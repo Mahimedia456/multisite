@@ -1,64 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MIcon from "../components/MIcon";
 
-const BRANDS = [
-  {
-    id: "aamir",
-    name: "Aamir PetCare",
-    route: "/aamir",
-    status: "active",
-    templates: 12,
-    updated: "2 hours ago",
-    icon: "pets",
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
-  },
-  {
-    id: "umair",
-    name: "Umair Trust Life",
-    route: "/umair",
-    status: "active",
-    templates: 8,
-    updated: "Oct 12, 2023",
-    icon: "favorite",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-  },
-  {
-    id: "horizon",
-    name: "Horizon Safety",
-    route: "/horizon",
-    status: "inactive",
-    templates: 15,
-    updated: "Sep 28, 2023",
-    icon: "shield",
-    iconBg: "bg-zinc-100",
-    iconColor: "text-zinc-500",
-  },
-  {
-    id: "vital-guard",
-    name: "Vital Guard Co.",
-    route: "/vital-guard",
-    status: "active",
-    templates: 6,
-    updated: "Oct 05, 2023",
-    icon: "health_and_safety",
-    iconBg: "bg-teal-50",
-    iconColor: "text-teal-600",
-  },
-  {
-    id: "legacy",
-    name: "Legacy Assets",
-    route: "/legacy",
-    status: "active",
-    templates: 21,
-    updated: "Aug 12, 2023",
-    icon: "home_health",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-  },
-];
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ""; // e.g. http://localhost:4000
 
 function StatusPill({ status }) {
   const active = status === "active";
@@ -85,7 +29,12 @@ function StatusPill({ status }) {
 function KPI({ icon, iconWrap, title, value, hint, hintColor }) {
   return (
     <div className="bg-white/70 backdrop-blur-xl border border-zinc-200 rounded-xl p-5 flex items-center gap-4 shadow-sm">
-      <div className={["w-12 h-12 rounded-full flex items-center justify-center", iconWrap].join(" ")}>
+      <div
+        className={[
+          "w-12 h-12 rounded-full flex items-center justify-center",
+          iconWrap,
+        ].join(" ")}
+      >
         <MIcon name={icon} className="text-[22px]" />
       </div>
       <div>
@@ -93,7 +42,12 @@ function KPI({ icon, iconWrap, title, value, hint, hintColor }) {
           {title}
         </p>
         <p className="text-xl font-bold text-zinc-900">{value}</p>
-        <p className={["text-[10px] font-bold uppercase mt-0.5", hintColor].join(" ")}>
+        <p
+          className={[
+            "text-[10px] font-bold uppercase mt-0.5",
+            hintColor,
+          ].join(" ")}
+        >
           {hint}
         </p>
       </div>
@@ -101,23 +55,93 @@ function KPI({ icon, iconWrap, title, value, hint, hintColor }) {
   );
 }
 
+function formatUpdated(updatedAt) {
+  if (!updatedAt) return "-";
+  const d = new Date(updatedAt);
+  if (Number.isNaN(d.getTime())) return String(updatedAt);
+  return d.toLocaleString();
+}
+
 export default function BrandsPortfolio() {
   const navigate = useNavigate();
+
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all"); // all | active | inactive
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return BRANDS.filter((b) => {
-      const matchQuery =
-        !q ||
-        b.name.toLowerCase().includes(q) ||
-        b.route.toLowerCase().includes(q) ||
-        b.status.toLowerCase().includes(q);
-      const matchStatus = status === "all" ? true : b.status === status;
-      return matchQuery && matchStatus;
-    });
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // ✅ Fetch brands from API (server reads from tb_brands table)
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadBrands() {
+      try {
+        setLoading(true);
+        setErrorMsg("");
+
+        const params = new URLSearchParams();
+        if (query.trim()) params.set("q", query.trim());
+        params.set("status", status);
+
+        const res = await fetch(
+          `${API_BASE}/api/brands?${params.toString()}`,
+          { signal: controller.signal }
+        );
+
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.message || "Failed to fetch brands");
+        }
+
+        // ✅ Normalize response to match UI fields (safe defaults)
+        const normalized = (json.data || []).map((b) => ({
+          id: b.id,
+          name: b.name,
+          route: b.route,
+          status: b.status || "inactive",
+          templates: Number.isFinite(b.templates) ? b.templates : 0,
+          updatedAt: b.updatedAt || b.updated_at || b.updated, // supports common names
+          icon: b.icon || "business",
+          iconBg: b.iconBg || "bg-zinc-100",
+          iconColor: b.iconColor || "text-zinc-500",
+        }));
+
+        setBrands(normalized);
+      } catch (e) {
+        if (e?.name !== "AbortError") {
+          console.error(e);
+          setErrorMsg(e?.message || "Something went wrong");
+          setBrands([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // small debounce for smoother typing
+    const t = setTimeout(loadBrands, 250);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
   }, [query, status]);
+
+  // If your API already filters, this is just brands.
+  // Keeping this allows you to later change API behavior without touching UI.
+  const filtered = useMemo(() => brands, [brands]);
+
+  // ✅ KPI values from real data
+  const totalCount = filtered.length;
+  const activeCount = filtered.filter((b) => b.status === "active").length;
+  const inactiveCount = totalCount - activeCount;
+  const activeRate = totalCount ? ((activeCount / totalCount) * 100).toFixed(1) : "0.0";
+
+  // ✅ pagination UI (static buttons in your UI) — we’ll just show “1-total”
+  const showingFrom = totalCount ? 1 : 0;
+  const showingTo = totalCount;
 
   return (
     <div className="max-w-[1400px] mx-auto">
@@ -126,7 +150,7 @@ export default function BrandsPortfolio() {
         <div>
           <h2 className="text-xl font-bold text-zinc-900">Brand Portfolio</h2>
           <p className="text-zinc-500 text-sm">
-            Managing 54 active and inactive insurance sub-brands.
+            Managing {totalCount} active and inactive sub-brands.
           </p>
         </div>
 
@@ -150,7 +174,9 @@ export default function BrandsPortfolio() {
               onClick={() => setStatus("all")}
               className={[
                 "px-3 py-1 text-xs font-medium rounded-md",
-                status === "all" ? "text-zinc-600 bg-zinc-100" : "text-zinc-400 hover:text-zinc-600",
+                status === "all"
+                  ? "text-zinc-600 bg-zinc-100"
+                  : "text-zinc-400 hover:text-zinc-600",
               ].join(" ")}
             >
               All
@@ -159,7 +185,9 @@ export default function BrandsPortfolio() {
               onClick={() => setStatus("active")}
               className={[
                 "px-3 py-1 text-xs font-medium rounded-md",
-                status === "active" ? "text-zinc-600 bg-zinc-100" : "text-zinc-400 hover:text-zinc-600",
+                status === "active"
+                  ? "text-zinc-600 bg-zinc-100"
+                  : "text-zinc-400 hover:text-zinc-600",
               ].join(" ")}
             >
               Active
@@ -168,7 +196,9 @@ export default function BrandsPortfolio() {
               onClick={() => setStatus("inactive")}
               className={[
                 "px-3 py-1 text-xs font-medium rounded-md",
-                status === "inactive" ? "text-zinc-600 bg-zinc-100" : "text-zinc-400 hover:text-zinc-600",
+                status === "inactive"
+                  ? "text-zinc-600 bg-zinc-100"
+                  : "text-zinc-400 hover:text-zinc-600",
               ].join(" ")}
             >
               Inactive
@@ -177,33 +207,40 @@ export default function BrandsPortfolio() {
         </div>
       </div>
 
-      {/* ✅ KPI ROW (you asked “add kpi on top after heading and search then table”) */}
+      {/* KPI ROW */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <KPI
-          icon="analytics"
+          icon="groups"
           iconWrap="bg-primary/10 text-primary"
-          title="Growth"
-          value="+12.5%"
-          hint="Brand Expansion"
-          hintColor="text-green-600"
+          title="Total Brands"
+          value={String(totalCount)}
+          hint={`${activeCount} active • ${inactiveCount} inactive`}
+          hintColor="text-zinc-600"
         />
         <KPI
           icon="check_circle"
           iconWrap="bg-blue-50 text-blue-500"
           title="Active Rate"
-          value="94.2%"
-          hint="Global Portfolio"
+          value={`${activeRate}%`}
+          hint="Portfolio Health"
           hintColor="text-blue-600"
         />
         <KPI
           icon="history"
           iconWrap="bg-amber-50 text-amber-500"
-          title="Recent Activity"
-          value="24 mins ago"
-          hint="Last Brand Sync"
-          hintColor="text-amber-600"
+          title="Sync Status"
+          value={loading ? "Syncing..." : "Up to date"}
+          hint={errorMsg ? "API error" : "Last fetch OK"}
+          hintColor={errorMsg ? "text-red-600" : "text-amber-600"}
         />
       </div>
+
+      {/* Error */}
+      {errorMsg && (
+        <div className="mb-4 bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 rounded-lg">
+          {errorMsg}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
@@ -232,78 +269,113 @@ export default function BrandsPortfolio() {
           </thead>
 
           <tbody className="divide-y divide-zinc-100">
-            {filtered.map((b) => (
-              <tr
-                key={b.id}
-                className="hover:bg-primary/5 transition-colors cursor-pointer"
-                onClick={() => navigate(`/brands/${b.id}`)}
-              >
-                <td className="px-6 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className={["w-8 h-8 rounded flex items-center justify-center", b.iconBg].join(" ")}>
-                      <MIcon name={b.icon} className={["text-[18px]", b.iconColor].join(" ")} />
-                    </div>
-                    <span className="text-sm font-semibold text-zinc-900">
-                      {b.name}
-                    </span>
-                  </div>
-                </td>
-
-                <td className="px-6 py-3">
-                  <span className="text-sm font-mono text-zinc-500">{b.route}</span>
-                </td>
-
-                <td className="px-6 py-3">
-                  <StatusPill status={b.status} />
-                </td>
-
-                <td className="px-6 py-3 text-sm text-zinc-600 font-medium">
-                  {b.templates}
-                </td>
-
-                <td className="px-6 py-3 text-sm text-zinc-500">{b.updated}</td>
-
-                <td className="px-6 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
-                      title="Manage"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MIcon name="settings" className="text-[18px]" />
-                    </button>
-
-                    <button
-                      className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
-                      title="Edit"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MIcon name="edit" className="text-[18px]" />
-                    </button>
-
-                    <button
-                      className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
-                      title="Duplicate"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MIcon name="content_copy" className="text-[18px]" />
-                    </button>
-                  </div>
+            {loading ? (
+              <tr>
+                <td className="px-6 py-6 text-sm text-zinc-500" colSpan={6}>
+                  Loading brands...
                 </td>
               </tr>
-            ))}
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td className="px-6 py-6 text-sm text-zinc-500" colSpan={6}>
+                  No brands found.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((b) => (
+                <tr
+                  key={b.id}
+                  className="hover:bg-primary/5 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/brands/${b.id}`)}
+                >
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={[
+                          "w-8 h-8 rounded flex items-center justify-center",
+                          b.iconBg,
+                        ].join(" ")}
+                      >
+                        <MIcon
+                          name={b.icon}
+                          className={["text-[18px]", b.iconColor].join(" ")}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-zinc-900">
+                        {b.name}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-mono text-zinc-500">
+                      {b.route}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-3">
+                    <StatusPill status={b.status} />
+                  </td>
+
+                  <td className="px-6 py-3 text-sm text-zinc-600 font-medium">
+                    {b.templates}
+                  </td>
+
+                  <td className="px-6 py-3 text-sm text-zinc-500">
+                    {formatUpdated(b.updatedAt)}
+                  </td>
+
+                  <td className="px-6 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
+                        title="Manage"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MIcon name="settings" className="text-[18px]" />
+                      </button>
+
+                      <button
+                        className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
+                        title="Edit"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MIcon name="edit" className="text-[18px]" />
+                      </button>
+
+                      <button
+                        className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
+                        title="Duplicate"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MIcon name="content_copy" className="text-[18px]" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
           <span className="text-sm text-zinc-500">
-            Showing <span className="font-semibold text-zinc-900">1-10</span> of{" "}
-            <span className="font-semibold text-zinc-900">54</span> brands
+            Showing{" "}
+            <span className="font-semibold text-zinc-900">
+              {showingFrom}-{showingTo}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-zinc-900">{totalCount}</span>{" "}
+            brands
           </span>
 
+          {/* keep your pagination UI (static) */}
           <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-zinc-200 rounded transition-colors disabled:opacity-30" disabled>
+            <button
+              className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-zinc-200 rounded transition-colors disabled:opacity-30"
+              disabled
+            >
               <MIcon name="chevron_left" className="text-[20px]" />
             </button>
 

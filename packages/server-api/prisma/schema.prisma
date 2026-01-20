@@ -3,9 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
+
+/**
+ * IMPORTANT:
+ * If your DB columns `scope`/`status` are currently TEXT,
+ * keep them as String for now (safe migration).
+ * Once you normalize data, we can convert to enums.
+ * So we will NOT use Prisma enums for scope/status yet to avoid db push failing.
+ */
 
 enum TemplateStatus {
   DRAFT
@@ -18,155 +27,180 @@ enum ScopeType {
   MAIN
 }
 
-/* =======================
-   ADMIN USERS
-======================= */
+/**
+ * =======================
+ * ADMIN USERS
+ * =======================
+ */
 
 model AdminUser {
-  id           String   @id @default(uuid())
+  id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
   passwordHash String   @map("password_hash")
   role         String   @default("SUPER_ADMIN")
-  createdAt    DateTime @map("created_at") @default(now())
-  updatedAt    DateTime @map("updated_at") @updatedAt
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  sessions     AdminSession[]
-  templateVersions TemplateVersion[]
-  pageVersions     InnerPageVersion[]
+  sessions         AdminSession[]
+  templateVersions TemplateVersion[]  @relation("AdminTemplateVersions")
+  pageVersions     InnerPageVersion[] @relation("AdminPageVersions")
 
   @@map("admin_users")
 }
 
-/* =======================
-   ADMIN SESSIONS
-======================= */
+/**
+ * =======================
+ * ADMIN SESSIONS
+ * =======================
+ */
 
 model AdminSession {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
   token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @map("created_at") @default(now())
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([expiresAt])
+  @@index([userId], map: "idx_admin_sessions_user_id")
+  @@index([expiresAt], map: "idx_admin_sessions_expires_at")
   @@map("admin_sessions")
 }
 
-/* =======================
-   BRANDS
-======================= */
+/**
+ * =======================
+ * BRANDS
+ * =======================
+ */
 
-model Brand {
-  id            String   @id @default(uuid())
-  slug          String   @unique
-  name          String
-  route         String
-  status        String   @default("ACTIVE")
-  primaryDomain String?  @map("primary_domain")
-
-  accentColor   String?  @map("accent_color")
-  logoUrl       String?  @map("logo_url")
-  typography    String?
-
-  createdAt     DateTime @map("created_at") @default(now())
-  updatedAt     DateTime @map("updated_at") @updatedAt
-
-  templates     Template[]
-  innerPages    InnerPage[]
-
-  @@index([status])
-  @@map("brands")
+model tb_brands {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  route     String   @unique
+  status    String   @default("active") // active | inactive
+  templates Int      @default(0)
+  icon      String? 
+  iconBg    String?
+  iconColor String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
-/* =======================
-   TEMPLATES
-======================= */
+
+/**
+ * =======================
+ * TEMPLATES
+ * =======================
+ */
 
 model Template {
-  id        String         @id @default(uuid())
-  scope     ScopeType
-  brandId   String?        @map("brand_id")
-  key       String
-  title     String
-  status    TemplateStatus @default(DRAFT)
-  createdAt DateTime       @map("created_at") @default(now())
-  updatedAt DateTime       @map("updated_at") @updatedAt
+  id String @id @default(uuid()) @db.Uuid
 
-  brand     Brand?         @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  versions  TemplateVersion[]
+  // ✅ SAFE: keep as String if DB is text right now
+  // Later we can convert to enum ScopeType.
+  scope String // was ScopeType
 
-  @@unique([scope, brandId, key])
-  @@index([brandId])
-  @@index([scope])
-  @@index([status])
+  brandId String? @map("brand_id") @db.Uuid
+  key     String
+  title   String
+
+  // ✅ SAFE: keep as String if DB is text right now
+  // Later we can convert to enum TemplateStatus.
+  status String @default("DRAFT") // was TemplateStatus
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  brand    Brand?            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  versions TemplateVersion[]
+
+  @@unique([scope, brandId, key], map: "uq_templates_scope_brand_key")
+  @@index([brandId], map: "idx_templates_brand_id")
+  @@index([scope], map: "idx_templates_scope")
+  @@index([status], map: "idx_templates_status")
   @@map("templates")
 }
 
-/* =======================
-   TEMPLATE VERSIONS
-======================= */
+/**
+ * =======================
+ * TEMPLATE VERSIONS
+ * =======================
+ */
 
 model TemplateVersion {
-  id         String   @id @default(uuid())
-  templateId String   @map("template_id")
+  id         String   @id @default(uuid()) @db.Uuid
+  templateId String   @map("template_id") @db.Uuid
   version    Int
   content    Json     @default("{}")
-  createdAt  DateTime @map("created_at") @default(now())
-  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  template   Template   @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  admin      AdminUser? @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdBy String? @map("created_by") @db.Uuid
 
-  @@unique([templateId, version])
-  @@index([templateId])
-  @@index([createdAt])
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  admin AdminUser? @relation("AdminTemplateVersions", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@unique([templateId, version], map: "uq_template_versions_template_version")
+  @@index([templateId], map: "idx_template_versions_template_id")
+  @@index([createdAt], map: "idx_template_versions_created_at")
   @@map("template_versions")
 }
 
-/* =======================
-   INNER PAGES
-======================= */
+/**
+ * =======================
+ * INNER PAGES
+ * =======================
+ */
 
 model InnerPage {
-  id        String         @id @default(uuid())
-  scope     ScopeType
-  brandId   String?        @map("brand_id")
-  slug      String
-  title     String
-  status    TemplateStatus @default(DRAFT)
-  createdAt DateTime       @map("created_at") @default(now())
-  updatedAt DateTime       @map("updated_at") @updatedAt
+  id String @id @default(uuid()) @db.Uuid
 
-  brand     Brand?         @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  versions  InnerPageVersion[]
+  // ✅ SAFE: keep as String if DB is text right now
+  scope String // was ScopeType
 
-  @@unique([scope, brandId, slug])
-  @@index([brandId])
-  @@index([scope])
-  @@index([status])
+  brandId String? @map("brand_id") @db.Uuid
+  slug    String
+  title   String
+
+  // ✅ SAFE: keep as String if DB is text right now
+  status String @default("DRAFT") // was TemplateStatus
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  brand    Brand?             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  versions InnerPageVersion[]
+
+  @@unique([scope, brandId, slug], map: "uq_inner_pages_scope_brand_slug")
+  @@index([brandId], map: "idx_inner_pages_brand_id")
+  @@index([scope], map: "idx_inner_pages_scope")
+  @@index([status], map: "idx_inner_pages_status")
   @@map("inner_pages")
 }
 
-/* =======================
-   INNER PAGE VERSIONS
-======================= */
+/**
+ * =======================
+ * INNER PAGE VERSIONS
+ * =======================
+ */
 
 model InnerPageVersion {
-  id        String   @id @default(uuid())
-  pageId    String   @map("page_id")
+  id        String   @id @default(uuid()) @db.Uuid
+  pageId    String   @map("page_id") @db.Uuid
   version   Int
   content   Json     @default("{}")
-  createdAt DateTime @map("created_at") @default(now())
-  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  page      InnerPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  admin     AdminUser? @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdBy String? @map("created_by") @db.Uuid
 
-  @@unique([pageId, version])
-  @@index([pageId])
-  @@index([createdAt])
+  page InnerPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  admin AdminUser? @relation("AdminPageVersions", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@unique([pageId, version], map: "uq_inner_page_versions_page_version")
+  @@index([pageId], map: "idx_inner_page_versions_page_id")
+  @@index([createdAt], map: "idx_inner_page_versions_created_at")
   @@map("inner_page_versions")
 }
