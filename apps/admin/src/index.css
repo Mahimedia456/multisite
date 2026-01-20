@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ✅ OPTION 2: FORCE bg-primary buttons to look like your violet gradient globally */
+@layer utilities {
+  /* turn bg-primary into gradient */
+  .bg-primary {
+    @apply bg-gradient-to-r from-violet-600 to-violet-700;
+  }
+
+  /* hover:bg-primary/90 becomes hover gradient brightness */
+  .hover\:bg-primary\/90:hover {
+    @apply brightness-110;
+  }
+
+  /* shadow-primary/20 becomes violet shadow */
+  .shadow-primary\/20 {
+    @apply shadow-violet-500/15;
+  }
+}
