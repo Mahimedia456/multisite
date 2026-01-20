@@ -3,12 +3,16 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "pnpm -r dev",
-    "dev:main": "pnpm --filter main dev",
+    "dev": "pnpm run dev:all",
     "dev:aamir": "pnpm --filter aamir dev",
     "dev:umair": "pnpm --filter umair dev",
+    "dev:main": "pnpm --filter main dev",
     "dev:admin": "pnpm --filter admin dev",
-    "dev:server": "pnpm --filter @server/api dev",
+    "dev:server": "pnpm --filter server-api dev",
+    "dev:all": "pnpm -r --parallel --filter aamir --filter umair --filter main --filter admin --filter server-api dev",
     "install:clean": "rimraf node_modules apps/**/node_modules packages/**/node_modules pnpm-lock.yaml && pnpm install"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
   }
 }
