@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
-
 /**
+ * Router-agnostic SiteHeader (NO react-router-dom import)
+ * UI remains identical. The consuming app passes LinkComponent (React Router's Link).
+ *
  * Props:
  * - brand: {
  *    name: string,
@@ -11,8 +12,21 @@ import { Link } from "react-router-dom";
  *    cta?: { label: string, onClick?: () => void, to?: string, href?: string },
  *    login?: { label?: string, to?: string },
  *  }
+ * - LinkComponent?: React component like react-router-dom's Link
  */
-export default function SiteHeader({ brand }) {
+
+const DefaultLink = ({ to, href, children, ...rest }) => {
+  const finalHref = href ?? to ?? "#";
+  return (
+    <a href={finalHref} {...rest}>
+      {children}
+    </a>
+  );
+};
+
+export default function SiteHeader({ brand, LinkComponent = DefaultLink }) {
+  const Link = LinkComponent;
+
   const {
     name,
     logoType = "material",
@@ -20,7 +34,7 @@ export default function SiteHeader({ brand }) {
     LogoIcon,
     homeLinks = [],
     login = { label: "Log In", to: "/login" },
-    cta = { label: "Get a Quote" },
+    cta = { label: "Get a Quote" }
   } = brand || {};
 
   const renderLogo = () => {
@@ -33,6 +47,7 @@ export default function SiteHeader({ brand }) {
   const renderNavItem = (item) => {
     const base =
       "text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-primary transition-colors";
+
     if (item.to) {
       return (
         <Link key={item.label} className={base} to={item.to}>
@@ -40,6 +55,7 @@ export default function SiteHeader({ brand }) {
         </Link>
       );
     }
+
     return (
       <a key={item.label} className={base} href={item.href}>
         {item.label}
@@ -50,6 +66,7 @@ export default function SiteHeader({ brand }) {
   const renderCta = () => {
     const cls =
       "h-10 px-5 rounded-xl bg-primary hover:bg-primary-dark dark:bg-accent dark:hover:opacity-90 text-white dark:text-primary text-sm font-bold shadow-lg shadow-primary/20 transition-all";
+
     if (cta.to) return <Link to={cta.to} className={cls}>{cta.label}</Link>;
     if (cta.href) return <a href={cta.href} className={cls}>{cta.label}</a>;
     return <button className={cls} onClick={cta.onClick}>{cta.label}</button>;
