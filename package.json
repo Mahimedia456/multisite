@@ -1,7 +1,10 @@
 {
   "name": "multisite",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.12.1",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "pnpm run dev:all",
     "dev:aamir": "pnpm --filter aamir dev",
