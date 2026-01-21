@@ -4,8 +4,6 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
-
-    // 🔥 IMPORTANT: scan shared UI package
     "../../packages/ui-inner-shared/src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
