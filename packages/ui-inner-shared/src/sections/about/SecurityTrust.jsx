@@ -1,10 +1,10 @@
-export default function SecurityTrust(props) {
-  const { title, items } = props || {};
-  const list = Array.isArray(items) && items.length ? items : ["256-bit", "SOC2", "24/7"];
+export default function SecurityTrust({ title, items }) {
+  const list = Array.isArray(items) ? items : [];
 
   return (
     <section className="bg-background-dark text-white rounded-3xl p-12">
-      <h2 className="text-4xl font-bold mb-6">{title || "Your data is safe, encrypted, and private."}</h2>
+      <h2 className="text-4xl font-bold mb-6">{title || ""}</h2>
+
       <div className="flex gap-8 flex-wrap">
         {list.map((t) => (
           <div key={t}>

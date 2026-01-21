@@ -1,3 +1,4 @@
+// apps/aamir/src/ui/AboutPage.jsx
 import StickyHeader from "../sections/about/StickyHeader";
 import SubTabs from "../sections/about/SubTabs";
 
@@ -40,14 +41,14 @@ export default function AboutPage({ tenantConfig, HeaderSlot, FooterSlot, conten
 
   return (
     <>
-      {HeaderSlot ? <HeaderSlot /> : <StickyHeader tenant={tenantConfig} />}
+      {HeaderSlot ? <HeaderSlot tenant={tenantConfig} /> : <StickyHeader tenant={tenantConfig} />}
       <SubTabs tenant={tenantConfig} />
 
       <main className="max-w-7xl mx-auto px-6 space-y-24 py-16">
         {sections.map(renderSection)}
       </main>
 
-      {FooterSlot ? <FooterSlot /> : <LocalFooter tenant={tenantConfig} />}
+      {FooterSlot ? <FooterSlot tenant={tenantConfig} /> : <LocalFooter tenant={tenantConfig} />}
     </>
   );
 }

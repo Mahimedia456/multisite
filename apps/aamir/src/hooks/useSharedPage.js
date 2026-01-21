@@ -1,7 +1,8 @@
 // apps/aamir/src/hooks/useSharedPage.js
 import { useEffect, useState } from "react";
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5050").replace(/\/+$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, ""); 
+// ✅ if you use vite proxy, set VITE_API_BASE_URL=""
 
 export function useSharedPage(slug) {
   const [content, setContent] = useState(null);
@@ -15,15 +16,20 @@ export function useSharedPage(slug) {
       setLoading(true);
       setError("");
       try {
-        const r = await fetch(`${API_BASE}/public/shared-pages/${encodeURIComponent(slug)}`);
+        const url = `${API_BASE}/public/shared-pages/${encodeURIComponent(slug)}`;
+        const r = await fetch(url);
         const j = await r.json().catch(() => null);
-        if (!r.ok || !j?.ok) throw new Error(j?.message || "Failed to load shared page");
 
-        if (!cancelled) setContent(j.data?.latestVersion?.content || null);
+        if (!r.ok || !j?.ok) throw new Error(j?.message || `Failed (${r.status})`);
+
+        // ✅ your API returns: { ok:true, data:{ latestVersion:{ content } } }
+        const next = j.data?.latestVersion?.content || null;
+
+        if (!cancelled) setContent(next);
       } catch (e) {
         if (!cancelled) {
           setContent(null);
-          setError(e?.message || "Failed to load");
+          setError(e?.message || "Failed to fetch");
         }
       } finally {
         if (!cancelled) setLoading(false);
