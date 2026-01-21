@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import { getTenantConfig } from "@multisite/sdk";
 
 // ✅ FIX: correct path (hooks)
-import { useSharedPage } from "../lib/useSharedPage";
+import { useSharedPage } from "../hooks/useSharedPage";
 
 export default function About() {
   const [config, setConfig] = useState(null);
