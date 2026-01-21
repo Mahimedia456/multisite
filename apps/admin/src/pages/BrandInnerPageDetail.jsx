@@ -359,31 +359,46 @@ export default function BrandInnerPageDetail() {
   }
 
   // ✅ IMPORTANT: body should be a plain object (apiFetch will JSON.stringify)
-  async function saveAsNewVersion(nextStatus) {
-    setSaving(true);
-    try {
-      const res = await apiFetch(`/admin/shared-pages/${pageId}/versions`, {
-        method: "POST",
-        body: {
-          content: data,
-          status: nextStatus, // "published" optional
-        },
-      });
+async function saveAndMaybePublish(nextStatus) {
+  setSaving(true);
+  try {
+    console.log("Saving content =>", data);
 
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save version");
+    const res = await apiFetch(`/admin/shared-pages/${pageId}/content`, {
+      method: "PUT",
+      body: { content: data, status: nextStatus },
+    });
 
-      const newList = await loadVersions(pageId);
-      const latest = Array.isArray(newList) ? newList[0] : null;
-      if (latest) await applyVersion(latest);
+    const json = await res.json().catch(() => null);
+    console.log("Save response =>", res.status, json);
 
-      alert(nextStatus ? "Saved & published" : "Saved new version");
-    } catch (e) {
-      alert(e?.message || "Save failed");
-    } finally {
-      setSaving(false);
+    if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save");
+
+    // reload latest
+    const res2 = await apiFetch(`/admin/shared-pages/${pageId}`);
+    const j2 = await res2.json().catch(() => null);
+    console.log("Reload page =>", res2.status, j2);
+
+    if (res2.ok && j2?.ok) {
+      setPage(j2.data);
+      const latest = j2.data?.latestVersion;
+      if (latest?.content) setData({ ...DEFAULT_PAGE_CONTENT, ...latest.content });
+      setActiveVersionId(latest?.id || null);
     }
+
+    const v = await loadVersions(pageId);
+    if (Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
+
+    alert(nextStatus ? "Saved & published" : "Saved");
+  } catch (e) {
+    console.error(e);
+    alert(e?.message || "Save failed");
+  } finally {
+    setSaving(false);
   }
+}
+
+
 
   /* =========================
      Initial load
@@ -481,27 +496,17 @@ export default function BrandInnerPageDetail() {
             Back
           </button>
 
-          <button
-            disabled={saving}
-            onClick={() => saveAsNewVersion(undefined)}
-            className={[
-              "h-11 px-5 rounded-xl text-white text-sm font-extrabold",
-              saving ? "bg-zinc-400" : "bg-zinc-900 hover:bg-zinc-800",
-            ].join(" ")}
-          >
-            {saving ? "Saving…" : "Save Version"}
-          </button>
+      <button
+  disabled={saving}
+  onClick={() => saveAndMaybePublish("published")}
+  className={[
+    "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg shadow-primary/20",
+    saving ? "bg-primary/40" : "bg-primary hover:bg-primary/90",
+  ].join(" ")}
+>
+  Publish
+</button>
 
-          <button
-            disabled={saving}
-            onClick={() => saveAsNewVersion("published")}
-            className={[
-              "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg shadow-primary/20",
-              saving ? "bg-primary/40" : "bg-primary hover:bg-primary/90",
-            ].join(" ")}
-          >
-            Publish
-          </button>
         </div>
       </div>
 

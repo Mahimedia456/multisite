@@ -593,6 +593,50 @@ app.get(
   })
 );
 
+app.put(
+  "/admin/shared-pages/:pageId/content",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { pageId } = req.params;
+    if (!isUuid(pageId)) return res.status(400).json({ ok: false, message: "Invalid pageId" });
+
+    const { content, status } = req.body || {};
+    if (!content || typeof content !== "object") {
+      return res.status(400).json({ ok: false, message: "content (object) is required" });
+    }
+
+    const createdBy = isUuid(req.user?.id) ? req.user.id : null;
+
+    // ✅ single version only (version=1)
+    const up = await pool.query(
+      `
+      INSERT INTO brand_shared_page_versions (page_id, version, content, created_by)
+      VALUES ($1, 1, $2, $3)
+      ON CONFLICT (page_id, version)
+      DO UPDATE SET
+        content = EXCLUDED.content,
+        created_at = NOW(),
+        created_by = EXCLUDED.created_by
+      RETURNING id, page_id, version, created_at, created_by
+      `,
+      [pageId, content, createdBy]
+    );
+
+    const nextStatus = normalizeStatus(status);
+    if (nextStatus) {
+      await pool.query(`UPDATE brand_shared_pages SET status = $2, updated_at = NOW() WHERE id = $1`, [
+        pageId,
+        nextStatus,
+      ]);
+    } else {
+      await pool.query(`UPDATE brand_shared_pages SET updated_at = NOW() WHERE id = $1`, [pageId]);
+    }
+
+    res.json({ ok: true, data: up.rows[0] });
+  })
+);
+
+
 app.post(
   "/admin/shared-pages/:pageId/versions",
   authMiddleware,
@@ -660,6 +704,113 @@ app.get(
     res.json({ ok: true, data: rows });
   })
 );
+// PUBLIC: brand layout for frontend websites
+app.get(
+  "/public/brands/:slug/layout",
+  wrap(async (req, res) => {
+    const slug = String(req.params.slug || "").trim().toLowerCase();
+    if (!slug) return res.status(400).json({ ok: false, message: "slug is required" });
+
+    const bq = await pool.query(
+      `SELECT id, name, slug, route
+       FROM brands
+       WHERE LOWER(slug) = $1
+       LIMIT 1`,
+      [slug]
+    );
+    if (!bq.rows.length) return res.status(404).json({ ok: false, message: "Brand not found" });
+
+    const brand = bq.rows[0];
+
+    const layoutsQ = await pool.query(
+      `
+      SELECT
+        t.key,
+        v.content
+      FROM brand_layout_templates t
+      LEFT JOIN LATERAL (
+        SELECT content
+        FROM brand_layout_template_versions
+        WHERE template_id = t.id
+        ORDER BY version DESC
+        LIMIT 1
+      ) v ON true
+      WHERE t.brand_id = $1
+        AND t.key IN ('header','footer')
+      `,
+      [brand.id]
+    );
+
+    const header = layoutsQ.rows.find((r) => r.key === "header")?.content || null;
+    const footer = layoutsQ.rows.find((r) => r.key === "footer")?.content || null;
+
+    res.json({
+      ok: true,
+      data: {
+        brand: { id: brand.id, name: brand.name, slug: brand.slug, route: brand.route },
+        header,
+        footer,
+      },
+    });
+  })
+);
+
+
+
+// PUBLIC: shared page by slug (latest version)
+app.get(
+  "/public/shared-pages/:slug",
+  wrap(async (req, res) => {
+    const slug = String(req.params.slug || "").trim().toLowerCase();
+    if (!slug) return res.status(400).json({ ok: false, message: "slug is required" });
+
+    // page meta
+    const pageQ = await pool.query(
+      `
+      SELECT id, slug, title, status, updated_at
+      FROM brand_shared_pages
+      WHERE LOWER(slug) = $1
+      LIMIT 1
+      `,
+      [slug]
+    );
+
+    if (!pageQ.rows.length) return res.status(404).json({ ok: false, message: "Page not found" });
+
+    const page = pageQ.rows[0];
+
+    // latest content
+    const latestQ = await pool.query(
+      `
+      SELECT id, version, content, created_at
+      FROM brand_shared_page_versions
+      WHERE page_id = $1
+      ORDER BY version DESC
+      LIMIT 1
+      `,
+      [page.id]
+    );
+
+    const latest = latestQ.rows[0] || null;
+
+    res.json({
+      ok: true,
+      data: {
+        page: {
+          id: page.id,
+          slug: page.slug,
+          title: page.title,
+          status: page.status,
+          updatedAt: page.updated_at,
+        },
+        latestVersion: latest
+          ? { id: latest.id, version: latest.version, content: latest.content, createdAt: latest.created_at }
+          : null,
+      },
+    });
+  })
+);
+
 
 /* =========================
    Global error handler
