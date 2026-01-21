@@ -19,8 +19,8 @@ function Pill({ children, tone = "gray" }) {
 
 function StatusTag({ status }) {
   const s = String(status || "").toLowerCase();
-  if (s === "published" || s === "live") return <Pill tone="green">Published</Pill>;
-  if (s === "draft") return <Pill tone="amber">Draft</Pill>;
+  if (s === "published" || s === "live" || s === "active") return <Pill tone="green">Published</Pill>;
+  if (s === "draft" || s === "inactive") return <Pill tone="amber">Draft</Pill>;
   return <Pill tone="gray">{status || "DRAFT"}</Pill>;
 }
 
@@ -43,15 +43,11 @@ export default function BrandInnerPagesIndex() {
     setErr("");
     setLoading(true);
     try {
-      // ✅ CHANGE THIS to match your backend route
       const url = `/admin/shared-pages?q=${encodeURIComponent((searchText || "").trim())}`;
-
       const res = await apiFetch(url);
       const json = await res.json().catch(() => null);
 
-      if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || `Failed (${res.status})`);
-      }
+      if (!res.ok || !json?.ok) throw new Error(json?.message || `Failed (${res.status})`);
 
       setRows(Array.isArray(json.data) ? json.data : []);
     } catch (e) {
