@@ -1,14 +1,10 @@
-// apps/aamir/src/ui/AboutPage.jsx
 import StickyHeader from "../sections/about/StickyHeader";
 import SubTabs from "../sections/about/SubTabs";
 
 import Hero from "../sections/about/Hero";
-import OurStory from "../sections/about/OurStory";
 import MissionVision from "../sections/about/MissionVision";
-import ValuesGrid from "../sections/about/ValuesGrid";
-import BrandShowcase from "../sections/about/BrandShowcase";
-import Leadership from "../sections/about/Leadership";
-import SecurityTrust from "../sections/about/SecurityTrust";
+import Timeline from "../sections/about/Timeline";
+import TeamGrid from "../sections/about/TeamGrid";
 import FinalCTA from "../sections/about/FinalCTA";
 import LocalFooter from "../sections/about/Footer";
 
@@ -20,20 +16,22 @@ export default function AboutPage({ tenantConfig, HeaderSlot, FooterSlot, conten
     switch (s?.type) {
       case "Hero":
         return <Hero key={i} {...p} />;
-      case "OurStory":
-        return <OurStory key={i} {...p} />;
+
+      // New layout sections (as per your uploaded folder)
       case "MissionVision":
+      case "MissionValues":
+        // supports either key if your JSON uses MissionValues
         return <MissionVision key={i} {...p} />;
-      case "ValuesGrid":
-        return <ValuesGrid key={i} {...p} />;
-      case "BrandShowcase":
-        return <BrandShowcase key={i} {...p} />;
-      case "Leadership":
-        return <Leadership key={i} {...p} />;
-      case "SecurityTrust":
-        return <SecurityTrust key={i} {...p} />;
+
+      case "Timeline":
+        return <Timeline key={i} {...p} />;
+
+      case "TeamGrid":
+        return <TeamGrid key={i} {...p} />;
+
       case "FinalCTA":
         return <FinalCTA key={i} {...p} />;
+
       default:
         return null;
     }
