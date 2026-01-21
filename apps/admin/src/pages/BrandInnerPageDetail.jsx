@@ -34,6 +34,31 @@ function move(arr, from, to) {
   return next;
 }
 
+/* =========================
+   Nested path helpers
+========================= */
+function getByPath(obj, path) {
+  if (!path) return obj;
+  return String(path)
+    .split(".")
+    .reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
+}
+
+function setByPath(obj, path, value) {
+  const keys = String(path).split(".");
+  const next = { ...(obj || {}) };
+  let cur = next;
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    const k = keys[i];
+    cur[k] = typeof cur[k] === "object" && cur[k] !== null ? { ...cur[k] } : {};
+    cur = cur[k];
+  }
+
+  cur[keys[keys.length - 1]] = value;
+  return next;
+}
+
 function Field({ field, value, onChange }) {
   if (field.kind === "textarea") {
     return (
@@ -106,115 +131,182 @@ function Field({ field, value, onChange }) {
 }
 
 /* =========================
-   Section registry
+   Section registry (NEW about layout)
 ========================= */
 const SECTION_DEFS = {
   Hero: {
     label: "Hero",
     fields: [
-      { key: "title", label: "Title", kind: "text", placeholder: "Built on trust." },
-      { key: "subtitle", label: "Subtitle", kind: "textarea" },
-      { key: "highlight", label: "Highlight", kind: "text", placeholder: "Focused on what matters." },
-      { key: "bgImage", label: "Background Image URL", kind: "text", placeholder: "https://..." },
+      { key: "badge.label", label: "Badge Label", kind: "text", placeholder: "Our Heart & Soul" },
+      { key: "badge.icon", label: "Badge Icon", kind: "text", placeholder: "favorite" },
+
+      { key: "title.before", label: "Title Before", kind: "text", placeholder: "Born from a Love for" },
+      { key: "title.highlight", label: "Title Highlight", kind: "text", placeholder: "Furry Family" },
+      { key: "title.after", label: "Title After", kind: "text", placeholder: "." },
+
+      { key: "description", label: "Description", kind: "textarea" },
+
+      { key: "backgroundImage.url", label: "Background Image URL", kind: "text", placeholder: "STOCK_URL_FROM_DB" },
+      { key: "backgroundImage.alt", label: "Background Image Alt", kind: "text", placeholder: "Person and pet..." },
+
+      { key: "founders.name", label: "Founders Name", kind: "text", placeholder: "Sarah & Michael Jenkins" },
+      { key: "founders.role", label: "Founders Role", kind: "text", placeholder: "Founders & Pet Parents" }
     ],
     defaults: {
-      title: "Built on trust.",
-      subtitle: "Experience premium insurance solutions tailored for your modern family life.",
-      highlight: "Focused on what matters.",
-      bgImage: "",
-    },
+      badge: { icon: "favorite", label: "Our Heart & Soul" },
+      title: { before: "Born from a Love for", highlight: "Furry Family", after: "." },
+      description:
+        "Ten years ago, we lost our first dog, Cooper, to a treatable condition because we couldn't afford the emergency surgery. That heartbreak became our mission.",
+      backgroundImage: { url: "", alt: "Person and pet in natural setting", assetKey: "about.hero.bg" },
+      founders: {
+        name: "Sarah & Michael Jenkins",
+        role: "Founders & Pet Parents",
+        avatars: [
+          { url: "", alt: "Founder 1", assetKey: "about.founder.1" },
+          { url: "", alt: "Founder 2", assetKey: "about.founder.2" }
+        ]
+      }
+    }
   },
 
-  OurStory: {
-    label: "Our Story",
+  MissionValues: {
+    label: "Mission + Values",
     fields: [
-      { key: "kicker", label: "Kicker", kind: "text", placeholder: "Our Heritage" },
-      { key: "headline", label: "Headline", kind: "text", placeholder: "Founded with Purpose" },
-      { key: "body", label: "Body", kind: "textarea" },
-      { key: "timeline", label: "Timeline Items", kind: "list" },
-    ],
-    defaults: {
-      kicker: "Our Heritage",
-      headline: "Founded with Purpose",
-      body: "Write your story...",
-      timeline: [],
-    },
-  },
-
-  MissionVision: {
-    label: "Mission & Vision",
-    fields: [
-      { key: "visionTitle", label: "Vision Title", kind: "text", placeholder: "Our Vision" },
-      { key: "visionBody", label: "Vision Body", kind: "textarea" },
-      { key: "missionTitle", label: "Mission Title", kind: "text", placeholder: "Our Mission" },
+      { key: "missionTitle", label: "Mission Title", kind: "text" },
       { key: "missionBody", label: "Mission Body", kind: "textarea" },
+      { key: "valuesTitle", label: "Values Title", kind: "text" }
     ],
     defaults: {
-      visionTitle: "Our Vision",
-      visionBody: "Become the most trusted global insurance holding.",
       missionTitle: "Our Mission",
-      missionBody: "Empower families through transparent, innovative insurance.",
-    },
+      missionBody:
+        "Our mission is to empower pet parents with the tools and financial security they need to provide the best possible care for their pets.",
+      valuesTitle: "Our Values",
+      stats: [
+        { value: "500k+", label: "Pets Protected", variant: "primary" },
+        { value: "98%", label: "Claims Satisfied", variant: "secondary" }
+      ],
+      values: [
+        {
+          icon: "visibility",
+          title: "Total Transparency",
+          body: "No hidden fine print or confusing jargon. We tell you exactly what’s covered and what’s not, in plain English.",
+          variant: "primary"
+        },
+        {
+          icon: "volunteer_activism",
+          title: "Radical Compassion",
+          body: "We know how stressful pet emergencies are. Our support team is trained in pet grief and crisis counseling.",
+          variant: "secondary"
+        },
+        {
+          icon: "lightbulb",
+          title: "Innovation for Good",
+          body: "Using technology to pay claims faster and provide 24/7 access to world-class veterinary advice via our app.",
+          variant: "primary"
+        }
+      ]
+    }
   },
+
+  Timeline: {
+    label: "Timeline",
+    fields: [
+      { key: "kicker", label: "Kicker", kind: "text", placeholder: "Our Story" },
+      { key: "title", label: "Title", kind: "text", placeholder: "Our Journey So Far" }
+    ],
+    defaults: {
+      kicker: "Our Story",
+      title: "Our Journey So Far",
+      items: [
+        {
+          year: "2014",
+          icon: "lightbulb",
+          title: "The Idea is Born",
+          body: "Sarah and Michael start brainstorming a pet-first insurance model in their garage.",
+          variant: "primary"
+        }
+      ]
+    }
+  },
+
+  TeamGrid: {
+    label: "Team Grid",
+    fields: [
+      { key: "title", label: "Title", kind: "text" },
+      { key: "subtitle", label: "Subtitle", kind: "textarea" },
+      { key: "badgeIcon", label: "Badge Icon", kind: "text" }
+    ],
+    defaults: {
+      title: "The Humans (and Pets) Behind PetGuard",
+      subtitle: "Led by a group of industry experts who all share one thing: an obsession with their pets.",
+      badgeIcon: "pets",
+      members: [
+        {
+          name: "Sarah Jenkins",
+          role: "CEO & Founder",
+          petLinePrefix: "Proud mom of",
+          petLineHighlight: "Luna (Labrador)",
+          image: { url: "", alt: "Sarah Jenkins", assetKey: "about.team.sarah" }
+        }
+      ]
+    }
+  },
+
+  FinalCTA: {
+    label: "Final CTA",
+    fields: [
+      { key: "title", label: "Title", kind: "text" },
+      { key: "primary.label", label: "Primary Label", kind: "text" },
+      { key: "primary.href", label: "Primary Href", kind: "text" },
+      { key: "secondary.label", label: "Secondary Label", kind: "text" },
+      { key: "secondary.href", label: "Secondary Href", kind: "text" }
+    ],
+    defaults: {
+      title: "Ready to protect your furry family?",
+      primary: { label: "Get a Quote", href: "/quote" },
+      secondary: { label: "See Plans", href: "/plans" }
+    }
+  }
 };
 
 /* =========================
-   Previews
+   Previews (safe)
 ========================= */
-function HeroPreview({ title, subtitle, highlight, bgImage }) {
+function HeroPreview({ badge, title, description, backgroundImage, founders }) {
+  const t =
+    typeof title === "object" && title
+      ? `${title.before || ""} ${title.highlight || ""}${title.after || ""}`.trim()
+      : String(title || "");
+
+  const bg = backgroundImage?.url || "";
+
   return (
     <div className="rounded-3xl overflow-hidden border border-zinc-200 bg-white">
-      {bgImage ? (
+      {bg ? (
         <div
           className="h-48 bg-zinc-100"
-          style={{ backgroundImage: `url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
+          style={{ backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "center" }}
         />
       ) : (
         <div className="h-20 bg-zinc-100" />
       )}
+
       <div className="p-6">
-        <div className="text-2xl font-extrabold text-zinc-900">{title || "Hero title..."}</div>
-        {highlight ? <div className="mt-2 text-sm font-bold text-primary">{highlight}</div> : null}
-        {subtitle ? <p className="mt-2 text-sm text-zinc-600 leading-relaxed">{subtitle}</p> : null}
-      </div>
-    </div>
-  );
-}
-
-function OurStoryPreview({ kicker, headline, body, timeline }) {
-  const list = Array.isArray(timeline) ? timeline : [];
-  return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6">
-      {kicker ? <div className="text-xs font-extrabold tracking-widest text-zinc-400">{kicker}</div> : null}
-      <div className="mt-1 text-xl font-extrabold text-zinc-900">{headline || "Our story..."}</div>
-      {body ? <p className="mt-3 text-sm text-zinc-600 leading-relaxed">{body}</p> : null}
-
-      {list.length ? (
-        <div className="mt-4 space-y-2">
-          {list.map((t, i) => (
-            <div key={i} className="text-sm text-zinc-600 flex items-start gap-2">
-              <span className="mt-1 w-2 h-2 rounded-full bg-zinc-300" />
-              <span>{t}</span>
-            </div>
-          ))}
+        <div className="flex items-center gap-2 text-xs font-extrabold text-primary">
+          {badge?.icon ? <span className="opacity-70">[{badge.icon}]</span> : null}
+          <span>{badge?.label || ""}</span>
         </div>
-      ) : null}
-    </div>
-  );
-}
 
-function MissionVisionPreview({ visionTitle, visionBody, missionTitle, missionBody }) {
-  return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl bg-zinc-50 border border-zinc-200 p-4">
-          <div className="text-sm font-extrabold text-zinc-900">{visionTitle || "Vision"}</div>
-          <div className="mt-2 text-sm text-zinc-600 leading-relaxed">{visionBody || "Vision body..."}</div>
-        </div>
-        <div className="rounded-2xl bg-zinc-50 border border-zinc-200 p-4">
-          <div className="text-sm font-extrabold text-zinc-900">{missionTitle || "Mission"}</div>
-          <div className="mt-2 text-sm text-zinc-600 leading-relaxed">{missionBody || "Mission body..."}</div>
-        </div>
+        <div className="mt-2 text-2xl font-extrabold text-zinc-900">{t || "Hero title..."}</div>
+
+        {description ? <p className="mt-2 text-sm text-zinc-600 leading-relaxed">{description}</p> : null}
+
+        {founders?.name ? (
+          <div className="mt-4 text-sm text-zinc-700">
+            <div className="font-bold">{founders.name}</div>
+            <div className="text-zinc-500">{founders.role}</div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -225,9 +317,19 @@ function PreviewRenderer({ sections }) {
     <div className="space-y-4">
       {(sections || []).map((s, i) => {
         const props = s?.props || {};
+
         if (s?.type === "Hero") return <HeroPreview key={i} {...props} />;
-        if (s?.type === "OurStory") return <OurStoryPreview key={i} {...props} />;
-        if (s?.type === "MissionVision") return <MissionVisionPreview key={i} {...props} />;
+
+        if (s?.type === "MissionValues" || s?.type === "Timeline" || s?.type === "TeamGrid" || s?.type === "FinalCTA") {
+          return (
+            <div key={i} className="rounded-3xl bg-white border border-zinc-200 p-6">
+              <div className="text-xs font-extrabold tracking-widest text-zinc-400">{s?.type}</div>
+              <pre className="mt-3 text-[12px] text-zinc-700 whitespace-pre-wrap break-words">
+                {JSON.stringify(props, null, 2)}
+              </pre>
+            </div>
+          );
+        }
 
         return (
           <div key={i} className="rounded-3xl bg-white border border-zinc-200 p-6">
@@ -245,15 +347,17 @@ function PreviewRenderer({ sections }) {
 }
 
 /* =========================
-   Default content
+   Default content (NEW about layout)
 ========================= */
 const DEFAULT_PAGE_CONTENT = {
+  templateKey: "about-shared",
   sections: [
     { type: "Hero", props: { ...SECTION_DEFS.Hero.defaults } },
-    { type: "OurStory", props: { ...SECTION_DEFS.OurStory.defaults } },
-    { type: "MissionVision", props: { ...SECTION_DEFS.MissionVision.defaults } },
-  ],
-  templateKey: "about-shared",
+    { type: "MissionValues", props: { ...SECTION_DEFS.MissionValues.defaults } },
+    { type: "Timeline", props: { ...SECTION_DEFS.Timeline.defaults } },
+    { type: "TeamGrid", props: { ...SECTION_DEFS.TeamGrid.defaults } },
+    { type: "FinalCTA", props: { ...SECTION_DEFS.FinalCTA.defaults } }
+  ]
 };
 
 export default function BrandInnerPageDetail() {
@@ -311,7 +415,7 @@ export default function BrandInnerPageDetail() {
     const defaults = def?.defaults || {};
     setData((d) => ({
       ...(d || {}),
-      sections: [...((d && d.sections) || []), { type, props: { ...defaults } }],
+      sections: [...((d && d.sections) || []), { type, props: { ...defaults } }]
     }));
     setSelectedIdx((sections?.length || 0));
   }
@@ -362,7 +466,7 @@ export default function BrandInnerPageDetail() {
     try {
       const res = await apiFetch(`/admin/shared-pages/${pageId}/content`, {
         method: "PUT",
-        body: { content: data, status: nextStatus || undefined },
+        body: { content: data, status: nextStatus || undefined }
       });
 
       const json = await res.json().catch(() => null);
@@ -491,7 +595,7 @@ export default function BrandInnerPageDetail() {
             onClick={() => saveAndMaybePublish(undefined)}
             className={[
               "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg",
-              saving ? "bg-zinc-400" : "bg-zinc-900 hover:bg-zinc-800",
+              saving ? "bg-zinc-400" : "bg-zinc-900 hover:bg-zinc-800"
             ].join(" ")}
           >
             {saving ? "Saving…" : "Save"}
@@ -502,7 +606,7 @@ export default function BrandInnerPageDetail() {
             onClick={() => saveAndMaybePublish("published")}
             className={[
               "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg shadow-primary/20",
-              saving ? "bg-primary/40" : "bg-primary hover:bg-primary/90",
+              saving ? "bg-primary/40" : "bg-primary hover:bg-primary/90"
             ].join(" ")}
           >
             {saving ? "Publishing…" : "Publish"}
@@ -530,7 +634,7 @@ export default function BrandInnerPageDetail() {
                     onClick={() => applyVersion(v)}
                     className={[
                       "w-full text-left px-5 py-4 hover:bg-primary/5 transition",
-                      active ? "bg-primary/10" : "",
+                      active ? "bg-primary/10" : ""
                     ].join(" ")}
                   >
                     <div className="flex items-center justify-between">
@@ -577,7 +681,7 @@ export default function BrandInnerPageDetail() {
                     key={idx}
                     className={[
                       "px-5 py-4 flex items-center justify-between hover:bg-primary/5 cursor-pointer transition",
-                      isActive ? "bg-primary/10" : "",
+                      isActive ? "bg-primary/10" : ""
                     ].join(" ")}
                     onClick={() => setSelectedIdx(idx)}
                   >
@@ -684,8 +788,17 @@ export default function BrandInnerPageDetail() {
                   <Field
                     key={f.key}
                     field={f}
-                    value={selected.props?.[f.key]}
-                    onChange={(val) => updateSectionProps(selectedIdx, { [f.key]: val })}
+                    value={getByPath(selected.props, f.key)}
+                    onChange={(val) =>
+                      setData((d) => {
+                        const next = { ...(d || {}) };
+                        const arr = [...(next.sections || [])];
+                        const s = arr[selectedIdx] || { type: "Hero", props: {} };
+                        arr[selectedIdx] = { ...s, props: setByPath(s.props || {}, f.key, val) };
+                        next.sections = arr;
+                        return next;
+                      })
+                    }
                   />
                 ))}
               </>

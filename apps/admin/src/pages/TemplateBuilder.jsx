@@ -1,8 +1,12 @@
+// admin/src/pages/TemplateBuilder.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
 
+/* =========================
+   Small UI bits
+========================= */
 function Badge({ text }) {
   const s = String(text || "").toLowerCase();
   const tone =
@@ -30,7 +34,7 @@ function Input({ label, value, onChange, placeholder }) {
   );
 }
 
-function TextArea({ label, value, onChange, placeholder }) {
+function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
   return (
     <div>
       <label className="text-xs font-bold text-zinc-500">{label}</label>
@@ -38,7 +42,7 @@ function TextArea({ label, value, onChange, placeholder }) {
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        rows={3}
+        rows={rows}
         className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
       />
     </div>
@@ -52,6 +56,7 @@ function RowActions({ onUp, onDown, onDelete }) {
         type="button"
         onClick={onUp}
         className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center"
+        title="Move up"
       >
         <MIcon name="keyboard_arrow_up" className="text-[18px]" />
       </button>
@@ -59,6 +64,7 @@ function RowActions({ onUp, onDown, onDelete }) {
         type="button"
         onClick={onDown}
         className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center"
+        title="Move down"
       >
         <MIcon name="keyboard_arrow_down" className="text-[18px]" />
       </button>
@@ -66,6 +72,7 @@ function RowActions({ onUp, onDown, onDelete }) {
         type="button"
         onClick={onDelete}
         className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center"
+        title="Delete"
       >
         <MIcon name="delete" className="text-[18px]" />
       </button>
@@ -80,6 +87,9 @@ function move(arr, from, to) {
   return next;
 }
 
+/* =========================
+   Defaults
+========================= */
 const DEFAULT_HEADER = {
   name: "",
   logoType: "material", // material | emoji | image
@@ -105,8 +115,11 @@ const DEFAULT_FOOTER = {
   bottomRight: "",
 };
 
+/* =========================
+   Page
+========================= */
 export default function TemplateBuilder() {
-  const { brandId, templateId } = useParams(); // URL: header | footer
+  const { brandId, templateId } = useParams(); // templateId: header | footer
   const navigate = useNavigate();
 
   const isHeader = templateId === "header";
@@ -116,12 +129,14 @@ export default function TemplateBuilder() {
   const [err, setErr] = useState("");
 
   const [brand, setBrand] = useState(null);
-  const [templateMeta, setTemplateMeta] = useState(null); // must contain UUID in .id
+  const [templateMeta, setTemplateMeta] = useState(null); // contains UUID in .id (brand_layout_templates.id)
   const [data, setData] = useState(isHeader ? DEFAULT_HEADER : DEFAULT_FOOTER);
 
   const [saving, setSaving] = useState(false);
 
-  // Load template meta + latest content
+  /* =========================
+     Load template meta + latest content
+  ========================= */
   useEffect(() => {
     let cancelled = false;
 
@@ -183,39 +198,42 @@ export default function TemplateBuilder() {
     if (t2) setTemplateMeta(t2);
   }
 
- async function saveAndMaybePublish(nextStatus) {
-  setSaving(true);
-  try {
-    const res = await apiFetch(`/admin/shared-pages/${pageId}/content`, {
-      method: "PUT",
-      body: { content: data, status: nextStatus }, // status can be "published"
-    });
-
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save");
-
-    // reload page + versions
-    const res2 = await apiFetch(`/admin/shared-pages/${pageId}`);
-    const j2 = await res2.json().catch(() => null);
-    if (res2.ok && j2?.ok) {
-      setPage(j2.data);
-      const latest = j2.data?.latestVersion;
-      if (latest?.content) setData({ ...DEFAULT_PAGE_CONTENT, ...latest.content });
-      setActiveVersionId(latest?.id || null);
+  /* =========================
+     ✅ Save / Publish (FIXED to match your API)
+     Server route exists:
+     POST /admin/layout-templates/:templateId/versions
+  ========================= */
+  async function saveAsNewVersion(nextStatus) {
+    if (!templateMeta?.id) {
+      alert("template_id missing (seed header/footer rows for this brand)");
+      return;
     }
 
-    const v = await loadVersions(pageId);
-    if (Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
+    setSaving(true);
+    try {
+      const res = await apiFetch(`/admin/layout-templates/${templateMeta.id}/versions`, {
+        method: "POST",
+        body: {
+          content: data,
+          status: nextStatus || undefined, // "published" optional
+        },
+      });
 
-    alert(nextStatus ? "Saved & published" : "Saved");
-  } catch (e) {
-    alert(e?.message || "Save failed");
-  } finally {
-    setSaving(false);
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save template");
+
+      await refreshTemplateMeta();
+      alert(nextStatus ? "Saved & published" : "Saved");
+    } catch (e) {
+      alert(e?.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
   }
-}
 
-
+  /* =========================
+     Render guards
+  ========================= */
   if (loading) return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
 
   if (err) {
@@ -255,9 +273,7 @@ export default function TemplateBuilder() {
                 template_id: <span className="font-mono">{templateMeta.id}</span>
               </span>
             ) : (
-              <span className="text-xs text-red-600 font-bold">
-                template_id missing (seed header/footer rows)
-              </span>
+              <span className="text-xs text-red-600 font-bold">template_id missing (seed header/footer rows)</span>
             )}
           </div>
         </div>
@@ -290,7 +306,7 @@ export default function TemplateBuilder() {
               saveDisabled ? "bg-primary/40" : "bg-primary hover:bg-primary/90",
             ].join(" ")}
           >
-            Publish
+            {saving ? "Publishing…" : "Publish"}
           </button>
         </div>
       </div>
@@ -350,9 +366,10 @@ export default function TemplateBuilder() {
               </div>
             </div>
 
-            {/* Header */}
+            {/* Header Editor */}
             {isHeader ? (
               <>
+                {/* Menu Links */}
                 <div className="rounded-2xl border border-zinc-200 bg-white p-4">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-extrabold tracking-widest text-zinc-400">MENU LINKS</div>
@@ -380,14 +397,18 @@ export default function TemplateBuilder() {
                           </div>
                           <RowActions
                             onUp={() =>
-                              idx > 0 && setData((d) => ({ ...d, homeLinks: move(d.homeLinks || [], idx, idx - 1) }))
+                              idx > 0 &&
+                              setData((d) => ({ ...d, homeLinks: move(d.homeLinks || [], idx, idx - 1) }))
                             }
                             onDown={() =>
                               idx < (data.homeLinks || []).length - 1 &&
                               setData((d) => ({ ...d, homeLinks: move(d.homeLinks || [], idx, idx + 1) }))
                             }
                             onDelete={() =>
-                              setData((d) => ({ ...d, homeLinks: (d.homeLinks || []).filter((_, i) => i !== idx) }))
+                              setData((d) => ({
+                                ...d,
+                                homeLinks: (d.homeLinks || []).filter((_, i) => i !== idx),
+                              }))
                             }
                           />
                         </div>
@@ -419,6 +440,7 @@ export default function TemplateBuilder() {
                   </div>
                 </div>
 
+                {/* Buttons */}
                 <div className="rounded-2xl border border-zinc-200 bg-white p-4">
                   <div className="text-xs font-extrabold tracking-widest text-zinc-400">BUTTONS</div>
 
@@ -448,15 +470,17 @@ export default function TemplateBuilder() {
               </>
             ) : null}
 
-            {/* Footer */}
+            {/* Footer Editor */}
             {isFooter ? (
               <>
                 <TextArea
                   label="Description"
                   value={data.description || ""}
                   onChange={(v) => setData((d) => ({ ...d, description: v }))}
+                  placeholder="Short footer description..."
+                  rows={4}
                 />
-                {/* (rest of footer editor stays same as your code) */}
+                {/* (rest of footer editor unchanged from your file) */}
               </>
             ) : null}
           </div>
@@ -509,20 +533,9 @@ export default function TemplateBuilder() {
                 </div>
               ) : null}
 
-              {isFooter ? (
-                <div className="rounded-3xl bg-white border border-zinc-200 p-6">
-                  {/* your footer preview same */}
-                  <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">
-                    {JSON.stringify(data, null, 2)}
-                  </pre>
-                </div>
-              ) : null}
-
               <div className="rounded-3xl bg-white border border-zinc-200 p-6">
                 <div className="text-xs font-extrabold tracking-widest text-zinc-400 mb-2">CONTENT JSON</div>
-                <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">
-                  {JSON.stringify(data, null, 2)}
-                </pre>
+                <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">{JSON.stringify(data, null, 2)}</pre>
               </div>
             </div>
           </div>

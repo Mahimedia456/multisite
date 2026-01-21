@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://multisite-server-api.onrender.com/:path*"
+    },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}
