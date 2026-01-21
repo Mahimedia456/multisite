@@ -1,12 +1,10 @@
 {
   "name": "multisite",
   "private": true,
-
   "packageManager": "pnpm@9.15.3",
   "engines": {
     "node": "18.x"
   },
-
   "scripts": {
     "dev": "pnpm run dev:all",
     "dev:aamir": "pnpm --filter aamir dev",
@@ -17,7 +15,6 @@
     "dev:all": "pnpm -r --parallel --filter aamir --filter umair --filter main --filter admin --filter server-api dev",
     "install:clean": "rimraf node_modules apps/**/node_modules packages/**/node_modules pnpm-lock.yaml && pnpm install"
   },
-
   "dependencies": {
     "bcryptjs": "^3.0.3"
   }
