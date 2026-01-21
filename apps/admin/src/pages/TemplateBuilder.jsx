@@ -183,38 +183,38 @@ export default function TemplateBuilder() {
     if (t2) setTemplateMeta(t2);
   }
 
-  async function saveAsNewVersion(nextStatus) {
-    setSaving(true);
-    try {
-      if (!templateMeta?.id) {
-        throw new Error(
-          "Template UUID missing. brand_layout_templates me is brand ke header/footer rows seed karo."
-        );
-      }
+ async function saveAndMaybePublish(nextStatus) {
+  setSaving(true);
+  try {
+    const res = await apiFetch(`/admin/shared-pages/${pageId}/content`, {
+      method: "PUT",
+      body: { content: data, status: nextStatus }, // status can be "published"
+    });
 
-      const res = await apiFetch(`/admin/layout-templates/${templateMeta.id}/versions`, {
-        method: "POST",
-        body: {
-          content: data,
-          status: nextStatus, // publish => "published"
-        },
-      });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save");
 
-      const json = await res.json().catch(() => null);
-
-      if (!res.ok || !json?.ok) {
-        console.error("TEMPLATE SAVE ERROR:", { status: res.status, json });
-        throw new Error(json?.error || json?.message || `Save failed (${res.status})`);
-      }
-
-      await refreshTemplateMeta();
-      alert(nextStatus ? "Saved & published" : "Saved new version");
-    } catch (e) {
-      alert(e?.message || "Save failed");
-    } finally {
-      setSaving(false);
+    // reload page + versions
+    const res2 = await apiFetch(`/admin/shared-pages/${pageId}`);
+    const j2 = await res2.json().catch(() => null);
+    if (res2.ok && j2?.ok) {
+      setPage(j2.data);
+      const latest = j2.data?.latestVersion;
+      if (latest?.content) setData({ ...DEFAULT_PAGE_CONTENT, ...latest.content });
+      setActiveVersionId(latest?.id || null);
     }
+
+    const v = await loadVersions(pageId);
+    if (Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
+
+    alert(nextStatus ? "Saved & published" : "Saved");
+  } catch (e) {
+    alert(e?.message || "Save failed");
+  } finally {
+    setSaving(false);
   }
+}
+
 
   if (loading) return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
 

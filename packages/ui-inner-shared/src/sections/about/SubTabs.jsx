@@ -1,5 +1,7 @@
-export default function SubTabs() {
-  const tabs = ["Overview", "Our Story", "Brands", "Leadership"];
+export default function SubTabs({ tenant }) {
+  const tabs =
+    tenant?.about?.tabs || ["Overview", "Our Story", "Brands", "Leadership"];
+
   return (
     <div className="border-b bg-white/40">
       <div className="max-w-7xl mx-auto px-6 flex gap-8">
