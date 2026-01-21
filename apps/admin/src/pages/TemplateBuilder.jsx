@@ -1,45 +1,200 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
-
-const TEMPLATE_DATA = {
-  home: {
-    name: "Home Page",
-    status: "published",
-    sections: [
-      { id: "hero", type: "Hero", title: "Built on trust", subtitle: "Focused on what matters." },
-      { id: "features", type: "Features", items: ["Fast claims", "24/7 support", "Flexible plans"] },
-      { id: "cta", type: "CTA", title: "Get a Quote", buttonText: "Start Now" },
-    ],
-  },
-  about: {
-    name: "About Us",
-    status: "draft",
-    sections: [
-      { id: "hero", type: "Hero", title: "Founded with purpose", subtitle: "Modern protection through clarity." },
-      { id: "mission", type: "Mission", title: "Our Mission", subtitle: "Empower families through transparent insurance." },
-    ],
-  },
-};
+import { apiFetch } from "../lib/auth";
 
 function Badge({ text }) {
-  const tone = text === "published" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700";
-  return <span className={["px-2.5 py-1 rounded-full text-[11px] font-bold uppercase", tone].join(" ")}>{text}</span>;
+  const s = String(text || "").toLowerCase();
+  const tone =
+    s === "published" || s === "live" || s === "active"
+      ? "bg-green-50 text-green-700"
+      : "bg-amber-50 text-amber-700";
+  return (
+    <span className={["px-2.5 py-1 rounded-full text-[11px] font-bold uppercase", tone].join(" ")}>
+      {text || "draft"}
+    </span>
+  );
 }
 
+function Input({ label, value, onChange, placeholder }) {
+  return (
+    <div>
+      <label className="text-xs font-bold text-zinc-500">{label}</label>
+      <input
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+      />
+    </div>
+  );
+}
+
+function TextArea({ label, value, onChange, placeholder }) {
+  return (
+    <div>
+      <label className="text-xs font-bold text-zinc-500">{label}</label>
+      <textarea
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+      />
+    </div>
+  );
+}
+
+function RowActions({ onUp, onDown, onDelete }) {
+  return (
+    <div className="flex items-center gap-1 text-zinc-400">
+      <button onClick={onUp} className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center">
+        <MIcon name="keyboard_arrow_up" className="text-[18px]" />
+      </button>
+      <button onClick={onDown} className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center">
+        <MIcon name="keyboard_arrow_down" className="text-[18px]" />
+      </button>
+      <button onClick={onDelete} className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center">
+        <MIcon name="delete" className="text-[18px]" />
+      </button>
+    </div>
+  );
+}
+
+function move(arr, from, to) {
+  const next = [...arr];
+  const item = next.splice(from, 1)[0];
+  next.splice(to, 0, item);
+  return next;
+}
+
+const DEFAULT_HEADER = {
+  name: "",
+  logoType: "material", // material | emoji | image
+  logoValue: "pets",
+  logoUrl: "",
+  homeLinks: [
+    { label: "Plans", href: "/#plans" },
+    { label: "How it Works", href: "/#how" },
+  ],
+  login: { label: "Log In", to: "/login" },
+  cta: { label: "Get a Quote", href: "/quote" },
+};
+
+const DEFAULT_FOOTER = {
+  name: "",
+  logoType: "emoji",
+  logoValue: "✨",
+  logoUrl: "",
+  description: "",
+  socials: [{ label: "f", href: "#" }],
+  columns: [
+    { title: "Company", links: [{ label: "About Us", href: "/about" }] },
+  ],
+  bottomLeft: "",
+  bottomRight: "",
+};
+
 export default function TemplateBuilder() {
-  const { brandId, templateId } = useParams();
+  const { brandId, templateId } = useParams(); // templateId will be: header|footer|home
   const navigate = useNavigate();
 
-  const template = useMemo(() => TEMPLATE_DATA[templateId] || TEMPLATE_DATA.home, [templateId]);
+  const isHeader = templateId === "header";
+  const isFooter = templateId === "footer";
 
-  const [data, setData] = useState(template);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-  function updateSectionTitle(sectionId, next) {
-    setData((d) => ({
-      ...d,
-      sections: d.sections.map((s) => (s.id === sectionId ? { ...s, title: next } : s)),
-    }));
+  const [brand, setBrand] = useState(null);
+  const [templateMeta, setTemplateMeta] = useState(null); // {id,key,title,status,latestVersion}
+  const [data, setData] = useState(isHeader ? DEFAULT_HEADER : DEFAULT_FOOTER);
+
+  // Load template content from /admin/brands/:brandId/detail
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setErr("");
+      try {
+        if (!isHeader && !isFooter) {
+          // for now: only header/footer builder
+          setErr("Only header/footer builder is enabled right now.");
+          setLoading(false);
+          return;
+        }
+
+        const res = await apiFetch(`/admin/brands/${brandId}/detail`);
+        const json = await res.json().catch(() => null);
+        if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to load");
+
+        const b = json.data.brand;
+        const t = (json.data.templates || []).find((x) => x.key === templateId);
+        const content = t?.latestVersion?.content;
+
+        if (!cancelled) {
+          setBrand(b);
+          setTemplateMeta(t || { key: templateId, title: templateId, status: "draft" });
+
+          if (content && typeof content === "object") {
+            // merge with defaults so missing fields don't break UI
+            if (isHeader) setData({ ...DEFAULT_HEADER, ...content });
+            if (isFooter) setData({ ...DEFAULT_FOOTER, ...content });
+          } else {
+            // fallback: create from defaults but use brand name
+            const base = isHeader ? DEFAULT_HEADER : DEFAULT_FOOTER;
+            setData({ ...base, name: b?.name || "" });
+          }
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e?.message || "Failed to load");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    if (brandId && templateId) load();
+    return () => {
+      cancelled = true;
+    };
+  }, [brandId, templateId, isHeader, isFooter]);
+
+  const title = useMemo(() => {
+    if (isHeader) return "Global Header";
+    if (isFooter) return "Global Footer";
+    return templateId;
+  }, [templateId, isHeader, isFooter]);
+
+  const status = templateMeta?.status || "draft";
+
+  // For now: just local save (we will connect DB versions endpoint next)
+  function fakeSave() {
+    console.log("SAVE CONTENT JSON:", data);
+    alert("Saved locally (console). Next step: save as new DB version.");
+  }
+
+  function fakePublish() {
+    console.log("PUBLISH CONTENT JSON:", data);
+    alert("Publish locally (console). Next step: create version + mark template published.");
+  }
+
+  if (loading) return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
+
+  if (err) {
+    return (
+      <div className="max-w-7xl mx-auto py-10">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{err}</div>
+        <div className="mt-4">
+          <button
+            onClick={() => navigate(`/brands/${brandId}`)}
+            className="h-11 px-4 rounded-xl bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50 flex items-center gap-2"
+          >
+            <MIcon name="arrow_back" className="text-[18px]" />
+            Back
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -48,11 +203,11 @@ export default function TemplateBuilder() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="text-xs text-zinc-400">
-            Brands <span className="mx-2">›</span> {brandId} <span className="mx-2">›</span> Templates
+            Brands <span className="mx-2">›</span> {brand?.name || brandId} <span className="mx-2">›</span> Templates
           </div>
           <div className="flex items-center gap-3 mt-1">
-            <h1 className="text-2xl font-extrabold text-zinc-900">{data.name}</h1>
-            <Badge text={data.status} />
+            <h1 className="text-2xl font-extrabold text-zinc-900">{title}</h1>
+            <Badge text={status} />
           </div>
         </div>
 
@@ -65,89 +220,431 @@ export default function TemplateBuilder() {
             Back
           </button>
 
-          <button className="h-11 px-5 rounded-xl bg-zinc-900 text-white text-sm font-extrabold hover:bg-zinc-800">
+          <button
+            onClick={fakeSave}
+            className="h-11 px-5 rounded-xl bg-zinc-900 text-white text-sm font-extrabold hover:bg-zinc-800"
+          >
             Save Changes
           </button>
 
-          <button className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-extrabold shadow-lg shadow-primary/20 hover:bg-primary/90">
+          <button
+            onClick={fakePublish}
+            className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-extrabold shadow-lg shadow-primary/20 hover:bg-primary/90"
+          >
             Publish
           </button>
         </div>
       </div>
 
       {/* Builder layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-[420px,1fr] gap-6">
-        {/* Left: sections list */}
+      <div className="grid grid-cols-1 xl:grid-cols-[520px,1fr] gap-6">
+        {/* Left: editor */}
         <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-zinc-200">
-            <div className="text-sm font-extrabold text-zinc-900">Sections</div>
-            <div className="text-xs text-zinc-500">Edit content blocks for this template.</div>
+            <div className="text-sm font-extrabold text-zinc-900">Editor</div>
+            <div className="text-xs text-zinc-500">
+              Update JSON data for <span className="font-bold">{title}</span> (logo, links, buttons, etc.)
+            </div>
           </div>
 
-          <div className="p-5 space-y-3">
-            {data.sections.map((s) => (
-              <div key={s.id} className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-widest text-zinc-400">
-                    {s.type}
+          <div className="p-5 space-y-6">
+            {/* Common: Brand name shown in header/footer */}
+            <Input
+              label="Brand Name"
+              value={data.name}
+              onChange={(v) => setData((d) => ({ ...d, name: v }))}
+              placeholder="PetCare+"
+            />
+
+            {/* Logo */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-extrabold tracking-widest text-zinc-400">LOGO</div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-zinc-500">Logo Type</label>
+                  <select
+                    value={data.logoType || "material"}
+                    onChange={(e) => setData((d) => ({ ...d, logoType: e.target.value }))}
+                    className="mt-1 w-full h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="material">material</option>
+                    <option value="emoji">emoji</option>
+                    <option value="image">image</option>
+                  </select>
+                </div>
+
+                {data.logoType === "image" ? (
+                  <Input
+                    label="Logo Image URL"
+                    value={data.logoUrl || ""}
+                    onChange={(v) => setData((d) => ({ ...d, logoUrl: v }))}
+                    placeholder="https://.../logo.png"
+                  />
+                ) : (
+                  <Input
+                    label={data.logoType === "emoji" ? "Emoji" : "Material Icon Name"}
+                    value={data.logoValue || ""}
+                    onChange={(v) => setData((d) => ({ ...d, logoValue: v }))}
+                    placeholder={data.logoType === "emoji" ? "🐾" : "pets"}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* HEADER */}
+            {isHeader ? (
+              <>
+                {/* Nav links */}
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-extrabold tracking-widest text-zinc-400">MENU LINKS</div>
+                    <button
+                      onClick={() =>
+                        setData((d) => ({
+                          ...d,
+                          homeLinks: [...(d.homeLinks || []), { label: "New Link", href: "#" }],
+                        }))
+                      }
+                      className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+                    >
+                      <MIcon name="add" className="text-[16px]" />
+                      Add
+                    </button>
                   </div>
-                  <div className="flex items-center gap-1 text-zinc-400">
-                    <button className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center">
-                      <MIcon name="keyboard_arrow_up" className="text-[18px]" />
-                    </button>
-                    <button className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center">
-                      <MIcon name="keyboard_arrow_down" className="text-[18px]" />
-                    </button>
-                    <button className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center">
-                      <MIcon name="delete" className="text-[18px]" />
-                    </button>
+
+                  <div className="mt-3 space-y-3">
+                    {(data.homeLinks || []).map((l, idx) => (
+                      <div key={idx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">LINK #{idx + 1}</div>
+                          <RowActions
+                            onUp={() => idx > 0 && setData((d) => ({ ...d, homeLinks: move(d.homeLinks || [], idx, idx - 1) }))}
+                            onDown={() =>
+                              idx < (data.homeLinks || []).length - 1 &&
+                              setData((d) => ({ ...d, homeLinks: move(d.homeLinks || [], idx, idx + 1) }))
+                            }
+                            onDelete={() =>
+                              setData((d) => ({ ...d, homeLinks: (d.homeLinks || []).filter((_, i) => i !== idx) }))
+                            }
+                          />
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input
+                            label="Label"
+                            value={l.label}
+                            onChange={(v) =>
+                              setData((d) => ({
+                                ...d,
+                                homeLinks: (d.homeLinks || []).map((x, i) => (i === idx ? { ...x, label: v } : x)),
+                              }))
+                            }
+                            placeholder="Plans"
+                          />
+                          <Input
+                            label="URL"
+                            value={l.href}
+                            onChange={(v) =>
+                              setData((d) => ({
+                                ...d,
+                                homeLinks: (d.homeLinks || []).map((x, i) => (i === idx ? { ...x, href: v } : x)),
+                              }))
+                            }
+                            placeholder="/#plans"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {"title" in s && (
-                  <div className="mt-3">
-                    <label className="text-xs font-bold text-zinc-500">Title</label>
-                    <input
-                      value={s.title}
-                      onChange={(e) => updateSectionTitle(s.id, e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                {/* Login + CTA */}
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="text-xs font-extrabold tracking-widest text-zinc-400">BUTTONS</div>
+
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input
+                      label="Login Label"
+                      value={data.login?.label || ""}
+                      onChange={(v) => setData((d) => ({ ...d, login: { ...(d.login || {}), label: v } }))}
+                      placeholder="Log In"
+                    />
+                    <Input
+                      label="Login URL"
+                      value={data.login?.to || ""}
+                      onChange={(v) => setData((d) => ({ ...d, login: { ...(d.login || {}), to: v } }))}
+                      placeholder="/login"
+                    />
+
+                    <Input
+                      label="CTA Label"
+                      value={data.cta?.label || ""}
+                      onChange={(v) => setData((d) => ({ ...d, cta: { ...(d.cta || {}), label: v } }))}
+                      placeholder="Get a Quote"
+                    />
+                    <Input
+                      label="CTA URL"
+                      value={data.cta?.href || ""}
+                      onChange={(v) => setData((d) => ({ ...d, cta: { ...(d.cta || {}), href: v } }))}
+                      placeholder="/quote"
                     />
                   </div>
-                )}
+                </div>
+              </>
+            ) : null}
 
-                {"subtitle" in s && (
-                  <div className="mt-3">
-                    <label className="text-xs font-bold text-zinc-500">Subtitle</label>
-                    <input
-                      value={s.subtitle}
-                      onChange={(e) =>
+            {/* FOOTER */}
+            {isFooter ? (
+              <>
+                <TextArea
+                  label="Description"
+                  value={data.description || ""}
+                  onChange={(v) => setData((d) => ({ ...d, description: v }))}
+                  placeholder="Short brand description..."
+                />
+
+                {/* Socials */}
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-extrabold tracking-widest text-zinc-400">SOCIALS</div>
+                    <button
+                      onClick={() =>
                         setData((d) => ({
                           ...d,
-                          sections: d.sections.map((x) =>
-                            x.id === s.id ? { ...x, subtitle: e.target.value } : x
-                          ),
+                          socials: [...(d.socials || []), { label: "x", href: "#" }],
                         }))
                       }
-                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                    />
+                      className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+                    >
+                      <MIcon name="add" className="text-[16px]" />
+                      Add
+                    </button>
                   </div>
-                )}
-              </div>
-            ))}
 
-            <button className="w-full h-11 rounded-2xl bg-primary/10 text-primary font-extrabold hover:bg-primary/15 transition flex items-center justify-center gap-2">
-              <MIcon name="add" className="text-[18px]" />
-              Add Section
-            </button>
+                  <div className="mt-3 space-y-3">
+                    {(data.socials || []).map((s, idx) => (
+                      <div key={idx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">SOCIAL #{idx + 1}</div>
+                          <RowActions
+                            onUp={() => idx > 0 && setData((d) => ({ ...d, socials: move(d.socials || [], idx, idx - 1) }))}
+                            onDown={() =>
+                              idx < (data.socials || []).length - 1 &&
+                              setData((d) => ({ ...d, socials: move(d.socials || [], idx, idx + 1) }))
+                            }
+                            onDelete={() =>
+                              setData((d) => ({ ...d, socials: (d.socials || []).filter((_, i) => i !== idx) }))
+                            }
+                          />
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input
+                            label="Label"
+                            value={s.label}
+                            onChange={(v) =>
+                              setData((d) => ({
+                                ...d,
+                                socials: (d.socials || []).map((x, i) => (i === idx ? { ...x, label: v } : x)),
+                              }))
+                            }
+                            placeholder="ig"
+                          />
+                          <Input
+                            label="URL"
+                            value={s.href}
+                            onChange={(v) =>
+                              setData((d) => ({
+                                ...d,
+                                socials: (d.socials || []).map((x, i) => (i === idx ? { ...x, href: v } : x)),
+                              }))
+                            }
+                            placeholder="https://instagram.com/..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Columns */}
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-extrabold tracking-widest text-zinc-400">FOOTER COLUMNS</div>
+                    <button
+                      onClick={() =>
+                        setData((d) => ({
+                          ...d,
+                          columns: [...(d.columns || []), { title: "New Column", links: [{ label: "Link", href: "#" }] }],
+                        }))
+                      }
+                      className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+                    >
+                      <MIcon name="add" className="text-[16px]" />
+                      Add Column
+                    </button>
+                  </div>
+
+                  <div className="mt-3 space-y-3">
+                    {(data.columns || []).map((col, cIdx) => (
+                      <div key={cIdx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">COLUMN #{cIdx + 1}</div>
+                          <RowActions
+                            onUp={() =>
+                              cIdx > 0 && setData((d) => ({ ...d, columns: move(d.columns || [], cIdx, cIdx - 1) }))
+                            }
+                            onDown={() =>
+                              cIdx < (data.columns || []).length - 1 &&
+                              setData((d) => ({ ...d, columns: move(d.columns || [], cIdx, cIdx + 1) }))
+                            }
+                            onDelete={() =>
+                              setData((d) => ({ ...d, columns: (d.columns || []).filter((_, i) => i !== cIdx) }))
+                            }
+                          />
+                        </div>
+
+                        <div className="mt-2 space-y-3">
+                          <Input
+                            label="Column Title"
+                            value={col.title}
+                            onChange={(v) =>
+                              setData((d) => ({
+                                ...d,
+                                columns: (d.columns || []).map((x, i) => (i === cIdx ? { ...x, title: v } : x)),
+                              }))
+                            }
+                            placeholder="Company"
+                          />
+
+                          <div className="flex items-center justify-between">
+                            <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">LINKS</div>
+                            <button
+                              onClick={() =>
+                                setData((d) => ({
+                                  ...d,
+                                  columns: (d.columns || []).map((x, i) =>
+                                    i === cIdx ? { ...x, links: [...(x.links || []), { label: "New", href: "#" }] } : x
+                                  ),
+                                }))
+                              }
+                              className="h-8 px-3 rounded-xl bg-primary/10 text-primary text-[11px] font-extrabold hover:bg-primary/15 flex items-center gap-2"
+                            >
+                              <MIcon name="add" className="text-[16px]" />
+                              Add Link
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            {(col.links || []).map((lnk, lIdx) => (
+                              <div key={lIdx} className="rounded-xl border border-zinc-200 bg-white p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                                    LINK #{lIdx + 1}
+                                  </div>
+                                  <RowActions
+                                    onUp={() =>
+                                      lIdx > 0 &&
+                                      setData((d) => ({
+                                        ...d,
+                                        columns: (d.columns || []).map((x, i) =>
+                                          i === cIdx ? { ...x, links: move(x.links || [], lIdx, lIdx - 1) } : x
+                                        ),
+                                      }))
+                                    }
+                                    onDown={() =>
+                                      lIdx < (col.links || []).length - 1 &&
+                                      setData((d) => ({
+                                        ...d,
+                                        columns: (d.columns || []).map((x, i) =>
+                                          i === cIdx ? { ...x, links: move(x.links || [], lIdx, lIdx + 1) } : x
+                                        ),
+                                      }))
+                                    }
+                                    onDelete={() =>
+                                      setData((d) => ({
+                                        ...d,
+                                        columns: (d.columns || []).map((x, i) =>
+                                          i === cIdx ? { ...x, links: (x.links || []).filter((_, k) => k !== lIdx) } : x
+                                        ),
+                                      }))
+                                    }
+                                  />
+                                </div>
+
+                                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <Input
+                                    label="Label"
+                                    value={lnk.label}
+                                    onChange={(v) =>
+                                      setData((d) => ({
+                                        ...d,
+                                        columns: (d.columns || []).map((x, i) =>
+                                          i === cIdx
+                                            ? {
+                                                ...x,
+                                                links: (x.links || []).map((z, k) => (k === lIdx ? { ...z, label: v } : z)),
+                                              }
+                                            : x
+                                        ),
+                                      }))
+                                    }
+                                    placeholder="About Us"
+                                  />
+                                  <Input
+                                    label="URL"
+                                    value={lnk.href}
+                                    onChange={(v) =>
+                                      setData((d) => ({
+                                        ...d,
+                                        columns: (d.columns || []).map((x, i) =>
+                                          i === cIdx
+                                            ? {
+                                                ...x,
+                                                links: (x.links || []).map((z, k) => (k === lIdx ? { ...z, href: v } : z)),
+                                              }
+                                            : x
+                                        ),
+                                      }))
+                                    }
+                                    placeholder="/about"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Input
+                  label="Bottom Left Text"
+                  value={data.bottomLeft || ""}
+                  onChange={(v) => setData((d) => ({ ...d, bottomLeft: v }))}
+                  placeholder="© 2024 ..."
+                />
+                <Input
+                  label="Bottom Right Text"
+                  value={data.bottomRight || ""}
+                  onChange={(v) => setData((d) => ({ ...d, bottomRight: v }))}
+                  placeholder="Insurance products are issued by ..."
+                />
+              </>
+            ) : null}
           </div>
         </div>
 
-        {/* Right: live preview */}
+        {/* Right: live preview (simple) */}
         <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between">
             <div>
-              <div className="text-sm font-extrabold text-zinc-900">Live Preview</div>
-              <div className="text-xs text-zinc-500">Mock preview (wireframe)</div>
+              <div className="text-sm font-extrabold text-zinc-900">Preview</div>
+              <div className="text-xs text-zinc-500">Simple visual preview</div>
             </div>
             <div className="flex gap-2">
               <button className="w-10 h-10 rounded-xl border border-zinc-200 bg-white flex items-center justify-center text-zinc-600">
@@ -161,26 +658,100 @@ export default function TemplateBuilder() {
 
           <div className="p-8 bg-zinc-50 min-h-[640px]">
             <div className="max-w-[900px] mx-auto space-y-6">
-              {data.sections.map((s) => (
-                <div key={s.id} className="rounded-3xl bg-white border border-zinc-200 p-7">
-                  <div className="text-xs font-extrabold tracking-widest text-zinc-400">
-                    {s.type}
-                  </div>
-                  {"title" in s && <div className="mt-2 text-2xl font-extrabold text-zinc-900">{s.title}</div>}
-                  {"subtitle" in s && <div className="mt-2 text-sm text-zinc-600">{s.subtitle}</div>}
+              {isHeader ? (
+                <div className="rounded-3xl bg-white border border-zinc-200 p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        {data.logoType === "image" && data.logoUrl ? (
+                          <img src={data.logoUrl} alt="logo" className="w-8 h-8 object-contain" />
+                        ) : data.logoType === "emoji" ? (
+                          <span className="text-2xl">{data.logoValue || "✨"}</span>
+                        ) : (
+                          <span className="material-symbols-outlined text-[22px] text-primary">
+                            {data.logoValue || "pets"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-extrabold text-zinc-900">{data.name || "Brand"}</div>
+                    </div>
 
-                  {"items" in s && (
-                    <ul className="mt-4 space-y-2 text-sm text-zinc-700">
-                      {s.items.map((it) => (
-                        <li key={it} className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-primary" />
-                          {it}
-                        </li>
+                    <div className="hidden md:flex items-center gap-6 text-sm text-zinc-600">
+                      {(data.homeLinks || []).map((l, i) => (
+                        <span key={i} className="hover:text-primary">
+                          {l.label}
+                        </span>
                       ))}
-                    </ul>
-                  )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm font-semibold text-zinc-600">{data.login?.label || "Log In"}</div>
+                      <div className="h-10 px-5 rounded-xl bg-primary text-white text-sm font-bold flex items-center">
+                        {data.cta?.label || "Get a Quote"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              ) : null}
+
+              {isFooter ? (
+                <div className="rounded-3xl bg-white border border-zinc-200 p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                          {data.logoType === "image" && data.logoUrl ? (
+                            <img src={data.logoUrl} alt="logo" className="w-6 h-6 object-contain" />
+                          ) : data.logoType === "material" ? (
+                            <span className="material-symbols-outlined text-[18px]">{data.logoValue || "pets"}</span>
+                          ) : (
+                            <span className="text-[16px]">{data.logoValue || "✨"}</span>
+                          )}
+                        </div>
+                        <div className="font-extrabold text-sm text-zinc-900">{data.name || "Brand"}</div>
+                      </div>
+
+                      {data.description ? (
+                        <p className="mt-3 text-xs text-zinc-500 max-w-sm leading-relaxed">{data.description}</p>
+                      ) : null}
+
+                      <div className="mt-4 flex gap-2">
+                        {(data.socials || []).map((s, i) => (
+                          <div key={i} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs">
+                            {s.label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(data.columns || []).map((col, i) => (
+                      <div key={i}>
+                        <div className="text-xs font-extrabold text-zinc-900 mb-3">{col.title}</div>
+                        <div className="space-y-2 text-xs text-zinc-500">
+                          {(col.links || []).map((l, k) => (
+                            <div key={k} className="hover:text-primary">
+                              {l.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8 pt-4 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-400">
+                    <div>{data.bottomLeft}</div>
+                    <div>{data.bottomRight}</div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Debug JSON */}
+              <div className="rounded-3xl bg-white border border-zinc-200 p-6">
+                <div className="text-xs font-extrabold tracking-widest text-zinc-400 mb-2">CONTENT JSON</div>
+                <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">
+                  {JSON.stringify(data, null, 2)}
+                </pre>
+              </div>
             </div>
           </div>
         </div>

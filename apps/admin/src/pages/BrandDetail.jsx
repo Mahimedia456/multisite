@@ -3,6 +3,27 @@ import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
 
+/* =========================
+   Small UI helpers
+========================= */
+function Modal({ open, title, children, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-zinc-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+          <div className="text-sm font-extrabold text-zinc-900">{title}</div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-zinc-100 flex items-center justify-center">
+            <MIcon name="close" className="text-[18px] text-zinc-600" />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function StatusBadge({ status }) {
   const s = String(status || "").toLowerCase();
   const map = {
@@ -46,9 +67,7 @@ function TemplateCard({ t, onEdit, onView }) {
       </div>
 
       <h3 className="text-lg font-bold text-zinc-900 mb-1">{t.title}</h3>
-      <p className="text-xs text-zinc-400 mb-6">
-        Last Edited: {t.edited || "—"}
-      </p>
+      <p className="text-xs text-zinc-400 mb-6">Last Edited: {t.edited || "—"}</p>
 
       <div className="flex gap-3">
         <button
@@ -77,6 +96,26 @@ function timeAgoOrDate(v) {
   return d.toLocaleString();
 }
 
+const MATERIAL_ICON_SUGGESTIONS = [
+  "pets",
+  "verified_user",
+  "home",
+  "favorite",
+  "star",
+  "support_agent",
+  "shield",
+  "health_and_safety",
+  "paid",
+  "savings",
+  "apartment",
+  "storefront",
+  "shopping_bag",
+  "local_shipping",
+  "handshake",
+  "workspace_premium",
+  "public",
+];
+
 export default function BrandDetail() {
   const navigate = useNavigate();
   const { brandId } = useParams();
@@ -85,6 +124,18 @@ export default function BrandDetail() {
   const [err, setErr] = useState("");
   const [brand, setBrand] = useState(null);
   const [templates, setTemplates] = useState([]);
+
+  // editable draft
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  // modals
+  const [openColors, setOpenColors] = useState(false);
+  const [openFonts, setOpenFonts] = useState(false);
+  const [openLogo, setOpenLogo] = useState(false);
+
+  // logo picker local state
+  const [iconSearch, setIconSearch] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -96,13 +147,26 @@ export default function BrandDetail() {
         const res = await apiFetch(`/admin/brands/${brandId}/detail`);
         const json = await res.json().catch(() => null);
 
-        if (!res.ok || !json?.ok) {
-          throw new Error(json?.message || "Failed to load brand");
-        }
+        if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to load brand");
 
         if (!cancelled) {
           setBrand(json.data.brand);
           setTemplates(Array.isArray(json.data.templates) ? json.data.templates : []);
+
+          const b = json.data.brand || {};
+          setDraft({
+            accentColor: b?.colors?.accent || b?.colors?.primary || "",
+            primaryColor: b?.colors?.primary || "",
+            typography: {
+              family: b?.fonts?.family || "",
+              googleUrl: b?.fonts?.googleUrl || "",
+              iconsUrl: b?.fonts?.iconsUrl || "",
+            },
+            logo: {
+              type: b?.logo?.type || "material",
+              value: b?.logo?.value || "pets",
+            },
+          });
         }
       } catch (e) {
         if (!cancelled) setErr(e?.message || "Failed to load brand");
@@ -118,29 +182,80 @@ export default function BrandDetail() {
   }, [brandId]);
 
   const style = useMemo(() => {
-    const accent = brand?.colors?.accent || brand?.colors?.primary || "#2ec2b3";
+    const accent = draft?.accentColor || brand?.colors?.accent || brand?.colors?.primary || "#2ec2b3";
     return { ["--brand-accent"]: accent };
-  }, [brand]);
+  }, [brand, draft]);
 
   const topTemplates = useMemo(() => {
-    // backend returns key header/footer/home
     const mapIcon = { header: "dock_to_bottom", footer: "dock_to_bottom", home: "home" };
     return (templates || [])
       .filter((t) => ["header", "footer", "home"].includes(t.key))
       .map((t) => ({
         id: t.id,
         key: t.key,
-        title:
-          t.key === "header"
-            ? "Global Header"
-            : t.key === "footer"
-            ? "Global Footer"
-            : "Home Page",
+        title: t.key === "header" ? "Global Header" : t.key === "footer" ? "Global Footer" : "Home Page",
         status: t.status || "draft",
         icon: mapIcon[t.key] || "description",
         edited: timeAgoOrDate(t.updatedAt),
       }));
   }, [templates]);
+
+  async function saveVariables() {
+    if (!draft) return;
+    setSaving(true);
+    try {
+      const res = await apiFetch(`/admin/brands/${brandId}/variables`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accentColor: draft.accentColor,
+          primaryColor: draft.primaryColor,
+          logoType: draft.logo?.type,
+          logoValue: draft.logo?.value,
+          typography: {
+            family: draft.typography?.family || null,
+            googleUrl: draft.typography?.googleUrl || null,
+            iconsUrl: draft.typography?.iconsUrl || null,
+          },
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to update brand");
+
+      // reflect saved changes in the page
+      setBrand((prev) => {
+        const p = prev || {};
+        const accent = json.data.accentColor || draft.accentColor || p?.colors?.accent;
+        const primary = json.data.primaryColor || draft.primaryColor || p?.colors?.primary || accent;
+
+        return {
+          ...p,
+          colors: {
+            ...(p.colors || {}),
+            accent,
+            primary,
+          },
+          fonts: {
+            ...(p.fonts || {}),
+            family: json.data.typography?.family || draft.typography?.family || p?.fonts?.family,
+            googleUrl: json.data.typography?.googleUrl || draft.typography?.googleUrl || p?.fonts?.googleUrl,
+            iconsUrl: json.data.typography?.iconsUrl || draft.typography?.iconsUrl || p?.fonts?.iconsUrl,
+          },
+          logo: {
+            ...(p.logo || {}),
+            type: json.data.logoType || draft.logo?.type,
+            value: json.data.logoValue || draft.logo?.value,
+            text: p?.name || "",
+          },
+        };
+      });
+    } catch (e) {
+      alert(e?.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
@@ -149,9 +264,7 @@ export default function BrandDetail() {
   if (err) {
     return (
       <div className="max-w-7xl mx-auto py-10">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {err}
-        </div>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{err}</div>
       </div>
     );
   }
@@ -159,6 +272,10 @@ export default function BrandDetail() {
   const colors = brand?.colors || {};
   const fonts = brand?.fonts || {};
   const logo = brand?.logo || {};
+
+  const iconOptions = MATERIAL_ICON_SUGGESTIONS.filter((x) =>
+    !iconSearch ? true : x.toLowerCase().includes(iconSearch.toLowerCase())
+  );
 
   return (
     <div style={style} className="max-w-7xl mx-auto space-y-12">
@@ -181,7 +298,6 @@ export default function BrandDetail() {
           </button>
         </div>
 
-        {/* ✅ 3 cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {topTemplates.map((t) => (
             <TemplateCard
@@ -214,26 +330,31 @@ export default function BrandDetail() {
               <div className="flex items-center gap-4">
                 <div
                   className="w-12 h-12 rounded-full border-4 border-white shadow-sm ring-1 ring-zinc-200"
-                  style={{ background: colors.primary || colors.accent || "#2ec2b3" }}
+                  style={{ background: draft?.accentColor || colors.primary || colors.accent || "#2ec2b3" }}
                 />
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-zinc-900">Primary</div>
-                  <div className="text-xs text-zinc-500">{colors.primary || colors.accent || "—"}</div>
+                  <div className="text-xs text-zinc-500">
+                    {draft?.accentColor || colors.primary || colors.accent || "—"}
+                  </div>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="text-xs text-zinc-500">
-                  <div className="font-bold text-zinc-700">Primary Dark</div>
-                  <div>{colors.primaryDark || "—"}</div>
+                  <div className="font-bold text-zinc-700">Primary</div>
+                  <div>{draft?.primaryColor || colors.primary || "—"}</div>
                 </div>
                 <div className="text-xs text-zinc-500">
                   <div className="font-bold text-zinc-700">Accent</div>
-                  <div>{colors.accent || "—"}</div>
+                  <div>{draft?.accentColor || colors.accent || "—"}</div>
                 </div>
               </div>
 
-              <button className="mt-4 text-primary text-xs font-bold hover:underline">
+              <button
+                className="mt-4 text-primary text-xs font-bold hover:underline"
+                onClick={() => setOpenColors(true)}
+              >
                 Change
               </button>
             </div>
@@ -249,20 +370,23 @@ export default function BrandDetail() {
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-zinc-900">
-                    {fonts.family || "—"}
+                    {draft?.typography?.family || fonts.family || "—"}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {fonts.googleUrl ? "Google Fonts" : "—"}
+                    {(draft?.typography?.googleUrl || fonts.googleUrl) ? "Google Fonts" : "—"}
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 text-xs text-zinc-500 break-all">
                 <div className="font-bold text-zinc-700">Font URL</div>
-                <div>{fonts.googleUrl || "—"}</div>
+                <div>{draft?.typography?.googleUrl || fonts.googleUrl || "—"}</div>
               </div>
 
-              <button className="mt-4 text-primary text-xs font-bold hover:underline">
+              <button
+                className="mt-4 text-primary text-xs font-bold hover:underline"
+                onClick={() => setOpenFonts(true)}
+              >
                 Edit
               </button>
             </div>
@@ -273,46 +397,257 @@ export default function BrandDetail() {
                 Logo Variant
               </label>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-zinc-50 rounded-lg flex items-center justify-center">
-                  {logo.type === "material" ? (
+                <div className="w-12 h-12 bg-zinc-50 rounded-lg flex items-center justify-center overflow-hidden">
+                  {draft?.logo?.type === "material" ? (
                     <span className="material-symbols-outlined text-zinc-700">
-                      {logo.value || "pets"}
+                      {draft?.logo?.value || logo.value || "pets"}
                     </span>
+                  ) : draft?.logo?.type === "emoji" ? (
+                    <span className="text-2xl">{draft?.logo?.value || "✨"}</span>
+                  ) : draft?.logo?.type === "image" && draft?.logo?.value ? (
+                    <img src={draft.logo.value} alt="logo" className="w-10 h-10 object-contain" />
                   ) : (
                     <MIcon name="image" className="text-zinc-700 text-[22px]" />
                   )}
                 </div>
+
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-zinc-900">
-                    {logo.text || brand?.name || "—"}
-                  </div>
+                  <div className="text-sm font-semibold text-zinc-900">{brand?.name || "—"}</div>
                   <div className="text-xs text-zinc-500">
-                    {logo.type || "—"} • {logo.value || "—"}
+                    {(draft?.logo?.type || logo.type || "—")} • {(draft?.logo?.value || logo.value || "—")}
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 text-xs text-zinc-500 break-all">
                 <div className="font-bold text-zinc-700">Icons URL</div>
-                <div>{fonts.iconsUrl || "—"}</div>
+                <div>{draft?.typography?.iconsUrl || fonts.iconsUrl || "—"}</div>
               </div>
 
-              <button className="mt-4 text-primary text-xs font-bold hover:underline">
+              <button
+                className="mt-4 text-primary text-xs font-bold hover:underline"
+                onClick={() => setOpenLogo(true)}
+              >
                 Replace
               </button>
             </div>
           </div>
 
           <div className="p-4 bg-zinc-50 flex justify-end gap-3">
-            <button className="px-4 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900">
+            <button
+              className="px-4 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              onClick={() => {
+                // reset draft to current brand
+                const b = brand || {};
+                setDraft({
+                  accentColor: b?.colors?.accent || b?.colors?.primary || "",
+                  primaryColor: b?.colors?.primary || "",
+                  typography: {
+                    family: b?.fonts?.family || "",
+                    googleUrl: b?.fonts?.googleUrl || "",
+                    iconsUrl: b?.fonts?.iconsUrl || "",
+                  },
+                  logo: {
+                    type: b?.logo?.type || "material",
+                    value: b?.logo?.value || "pets",
+                  },
+                });
+              }}
+            >
               Cancel Changes
             </button>
-            <button className="px-6 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors">
-              Apply Global Styles
+
+            <button
+              disabled={saving}
+              onClick={saveVariables}
+              className="px-6 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Apply Global Styles"}
             </button>
           </div>
         </div>
       </section>
+
+      {/* =========================
+          Modals
+      ========================= */}
+
+      <Modal open={openColors} title="Update Brand Colors" onClose={() => setOpenColors(false)}>
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-bold text-zinc-600 mb-1">Accent Color</div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={draft?.accentColor || "#2ec2b3"}
+                onChange={(e) => setDraft((d) => ({ ...d, accentColor: e.target.value }))}
+                className="w-12 h-10 p-0 border border-zinc-200 rounded"
+              />
+              <input
+                value={draft?.accentColor || ""}
+                onChange={(e) => setDraft((d) => ({ ...d, accentColor: e.target.value }))}
+                placeholder="#2ec2b3"
+                className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-bold text-zinc-600 mb-1">Primary Color</div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={draft?.primaryColor || "#2ec2b3"}
+                onChange={(e) => setDraft((d) => ({ ...d, primaryColor: e.target.value }))}
+                className="w-12 h-10 p-0 border border-zinc-200 rounded"
+              />
+              <input
+                value={draft?.primaryColor || ""}
+                onChange={(e) => setDraft((d) => ({ ...d, primaryColor: e.target.value }))}
+                placeholder="#2ec2b3"
+                className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setOpenColors(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={openFonts} title="Update Typography" onClose={() => setOpenFonts(false)}>
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-bold text-zinc-600 mb-1">Font Family</div>
+            <input
+              value={draft?.typography?.family || ""}
+              onChange={(e) => setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), family: e.target.value } }))}
+              placeholder="Inter"
+              className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+            />
+          </div>
+
+          <div>
+            <div className="text-xs font-bold text-zinc-600 mb-1">Google Font URL</div>
+            <input
+              value={draft?.typography?.googleUrl || ""}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), googleUrl: e.target.value } }))
+              }
+              placeholder="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+              className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+            />
+          </div>
+
+          <div>
+            <div className="text-xs font-bold text-zinc-600 mb-1">Icons URL (optional)</div>
+            <input
+              value={draft?.typography?.iconsUrl || ""}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), iconsUrl: e.target.value } }))
+              }
+              placeholder="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+              className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setOpenFonts(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={openLogo} title="Update Logo" onClose={() => setOpenLogo(false)}>
+        <div className="space-y-4">
+          <div className="text-xs font-bold text-zinc-600 mb-1">Logo Type</div>
+          <div className="flex gap-2">
+            {["material", "emoji", "image"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), type: t } }))}
+                className={[
+                  "h-10 px-4 rounded-lg border text-sm font-semibold",
+                  (draft?.logo?.type || "material") === t
+                    ? "border-zinc-900 text-zinc-900"
+                    : "border-zinc-200 text-zinc-600 hover:bg-zinc-50",
+                ].join(" ")}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {draft?.logo?.type === "material" ? (
+            <>
+              <div className="text-xs font-bold text-zinc-600 mb-1">Material Icon</div>
+              <input
+                value={iconSearch}
+                onChange={(e) => setIconSearch(e.target.value)}
+                placeholder="Search icon… (pets, home, star)"
+                className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+              />
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
+                {iconOptions.map((ic) => (
+                  <button
+                    key={ic}
+                    onClick={() => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: ic } }))}
+                    className={[
+                      "h-12 rounded-xl border flex items-center justify-center gap-2 text-sm",
+                      draft?.logo?.value === ic ? "border-zinc-900" : "border-zinc-200 hover:bg-zinc-50",
+                    ].join(" ")}
+                    title={ic}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{ic}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-xs text-zinc-500 mt-2">
+                Selected: <span className="font-semibold text-zinc-800">{draft?.logo?.value || "—"}</span>
+              </div>
+            </>
+          ) : null}
+
+          {draft?.logo?.type === "emoji" ? (
+            <>
+              <div className="text-xs font-bold text-zinc-600 mb-1">Emoji</div>
+              <input
+                value={draft?.logo?.value || ""}
+                onChange={(e) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: e.target.value } }))}
+                placeholder="🐾"
+                className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+              />
+            </>
+          ) : null}
+
+          {draft?.logo?.type === "image" ? (
+            <>
+              <div className="text-xs font-bold text-zinc-600 mb-1">Image URL</div>
+              <input
+                value={draft?.logo?.value || ""}
+                onChange={(e) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: e.target.value } }))}
+                placeholder="https://.../logo.png"
+                className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
+              />
+              <div className="text-xs text-zinc-500">
+                (Next: we can add actual upload to Supabase Storage and store the public URL here.)
+              </div>
+            </>
+          ) : null}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setOpenLogo(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -12,6 +12,29 @@ const app = express();
 app.use(express.json());
 
 /* =========================
+   Small utils
+========================= */
+const wrap =
+  (fn) =>
+  (req, res, next) =>
+    Promise.resolve(fn(req, res, next)).catch(next);
+
+function isUuid(v) {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+  );
+}
+
+function normalizeStatus(s) {
+  const v = String(s || "").toLowerCase().trim();
+  if (!v) return null;
+  if (v === "published" || v === "live" || v === "active") return "PUBLISHED";
+  if (v === "draft" || v === "inactive") return "DRAFT";
+  return v.toUpperCase();
+}
+
+/* =========================
    CORS
 ========================= */
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
@@ -47,25 +70,20 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const isProd = process.env.NODE_ENV === "production";
 
 /* =========================
-   DB (Supabase) + SSL FIX
+   DB (Supabase)
 ========================= */
 const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
-
 if (!dbUrl) console.warn("⚠️ DATABASE_URL/DIRECT_URL missing in .env");
 
 let pool;
 try {
   const cfg = parse(dbUrl || "");
-
-  // remove possible conflicting sslmode fields
   delete cfg.sslmode;
   delete cfg.sslMode;
 
   pool = new Pool({
     ...cfg,
-    ssl: isProd
-      ? { rejectUnauthorized: true }
-      : { rejectUnauthorized: false }, // ✅ dev: fixes SELF_SIGNED_CERT_IN_CHAIN
+    ssl: isProd ? { rejectUnauthorized: true } : { rejectUnauthorized: false },
   });
 } catch (e) {
   console.error("❌ Failed to create DB pool:", e);
@@ -82,40 +100,40 @@ function signToken(payload) {
 function authMiddleware(req, res, next) {
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  if (!token) return res.status(401).json({ message: "Missing token" });
+  if (!token) return res.status(401).json({ ok: false, message: "Missing token" });
 
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ ok: false, message: "Invalid or expired token" });
   }
 }
 
 /* =========================
-   Health / Debug
+   Health
 ========================= */
 app.get("/", (req, res) => {
   res.json({ ok: true, service: "server-api", time: new Date().toISOString() });
 });
 
-app.get("/debug/db", async (req, res) => {
-  try {
+app.get(
+  "/debug/db",
+  wrap(async (req, res) => {
     const r = await pool.query("SELECT NOW() as now");
     res.json({ ok: true, now: r.rows[0]?.now });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message, code: e?.code });
-  }
-});
+  })
+);
 
 /* =========================
    Admin Login
 ========================= */
-app.post("/admin/login", async (req, res) => {
-  try {
+app.post(
+  "/admin/login",
+  wrap(async (req, res) => {
     const { email, password } = req.body || {};
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res.status(400).json({ ok: false, message: "Email and password are required" });
     }
 
     const { rows } = await pool.query(
@@ -127,10 +145,10 @@ app.post("/admin/login", async (req, res) => {
     );
 
     const admin = rows[0];
-    if (!admin) return res.status(401).json({ message: "Invalid email or password" });
+    if (!admin) return res.status(401).json({ ok: false, message: "Invalid email or password" });
 
     const ok = await bcrypt.compare(password, admin.password_hash);
-    if (!ok) return res.status(401).json({ message: "Invalid email or password" });
+    if (!ok) return res.status(401).json({ ok: false, message: "Invalid email or password" });
 
     const access_token = signToken({
       id: admin.id,
@@ -139,20 +157,20 @@ app.post("/admin/login", async (req, res) => {
     });
 
     return res.json({
+      ok: true,
       access_token,
       user: { id: admin.id, email: admin.email, role: admin.role || "admin" },
     });
-  } catch (e) {
-    console.error("POST /admin/login error:", e);
-    return res.status(500).json({ message: "Server error", error: e?.message, code: e?.code });
-  }
-});
+  })
+);
 
 /* =========================
-   Brands
+   Brands list
 ========================= */
-app.get("/api/brands", authMiddleware, async (req, res) => {
-  try {
+app.get(
+  "/api/brands",
+  authMiddleware,
+  wrap(async (req, res) => {
     const q = String(req.query.q || "").trim().toLowerCase();
     const status = String(req.query.status || "all").toLowerCase();
 
@@ -179,7 +197,7 @@ app.get("/api/brands", authMiddleware, async (req, res) => {
       `
       SELECT
         id, name, route, status, updated_at,
-        accent_color, logo_type, logo_value,
+        accent_color, primary_color, logo_type, logo_value,
         typography_json, nav_links_json, cta_json, brand_description
       FROM brands
       ${whereSql}
@@ -197,40 +215,34 @@ app.get("/api/brands", authMiddleware, async (req, res) => {
         route: r.route,
         status: r.status || "inactive",
         updatedAt: r.updated_at,
-
-        // UI config for header/footer etc
         accentColor: r.accent_color,
+        primaryColor: r.primary_color,
         logoType: r.logo_type,
         logoValue: r.logo_value,
         typography: r.typography_json,
         navLinks: r.nav_links_json,
         cta: r.cta_json,
         description: r.brand_description,
-
-        templates: 0, // you can compute later
-        icon: "business",
-        iconBg: "bg-zinc-100",
-        iconColor: "text-zinc-500",
       })),
     });
-  } catch (e) {
-    console.error("GET /api/brands error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e?.message, code: e?.code });
-  }
-});
+  })
+);
 
-/**
- * Brand detail config (for BrandDetail page: colors/logo/typography)
- */
-app.get("/admin/brands/:brandId", authMiddleware, async (req, res) => {
-  try {
-    const brandId = req.params.brandId;
+/* =========================
+   Brand detail: header/footer templates (brand-wise) + latest version
+========================= */
+app.get(
+  "/admin/brands/:brandId/detail",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { brandId } = req.params;
+    if (!isUuid(brandId)) return res.status(400).json({ ok: false, message: "Invalid brandId" });
 
-    const { rows } = await pool.query(
+    const brandQ = await pool.query(
       `
       SELECT
         id, name, route, status, updated_at,
-        accent_color, logo_type, logo_value,
+        accent_color, primary_color, logo_type, logo_value,
         typography_json, nav_links_json, cta_json, brand_description
       FROM brands
       WHERE id = $1
@@ -239,230 +251,35 @@ app.get("/admin/brands/:brandId", authMiddleware, async (req, res) => {
       [brandId]
     );
 
-    if (!rows.length) return res.status(404).json({ ok: false, message: "Brand not found" });
+    if (!brandQ.rows.length) return res.status(404).json({ ok: false, message: "Brand not found" });
 
-    const b = rows[0];
+    const b = brandQ.rows[0];
+    const accent = b.accent_color || b.primary_color || "#2ec2b3";
+    const typography = b.typography_json || {};
 
-    return res.json({
-      ok: true,
-      data: {
-        id: b.id,
-        name: b.name,
-        route: b.route,
-        status: b.status,
-        updatedAt: b.updated_at,
-        accentColor: b.accent_color,
-        logoType: b.logo_type,
-        logoValue: b.logo_value,
-        typography: b.typography_json,
-        navLinks: b.nav_links_json,
-        cta: b.cta_json,
-        description: b.brand_description,
-      },
-    });
-  } catch (e) {
-    console.error("GET /admin/brands/:brandId error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e?.message, code: e?.code });
-  }
-});
-
-/* =========================
-   ✅ Shared Pages (About/Services/etc) used by ALL brands
-   Fixes your 404: /admin/shared-pages
-========================= */
-app.get("/admin/shared-pages", authMiddleware, async (req, res) => {
-  try {
-    const q = String(req.query.q || "").trim().toLowerCase();
-
-    const vals = [];
-    let whereSql = `WHERE scope = 'BRAND'`; // only brand shared pages
-
-    if (q) {
-      vals.push(`%${q}%`);
-      whereSql += `
-        AND (
-          LOWER(slug) LIKE $1
-          OR LOWER(COALESCE(title,'')) LIKE $1
-          OR LOWER(COALESCE(status::text,'')) LIKE $1
-        )
-      `;
-    }
-
-    const { rows } = await pool.query(
-      `
-      SELECT id, slug, title, status, updated_at as "modifiedAt"
-      FROM brand_shared_pages
-      ${whereSql}
-      ORDER BY updated_at DESC NULLS LAST, id DESC
-      LIMIT 500
-      `,
-      vals
-    );
-
-    res.json({ ok: true, data: rows });
-  } catch (e) {
-    console.error("GET /admin/shared-pages error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e?.message, code: e?.code });
-  }
-});
-
-app.get("/admin/shared-pages/:pageId", authMiddleware, async (req, res) => {
-  try {
-    const { pageId } = req.params;
-
-    const page = await pool.query(
-      `SELECT id, slug, title, status, updated_at as "modifiedAt"
-       FROM brand_shared_pages
-       WHERE id = $1
-       LIMIT 1`,
-      [pageId]
-    );
-
-    if (!page.rows.length) {
-      return res.status(404).json({ ok: false, message: "Shared page not found" });
-    }
-
-    // latest version content
-    const ver = await pool.query(
-      `
-      SELECT id, version, content_json, created_at
-      FROM brand_shared_page_versions
-      WHERE page_id = $1
-      ORDER BY version DESC
-      LIMIT 1
-      `,
-      [pageId]
-    );
-
-    res.json({
-      ok: true,
-      data: {
-        ...page.rows[0],
-        latestVersion: ver.rows[0]
-          ? {
-              id: ver.rows[0].id,
-              version: ver.rows[0].version,
-              content: ver.rows[0].content_json,
-              createdAt: ver.rows[0].created_at,
-            }
-          : null,
-      },
-    });
-  } catch (e) {
-    console.error("GET /admin/shared-pages/:pageId error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e?.message, code: e?.code });
-  }
-});
-
-/**
- * Create a new version for a shared page (save your JSON template)
- * body: { content: {...}, status?: 'DRAFT'|'PUBLISHED' }
- */
-app.post("/admin/shared-pages/:pageId/versions", authMiddleware, async (req, res) => {
-  try {
-    const { pageId } = req.params;
-    const { content, status } = req.body || {};
-
-    if (!content || typeof content !== "object") {
-      return res.status(400).json({ ok: false, message: "content (object) is required" });
-    }
-
-    // ensure page exists
-    const page = await pool.query(
-      `SELECT id FROM brand_shared_pages WHERE id = $1 LIMIT 1`,
-      [pageId]
-    );
-    if (!page.rows.length) {
-      return res.status(404).json({ ok: false, message: "Shared page not found" });
-    }
-
-    // next version
-    const next = await pool.query(
-      `SELECT COALESCE(MAX(version), 0) + 1 AS v
-       FROM brand_shared_page_versions
-       WHERE page_id = $1`,
-      [pageId]
-    );
-    const version = Number(next.rows[0].v);
-
-    const created = await pool.query(
-      `
-      INSERT INTO brand_shared_page_versions (page_id, version, content_json)
-      VALUES ($1, $2, $3)
-      RETURNING id, page_id, version, created_at
-      `,
-      [pageId, version, content]
-    );
-
-    if (status) {
-      await pool.query(
-        `UPDATE brand_shared_pages
-         SET status = $2, updated_at = NOW()
-         WHERE id = $1`,
-        [pageId, status]
-      );
-    } else {
-      await pool.query(
-        `UPDATE brand_shared_pages SET updated_at = NOW() WHERE id = $1`,
-        [pageId]
-      );
-    }
-
-    res.json({ ok: true, data: created.rows[0] });
-  } catch (e) {
-    console.error("POST /admin/shared-pages/:pageId/versions error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e?.message, code: e?.code });
-  }
-});
-app.get("/admin/brands/:brandId/detail", authMiddleware, async (req, res) => {
-  try {
-    const { brandId } = req.params;
-
-    const brandQ = await pool.query(
-      `
-      SELECT
-        id, name, route, status, updated_at,
-        accent_color, primary_color, primary_dark_color, accent_color_2,
-        background_light, background_dark, surface_light, surface_dark,
-        font_family, font_google_url, icon_font_url,
-        logo_type, logo_value, logo_text,
-        nav_links_json, cta_json, brand_description
-      FROM brands
-      WHERE id = $1
-      LIMIT 1
-      `,
-      [brandId]
-    );
-
-    if (!brandQ.rows.length) {
-      return res.status(404).json({ ok: false, message: "Brand not found" });
-    }
-
-    const brand = brandQ.rows[0];
-
-    // layout templates: HEADER/FOOTER/HOME
     const layoutsQ = await pool.query(
       `
       SELECT
         t.id,
+        t.brand_id,
         t.key,
         t.title,
         t.status,
         t.updated_at,
         v.id as version_id,
         v.version,
-        v.content_json,
-        v.created_at
+        v.created_at,
+        v.content
       FROM brand_layout_templates t
       LEFT JOIN LATERAL (
-        SELECT *
+        SELECT id, version, created_at, content
         FROM brand_layout_template_versions
         WHERE template_id = t.id
         ORDER BY version DESC
         LIMIT 1
       ) v ON true
       WHERE t.brand_id = $1
-        AND t.key IN ('header','footer','home')
+        AND t.key IN ('header','footer')
       ORDER BY t.key ASC
       `,
       [brandId]
@@ -470,86 +287,131 @@ app.get("/admin/brands/:brandId/detail", authMiddleware, async (req, res) => {
 
     const templates = layoutsQ.rows.map((r) => ({
       id: r.id,
+      brandId: r.brand_id,
       key: r.key,
       title: r.title,
       status: r.status,
       updatedAt: r.updated_at,
       latestVersion: r.version_id
-        ? {
-            id: r.version_id,
-            version: r.version,
-            content: r.content_json,
-            createdAt: r.created_at,
-          }
+        ? { id: r.version_id, version: r.version, content: r.content, createdAt: r.created_at }
         : null,
     }));
 
-    return res.json({
+    res.json({
       ok: true,
       data: {
         brand: {
-          id: brand.id,
-          name: brand.name,
-          route: brand.route,
-          status: brand.status,
-          updatedAt: brand.updated_at,
-
-          colors: {
-            primary: brand.primary_color,
-            primaryDark: brand.primary_dark_color,
-            accent: brand.accent_color,
-            accent2: brand.accent_color_2,
-            backgroundLight: brand.background_light,
-            backgroundDark: brand.background_dark,
-            surfaceLight: brand.surface_light,
-            surfaceDark: brand.surface_dark,
-          },
-
+          id: b.id,
+          name: b.name,
+          route: b.route,
+          status: b.status,
+          updatedAt: b.updated_at,
+          colors: { primary: accent, accent: accent, primaryDark: null, accent2: null },
           fonts: {
-            family: brand.font_family,
-            googleUrl: brand.font_google_url,
-            iconsUrl: brand.icon_font_url,
+            family: typography.family || typography.fontFamily || null,
+            googleUrl: typography.googleUrl || typography.google_font_url || null,
+            iconsUrl: typography.iconsUrl || typography.icon_font_url || null,
           },
-
-          logo: {
-            type: brand.logo_type,
-            value: brand.logo_value,
-            text: brand.logo_text,
-          },
-
-          navLinks: brand.nav_links_json || [],
-          cta: brand.cta_json || null,
-          description: brand.brand_description || "",
+          logo: { type: b.logo_type || null, value: b.logo_value || null, text: b.name || "" },
+          navLinks: b.nav_links_json || [],
+          cta: b.cta_json || null,
+          description: b.brand_description || "",
         },
         templates,
       },
     });
-  } catch (e) {
-    console.error("GET /admin/brands/:brandId/detail error:", e);
-    return res.status(500).json({
-      ok: false,
-      message: "Server error",
-      error: e?.message,
-      code: e?.code,
-    });
-  }
-});
+  })
+);
 
-app.get("/admin/shared-pages", authMiddleware, async (req, res) => {
-  try {
-    const q = String(req.query.q || "").trim().toLowerCase();
-    const vals = [];
-    let whereSql = "";
+/* =========================
+   Layout template versions
+========================= */
 
-    if (q) {
-      vals.push(`%${q}%`);
-      whereSql = `
-        WHERE
-          LOWER(p.slug) LIKE $1
-          OR LOWER(COALESCE(p.title,'')) LIKE $1
-          OR LOWER(COALESCE(p.status,'')) LIKE $1
-      `;
+// list versions (latest first)
+app.get(
+  "/admin/layout-templates/:templateId/versions",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { templateId } = req.params;
+    if (!isUuid(templateId)) return res.status(400).json({ ok: false, message: "Invalid templateId" });
+
+    const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
+
+    const { rows } = await pool.query(
+      `
+      SELECT id, template_id, version, content, created_at, created_by
+      FROM brand_layout_template_versions
+      WHERE template_id = $1
+      ORDER BY version DESC
+      LIMIT $2
+      `,
+      [templateId, limit]
+    );
+
+    res.json({ ok: true, data: rows });
+  })
+);
+
+// create new version (auto increment)
+app.post(
+  "/admin/layout-templates/:templateId/versions",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { templateId } = req.params;
+    if (!isUuid(templateId)) return res.status(400).json({ ok: false, message: "Invalid templateId" });
+
+    const { content, status } = req.body || {};
+    if (!content || typeof content !== "object") {
+      return res.status(400).json({ ok: false, message: "content (object) is required" });
     }
+
+    const t = await pool.query(`SELECT id FROM brand_layout_templates WHERE id = $1 LIMIT 1`, [templateId]);
+    if (!t.rows.length) return res.status(404).json({ ok: false, message: "Template not found" });
+
+    const next = await pool.query(
+      `SELECT COALESCE(MAX(version), 0) + 1 AS v
+       FROM brand_layout_template_versions
+       WHERE template_id = $1`,
+      [templateId]
+    );
+    const version = Number(next.rows[0].v);
+
+    const created = await pool.query(
+      `
+      INSERT INTO brand_layout_template_versions (template_id, version, content, created_by)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, template_id, version, created_at, created_by
+      `,
+      [templateId, version, content, req.user?.id || null]
+    );
+
+    const nextStatus = normalizeStatus(status);
+    if (nextStatus) {
+      await pool.query(
+        `UPDATE brand_layout_templates
+         SET status = $2, updated_at = NOW()
+         WHERE id = $1`,
+        [templateId, nextStatus]
+      );
+    } else {
+      await pool.query(`UPDATE brand_layout_templates SET updated_at = NOW() WHERE id = $1`, [templateId]);
+    }
+
+    res.json({ ok: true, data: created.rows[0] });
+  })
+);
+
+/* =========================
+   Shared Pages (BrandInnerPagesIndex)
+========================= */
+
+// LIST shared pages
+app.get(
+  "/admin/shared-pages",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const q = String(req.query.q ?? "").trim().toLowerCase();
+    const like = `%${q}%`;
 
     const { rows } = await pool.query(
       `
@@ -560,18 +422,163 @@ app.get("/admin/shared-pages", authMiddleware, async (req, res) => {
         p.status,
         p.updated_at as "modifiedAt"
       FROM brand_shared_pages p
-      ${whereSql}
+      WHERE ($1 = '' OR
+        LOWER(p.slug) LIKE $2 OR
+        LOWER(COALESCE(p.title,'')) LIKE $2 OR
+        LOWER(COALESCE(p.status::text,'')) LIKE $2
+      )
       ORDER BY p.updated_at DESC NULLS LAST, p.id DESC
       LIMIT 500
       `,
-      vals
+      [q, like]
     );
 
     res.json({ ok: true, data: rows });
-  } catch (e) {
-    console.error("GET /admin/shared-pages error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e?.message, code: e?.code });
-  }
+  })
+);
+
+// GET single shared page + latest version
+app.get(
+  "/admin/shared-pages/:pageId",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { pageId } = req.params;
+    if (!isUuid(pageId)) return res.status(400).json({ ok: false, message: "Invalid pageId" });
+
+    const pageQ = await pool.query(
+      `SELECT id, slug, title, status, updated_at as "modifiedAt"
+       FROM brand_shared_pages
+       WHERE id = $1
+       LIMIT 1`,
+      [pageId]
+    );
+
+    if (!pageQ.rows.length) return res.status(404).json({ ok: false, message: "Shared page not found" });
+
+    // ✅ FIX: column is "content" (jsonb), NOT content_json
+    const latestQ = await pool.query(
+      `SELECT id, version, content, created_at, created_by
+       FROM brand_shared_page_versions
+       WHERE page_id = $1
+       ORDER BY version DESC
+       LIMIT 1`,
+      [pageId]
+    );
+
+    res.json({
+      ok: true,
+      data: {
+        ...pageQ.rows[0],
+        latestVersion: latestQ.rows[0] ? latestQ.rows[0] : null,
+      },
+    });
+  })
+);
+
+// GET versions list
+app.get(
+  "/admin/shared-pages/:pageId/versions",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { pageId } = req.params;
+    if (!isUuid(pageId)) return res.status(400).json({ ok: false, message: "Invalid pageId" });
+
+    const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
+
+    // ✅ FIX: column is "content"
+    const { rows } = await pool.query(
+      `SELECT id, page_id, version, content, created_at, created_by
+       FROM brand_shared_page_versions
+       WHERE page_id = $1
+       ORDER BY version DESC
+       LIMIT $2`,
+      [pageId, limit]
+    );
+
+    res.json({ ok: true, data: rows });
+  })
+);
+
+// POST create new version
+app.post(
+  "/admin/shared-pages/:pageId/versions",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { pageId } = req.params;
+    if (!isUuid(pageId)) return res.status(400).json({ ok: false, message: "Invalid pageId" });
+
+    const { content, status } = req.body || {};
+    if (!content || typeof content !== "object") {
+      return res.status(400).json({ ok: false, message: "content (object) is required" });
+    }
+
+    const pageQ = await pool.query(`SELECT id FROM brand_shared_pages WHERE id = $1 LIMIT 1`, [pageId]);
+    if (!pageQ.rows.length) return res.status(404).json({ ok: false, message: "Shared page not found" });
+
+    const nextQ = await pool.query(
+      `SELECT COALESCE(MAX(version), 0) + 1 AS v
+       FROM brand_shared_page_versions
+       WHERE page_id = $1`,
+      [pageId]
+    );
+    const version = Number(nextQ.rows[0].v);
+
+    // ✅ FIX: insert into "content"
+    const ins = await pool.query(
+      `INSERT INTO brand_shared_page_versions (page_id, version, content, created_by)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, page_id, version, created_at, created_by`,
+      [pageId, version, content, req.user?.id || null]
+    );
+
+    const nextStatus = normalizeStatus(status);
+    if (nextStatus) {
+      await pool.query(`UPDATE brand_shared_pages SET status = $2, updated_at = NOW() WHERE id = $1`, [
+        pageId,
+        nextStatus,
+      ]);
+    } else {
+      await pool.query(`UPDATE brand_shared_pages SET updated_at = NOW() WHERE id = $1`, [pageId]);
+    }
+
+    res.json({ ok: true, data: ins.rows[0] });
+  })
+);
+
+/* =========================
+   Brand pages (for brand route)
+========================= */
+app.get(
+  "/admin/brands/:brandId/pages",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { brandId } = req.params;
+    if (!isUuid(brandId)) return res.status(400).json({ ok: false, message: "Invalid brandId" });
+
+    // For now: same shared pages (global). Later add brand_pages.
+    const { rows } = await pool.query(
+      `SELECT id, slug, title, status, updated_at as "modifiedAt"
+       FROM brand_shared_pages
+       ORDER BY updated_at DESC NULLS LAST, id DESC
+       LIMIT 500`
+    );
+
+    res.json({ ok: true, data: rows });
+  })
+);
+
+/* =========================
+   Global error handler
+========================= */
+app.use((err, req, res, next) => {
+  console.error("UNHANDLED ERROR:", {
+    path: req.path,
+    method: req.method,
+    message: err?.message,
+    code: err?.code,
+    stack: err?.stack,
+  });
+  res.status(500).json({ ok: false, message: "Server error", error: err?.message, code: err?.code });
 });
 
 /* =========================
