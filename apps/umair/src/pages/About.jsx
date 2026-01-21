@@ -1,49 +1,40 @@
+// apps/aamir/src/pages/About.jsx
 import { useEffect, useState } from "react";
 import { AboutPage } from "@multisite/ui-inner-shared";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { getTenantConfig } from "@multisite/sdk";
+import { useSharedPage } from "../hooks/useSharedPage";
 
 export default function About() {
   const [config, setConfig] = useState(null);
+  const { content, loading, error } = useSharedPage("about");
 
   useEffect(() => {
-    let mounted = true;
-
-    async function load() {
-      try {
-        const maybe = getTenantConfig("aamir");
-
-        // ✅ if promise
-        const res = typeof maybe?.then === "function" ? await maybe : maybe;
-
-        const cfg = res?.data ?? res;
-        if (!cfg) throw new Error("Tenant config is empty");
-
-        if (cfg?.primary) {
-          document.documentElement.style.setProperty("--brand", cfg.primary);
-        }
-
-        if (mounted) setConfig(cfg);
-      } catch (e) {
-        console.error("getTenantConfig failed:", e);
-        if (mounted) setConfig(null);
-      }
+    const c = getTenantConfig("aamir"); // sync
+    if (c?.primary) {
+      document.documentElement.style.setProperty("--brand", c.primary);
     }
-
-    load();
-    return () => {
-      mounted = false;
-    };
+    setConfig(c);
   }, []);
 
-  if (!config) return null;
+  if (!config || loading) return null;
+
+  if (error) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2 style={{ color: "red" }}>Shared page load failed</h2>
+        <pre>{error}</pre>
+      </div>
+    );
+  }
 
   return (
     <AboutPage
       tenantConfig={config}
-      HeaderSlot={() => <Header />}
-      FooterSlot={() => <Footer />}
+      HeaderSlot={Header}
+      FooterSlot={Footer}
+      content={content} // 🔥 DB JSON goes here
     />
   );
 }
