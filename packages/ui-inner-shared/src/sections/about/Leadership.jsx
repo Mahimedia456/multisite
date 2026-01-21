@@ -1,12 +1,12 @@
 import GlassCard from "../../ui/GlassCard";
 
-export default function Leadership(props) {
-  const { title, team } = props || {};
-  const list = Array.isArray(team) && team.length ? team : ["Julian Sterling", "Sarah Chen", "Marcus Thorne"];
+export default function Leadership({ title, team }) {
+  const list = Array.isArray(team) ? team : [];
 
   return (
     <section>
-      <h2 className="text-4xl font-bold text-center mb-12">{title || "Guided by Experience"}</h2>
+      <h2 className="text-4xl font-bold text-center mb-12">{title || ""}</h2>
+
       <div className="grid md:grid-cols-3 gap-8">
         {list.map((name) => (
           <GlassCard key={name} className="p-8 text-center">
