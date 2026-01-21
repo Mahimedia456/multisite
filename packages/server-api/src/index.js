@@ -1,3 +1,6 @@
+// index.js (server-api)
+// ✅ Full updated file (UUID safe + brand variables + company fields + template/page version save fix)
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -14,15 +17,15 @@ app.use(express.json());
 /* =========================
    Small utils
 ========================= */
-const wrap =
-  (fn) =>
-  (req, res, next) =>
-    Promise.resolve(fn(req, res, next)).catch(next);
+const wrap = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
 function isUuid(v) {
   return (
     typeof v === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      v
+    )
   );
 }
 
@@ -47,9 +50,7 @@ app.use(
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
 
-      if (allowedOrigins.length) {
-        return cb(null, allowedOrigins.includes(origin));
-      }
+      if (allowedOrigins.length) return cb(null, allowedOrigins.includes(origin));
 
       // dev: allow localhost:5173-5185
       const m = /^http:\/\/localhost:(\d+)$/.exec(origin);
@@ -57,7 +58,6 @@ app.use(
         const port = Number(m[1]);
         if (port >= 5173 && port <= 5185) return cb(null, true);
       }
-
       return cb(null, false);
     },
     credentials: true,
@@ -150,17 +150,14 @@ app.post(
     const ok = await bcrypt.compare(password, admin.password_hash);
     if (!ok) return res.status(401).json({ ok: false, message: "Invalid email or password" });
 
+    // ✅ No req.user usage here
     const access_token = signToken({
-      id: admin.id,
+      id: admin.id, // uuid
       email: admin.email,
       role: admin.role || "admin",
     });
 
-    return res.json({
-      ok: true,
-      access_token,
-      user: { id: admin.id, email: admin.email, role: admin.role || "admin" },
-    });
+    res.json({ ok: true, access_token, user: { id: admin.id, email: admin.email, role: admin.role || "admin" } });
   })
 );
 
@@ -198,7 +195,9 @@ app.get(
       SELECT
         id, name, route, status, updated_at,
         accent_color, primary_color, logo_type, logo_value,
-        typography_json, nav_links_json, cta_json, brand_description
+        typography_json, nav_links_json, cta_json, brand_description,
+
+        company_name, company_phone, company_whatsapp, company_email, company_location
       FROM brands
       ${whereSql}
       ORDER BY updated_at DESC NULLS LAST, id DESC
@@ -223,13 +222,20 @@ app.get(
         navLinks: r.nav_links_json,
         cta: r.cta_json,
         description: r.brand_description,
+        company: {
+          name: r.company_name,
+          phone: r.company_phone,
+          whatsapp: r.company_whatsapp,
+          email: r.company_email,
+          location: r.company_location,
+        },
       })),
     });
   })
 );
 
 /* =========================
-   Brand detail: header/footer templates (brand-wise) + latest version
+   Brand detail: header/footer templates + latest version
 ========================= */
 app.get(
   "/admin/brands/:brandId/detail",
@@ -243,7 +249,9 @@ app.get(
       SELECT
         id, name, route, status, updated_at,
         accent_color, primary_color, logo_type, logo_value,
-        typography_json, nav_links_json, cta_json, brand_description
+        typography_json, nav_links_json, cta_json, brand_description,
+
+        company_name, company_phone, company_whatsapp, company_email, company_location
       FROM brands
       WHERE id = $1
       LIMIT 1
@@ -316,6 +324,13 @@ app.get(
           navLinks: b.nav_links_json || [],
           cta: b.cta_json || null,
           description: b.brand_description || "",
+          company: {
+            name: b.company_name || "",
+            phone: b.company_phone || "",
+            whatsapp: b.company_whatsapp || "",
+            email: b.company_email || "",
+            location: b.company_location || "",
+          },
         },
         templates,
       },
@@ -324,10 +339,95 @@ app.get(
 );
 
 /* =========================
+   Brand variables update (Global styles + company details)
+========================= */
+app.put(
+  "/admin/brands/:brandId/variables",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { brandId } = req.params;
+    if (!isUuid(brandId)) return res.status(400).json({ ok: false, message: "Invalid brandId" });
+
+    const {
+      accentColor,
+      primaryColor,
+      logoType,
+      logoValue,
+      typography,
+
+      companyName,
+      companyPhone,
+      companyWhatsapp,
+      companyEmail,
+      companyLocation,
+    } = req.body || {};
+
+    const upd = await pool.query(
+      `
+      UPDATE brands
+      SET
+        accent_color = COALESCE($2, accent_color),
+        primary_color = COALESCE($3, primary_color),
+        logo_type = COALESCE($4, logo_type),
+        logo_value = COALESCE($5, logo_value),
+        typography_json = COALESCE($6, typography_json),
+
+        company_name = COALESCE($7, company_name),
+        company_phone = COALESCE($8, company_phone),
+        company_whatsapp = COALESCE($9, company_whatsapp),
+        company_email = COALESCE($10, company_email),
+        company_location = COALESCE($11, company_location),
+
+        updated_at = NOW()
+      WHERE id = $1
+      RETURNING
+        id, accent_color, primary_color, logo_type, logo_value, typography_json,
+        company_name, company_phone, company_whatsapp, company_email, company_location, updated_at
+      `,
+      [
+        brandId,
+        accentColor ?? null,
+        primaryColor ?? null,
+        logoType ?? null,
+        logoValue ?? null,
+        typography ?? null,
+
+        companyName ?? null,
+        companyPhone ?? null,
+        companyWhatsapp ?? null,
+        companyEmail ?? null,
+        companyLocation ?? null,
+      ]
+    );
+
+    if (!upd.rows.length) return res.status(404).json({ ok: false, message: "Brand not found" });
+
+    const r = upd.rows[0];
+    res.json({
+      ok: true,
+      data: {
+        brandId: r.id,
+        accentColor: r.accent_color,
+        primaryColor: r.primary_color,
+        logoType: r.logo_type,
+        logoValue: r.logo_value,
+        typography: r.typography_json,
+        company: {
+          name: r.company_name,
+          phone: r.company_phone,
+          whatsapp: r.company_whatsapp,
+          email: r.company_email,
+          location: r.company_location,
+        },
+        updatedAt: r.updated_at,
+      },
+    });
+  })
+);
+
+/* =========================
    Layout template versions
 ========================= */
-
-// list versions (latest first)
 app.get(
   "/admin/layout-templates/:templateId/versions",
   authMiddleware,
@@ -352,7 +452,6 @@ app.get(
   })
 );
 
-// create new version (auto increment)
 app.post(
   "/admin/layout-templates/:templateId/versions",
   authMiddleware,
@@ -376,23 +475,24 @@ app.post(
     );
     const version = Number(next.rows[0].v);
 
+    // ✅ UUID-safe created_by (prevents "invalid input syntax for type uuid: '1'")
+    const createdBy = isUuid(req.user?.id) ? req.user.id : null;
+
     const created = await pool.query(
       `
       INSERT INTO brand_layout_template_versions (template_id, version, content, created_by)
       VALUES ($1, $2, $3, $4)
       RETURNING id, template_id, version, created_at, created_by
       `,
-      [templateId, version, content, req.user?.id || null]
+      [templateId, version, content, createdBy]
     );
 
     const nextStatus = normalizeStatus(status);
     if (nextStatus) {
-      await pool.query(
-        `UPDATE brand_layout_templates
-         SET status = $2, updated_at = NOW()
-         WHERE id = $1`,
-        [templateId, nextStatus]
-      );
+      await pool.query(`UPDATE brand_layout_templates SET status = $2, updated_at = NOW() WHERE id = $1`, [
+        templateId,
+        nextStatus,
+      ]);
     } else {
       await pool.query(`UPDATE brand_layout_templates SET updated_at = NOW() WHERE id = $1`, [templateId]);
     }
@@ -402,10 +502,8 @@ app.post(
 );
 
 /* =========================
-   Shared Pages (BrandInnerPagesIndex)
+   Shared Pages (global inner pages)
 ========================= */
-
-// LIST shared pages
 app.get(
   "/admin/shared-pages",
   authMiddleware,
@@ -437,7 +535,6 @@ app.get(
   })
 );
 
-// GET single shared page + latest version
 app.get(
   "/admin/shared-pages/:pageId",
   authMiddleware,
@@ -455,7 +552,6 @@ app.get(
 
     if (!pageQ.rows.length) return res.status(404).json({ ok: false, message: "Shared page not found" });
 
-    // ✅ FIX: column is "content" (jsonb), NOT content_json
     const latestQ = await pool.query(
       `SELECT id, version, content, created_at, created_by
        FROM brand_shared_page_versions
@@ -475,7 +571,6 @@ app.get(
   })
 );
 
-// GET versions list
 app.get(
   "/admin/shared-pages/:pageId/versions",
   authMiddleware,
@@ -485,7 +580,6 @@ app.get(
 
     const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
 
-    // ✅ FIX: column is "content"
     const { rows } = await pool.query(
       `SELECT id, page_id, version, content, created_at, created_by
        FROM brand_shared_page_versions
@@ -499,7 +593,6 @@ app.get(
   })
 );
 
-// POST create new version
 app.post(
   "/admin/shared-pages/:pageId/versions",
   authMiddleware,
@@ -523,12 +616,14 @@ app.post(
     );
     const version = Number(nextQ.rows[0].v);
 
-    // ✅ FIX: insert into "content"
+    // ✅ UUID-safe created_by
+    const createdBy = isUuid(req.user?.id) ? req.user.id : null;
+
     const ins = await pool.query(
       `INSERT INTO brand_shared_page_versions (page_id, version, content, created_by)
        VALUES ($1, $2, $3, $4)
        RETURNING id, page_id, version, created_at, created_by`,
-      [pageId, version, content, req.user?.id || null]
+      [pageId, version, content, createdBy]
     );
 
     const nextStatus = normalizeStatus(status);
@@ -546,7 +641,7 @@ app.post(
 );
 
 /* =========================
-   Brand pages (for brand route)
+   Brand pages (for now same shared pages)
 ========================= */
 app.get(
   "/admin/brands/:brandId/pages",
@@ -555,7 +650,6 @@ app.get(
     const { brandId } = req.params;
     if (!isUuid(brandId)) return res.status(400).json({ ok: false, message: "Invalid brandId" });
 
-    // For now: same shared pages (global). Later add brand_pages.
     const { rows } = await pool.query(
       `SELECT id, slug, title, status, updated_at as "modifiedAt"
        FROM brand_shared_pages

@@ -1,3 +1,4 @@
+// BrandDetail.jsx (FULL FILE) ✅ Company Details UI + Save API wired
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
@@ -14,7 +15,10 @@ function Modal({ open, title, children, onClose }) {
       <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-zinc-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
           <div className="text-sm font-extrabold text-zinc-900">{title}</div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-zinc-100 flex items-center justify-center">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-zinc-100 flex items-center justify-center"
+          >
             <MIcon name="close" className="text-[18px] text-zinc-600" />
           </button>
         </div>
@@ -96,6 +100,20 @@ function timeAgoOrDate(v) {
   return d.toLocaleString();
 }
 
+function Field({ label, value, onChange, placeholder }) {
+  return (
+    <div>
+      <div className="text-xs font-bold text-zinc-600 mb-1">{label}</div>
+      <input
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+      />
+    </div>
+  );
+}
+
 const MATERIAL_ICON_SUGGESTIONS = [
   "pets",
   "verified_user",
@@ -133,6 +151,7 @@ export default function BrandDetail() {
   const [openColors, setOpenColors] = useState(false);
   const [openFonts, setOpenFonts] = useState(false);
   const [openLogo, setOpenLogo] = useState(false);
+  const [openCompany, setOpenCompany] = useState(false);
 
   // logo picker local state
   const [iconSearch, setIconSearch] = useState("");
@@ -166,6 +185,13 @@ export default function BrandDetail() {
               type: b?.logo?.type || "material",
               value: b?.logo?.value || "pets",
             },
+            company: {
+              name: b?.company?.name || b?.companyName || "",
+              phone: b?.company?.phone || b?.companyPhone || "",
+              whatsapp: b?.company?.whatsapp || b?.companyWhatsapp || "",
+              email: b?.company?.email || b?.companyEmail || "",
+              location: b?.company?.location || b?.companyLocation || "",
+            },
           });
         }
       } catch (e) {
@@ -182,7 +208,8 @@ export default function BrandDetail() {
   }, [brandId]);
 
   const style = useMemo(() => {
-    const accent = draft?.accentColor || brand?.colors?.accent || brand?.colors?.primary || "#2ec2b3";
+    const accent =
+      draft?.accentColor || brand?.colors?.accent || brand?.colors?.primary || "#2ec2b3";
     return { ["--brand-accent"]: accent };
   }, [brand, draft]);
 
@@ -199,6 +226,30 @@ export default function BrandDetail() {
         edited: timeAgoOrDate(t.updatedAt),
       }));
   }, [templates]);
+
+  function resetDraftToBrand() {
+    const b = brand || {};
+    setDraft({
+      accentColor: b?.colors?.accent || b?.colors?.primary || "",
+      primaryColor: b?.colors?.primary || "",
+      typography: {
+        family: b?.fonts?.family || "",
+        googleUrl: b?.fonts?.googleUrl || "",
+        iconsUrl: b?.fonts?.iconsUrl || "",
+      },
+      logo: {
+        type: b?.logo?.type || "material",
+        value: b?.logo?.value || "pets",
+      },
+      company: {
+        name: b?.company?.name || "",
+        phone: b?.company?.phone || "",
+        whatsapp: b?.company?.whatsapp || "",
+        email: b?.company?.email || "",
+        location: b?.company?.location || "",
+      },
+    });
+  }
 
   async function saveVariables() {
     if (!draft) return;
@@ -217,6 +268,13 @@ export default function BrandDetail() {
             googleUrl: draft.typography?.googleUrl || null,
             iconsUrl: draft.typography?.iconsUrl || null,
           },
+
+          // ✅ company details (new)
+          companyName: draft.company?.name || null,
+          companyPhone: draft.company?.phone || null,
+          companyWhatsapp: draft.company?.whatsapp || null,
+          companyEmail: draft.company?.email || null,
+          companyLocation: draft.company?.location || null,
         }),
       });
 
@@ -231,11 +289,7 @@ export default function BrandDetail() {
 
         return {
           ...p,
-          colors: {
-            ...(p.colors || {}),
-            accent,
-            primary,
-          },
+          colors: { ...(p.colors || {}), accent, primary },
           fonts: {
             ...(p.fonts || {}),
             family: json.data.typography?.family || draft.typography?.family || p?.fonts?.family,
@@ -248,8 +302,18 @@ export default function BrandDetail() {
             value: json.data.logoValue || draft.logo?.value,
             text: p?.name || "",
           },
+          company: {
+            name: json.data.company?.name ?? draft.company?.name ?? p?.company?.name ?? "",
+            phone: json.data.company?.phone ?? draft.company?.phone ?? p?.company?.phone ?? "",
+            whatsapp: json.data.company?.whatsapp ?? draft.company?.whatsapp ?? p?.company?.whatsapp ?? "",
+            email: json.data.company?.email ?? draft.company?.email ?? p?.company?.email ?? "",
+            location: json.data.company?.location ?? draft.company?.location ?? p?.company?.location ?? "",
+          },
         };
       });
+
+      setOpenCompany(false);
+      alert("Saved");
     } catch (e) {
       alert(e?.message || "Failed to save");
     } finally {
@@ -257,9 +321,7 @@ export default function BrandDetail() {
     }
   }
 
-  if (loading) {
-    return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
-  }
+  if (loading) return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
 
   if (err) {
     return (
@@ -272,6 +334,7 @@ export default function BrandDetail() {
   const colors = brand?.colors || {};
   const fonts = brand?.fonts || {};
   const logo = brand?.logo || {};
+  const company = brand?.company || {};
 
   const iconOptions = MATERIAL_ICON_SUGGESTIONS.filter((x) =>
     !iconSearch ? true : x.toLowerCase().includes(iconSearch.toLowerCase())
@@ -330,7 +393,9 @@ export default function BrandDetail() {
               <div className="flex items-center gap-4">
                 <div
                   className="w-12 h-12 rounded-full border-4 border-white shadow-sm ring-1 ring-zinc-200"
-                  style={{ background: draft?.accentColor || colors.primary || colors.accent || "#2ec2b3" }}
+                  style={{
+                    background: draft?.accentColor || colors.primary || colors.accent || "#2ec2b3",
+                  }}
                 />
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-zinc-900">Primary</div>
@@ -351,10 +416,7 @@ export default function BrandDetail() {
                 </div>
               </div>
 
-              <button
-                className="mt-4 text-primary text-xs font-bold hover:underline"
-                onClick={() => setOpenColors(true)}
-              >
+              <button className="mt-4 text-primary text-xs font-bold hover:underline" onClick={() => setOpenColors(true)}>
                 Change
               </button>
             </div>
@@ -373,7 +435,7 @@ export default function BrandDetail() {
                     {draft?.typography?.family || fonts.family || "—"}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {(draft?.typography?.googleUrl || fonts.googleUrl) ? "Google Fonts" : "—"}
+                    {draft?.typography?.googleUrl || fonts.googleUrl ? "Google Fonts" : "—"}
                   </div>
                 </div>
               </div>
@@ -383,10 +445,7 @@ export default function BrandDetail() {
                 <div>{draft?.typography?.googleUrl || fonts.googleUrl || "—"}</div>
               </div>
 
-              <button
-                className="mt-4 text-primary text-xs font-bold hover:underline"
-                onClick={() => setOpenFonts(true)}
-              >
+              <button className="mt-4 text-primary text-xs font-bold hover:underline" onClick={() => setOpenFonts(true)}>
                 Edit
               </button>
             </div>
@@ -424,35 +483,55 @@ export default function BrandDetail() {
                 <div>{draft?.typography?.iconsUrl || fonts.iconsUrl || "—"}</div>
               </div>
 
-              <button
-                className="mt-4 text-primary text-xs font-bold hover:underline"
-                onClick={() => setOpenLogo(true)}
-              >
+              <button className="mt-4 text-primary text-xs font-bold hover:underline" onClick={() => setOpenLogo(true)}>
                 Replace
               </button>
+            </div>
+          </div>
+
+          {/* ✅ Company Details (summary row) */}
+          <div className="p-6 border-b border-zinc-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-extrabold text-zinc-900">Company Details</div>
+                <div className="text-xs text-zinc-500">Shown on admin and can be used in templates/pages.</div>
+              </div>
+              <button
+                onClick={() => setOpenCompany(true)}
+                className="h-10 px-4 rounded-lg border border-zinc-200 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+              <div className="rounded-xl border border-zinc-200 p-4">
+                <div className="text-xs text-zinc-500 font-bold">Company Name</div>
+                <div className="text-zinc-900 font-semibold">{company?.name || "—"}</div>
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-4">
+                <div className="text-xs text-zinc-500 font-bold">Phone</div>
+                <div className="text-zinc-900 font-semibold">{company?.phone || "—"}</div>
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-4">
+                <div className="text-xs text-zinc-500 font-bold">WhatsApp</div>
+                <div className="text-zinc-900 font-semibold">{company?.whatsapp || "—"}</div>
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-4">
+                <div className="text-xs text-zinc-500 font-bold">Email</div>
+                <div className="text-zinc-900 font-semibold">{company?.email || "—"}</div>
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-4 md:col-span-2 lg:col-span-2">
+                <div className="text-xs text-zinc-500 font-bold">Location</div>
+                <div className="text-zinc-900 font-semibold">{company?.location || "—"}</div>
+              </div>
             </div>
           </div>
 
           <div className="p-4 bg-zinc-50 flex justify-end gap-3">
             <button
               className="px-4 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
-              onClick={() => {
-                // reset draft to current brand
-                const b = brand || {};
-                setDraft({
-                  accentColor: b?.colors?.accent || b?.colors?.primary || "",
-                  primaryColor: b?.colors?.primary || "",
-                  typography: {
-                    family: b?.fonts?.family || "",
-                    googleUrl: b?.fonts?.googleUrl || "",
-                    iconsUrl: b?.fonts?.iconsUrl || "",
-                  },
-                  logo: {
-                    type: b?.logo?.type || "material",
-                    value: b?.logo?.value || "pets",
-                  },
-                });
-              }}
+              onClick={resetDraftToBrand}
             >
               Cancel Changes
             </button>
@@ -524,7 +603,9 @@ export default function BrandDetail() {
             <div className="text-xs font-bold text-zinc-600 mb-1">Font Family</div>
             <input
               value={draft?.typography?.family || ""}
-              onChange={(e) => setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), family: e.target.value } }))}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), family: e.target.value } }))
+              }
               placeholder="Inter"
               className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
             />
@@ -615,28 +696,24 @@ export default function BrandDetail() {
           ) : null}
 
           {draft?.logo?.type === "emoji" ? (
-            <>
-              <div className="text-xs font-bold text-zinc-600 mb-1">Emoji</div>
-              <input
-                value={draft?.logo?.value || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: e.target.value } }))}
-                placeholder="🐾"
-                className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-              />
-            </>
+            <Field
+              label="Emoji"
+              value={draft?.logo?.value || ""}
+              onChange={(v) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: v } }))}
+              placeholder="🐾"
+            />
           ) : null}
 
           {draft?.logo?.type === "image" ? (
             <>
-              <div className="text-xs font-bold text-zinc-600 mb-1">Image URL</div>
-              <input
+              <Field
+                label="Image URL"
                 value={draft?.logo?.value || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: e.target.value } }))}
+                onChange={(v) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: v } }))}
                 placeholder="https://.../logo.png"
-                className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
               />
               <div className="text-xs text-zinc-500">
-                (Next: we can add actual upload to Supabase Storage and store the public URL here.)
+                (Next: upload to Supabase Storage and store public URL here.)
               </div>
             </>
           ) : null}
@@ -644,6 +721,60 @@ export default function BrandDetail() {
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setOpenLogo(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
               Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ✅ Company modal (functional + saves via same PUT variables) */}
+      <Modal open={openCompany} title="Company Details" onClose={() => setOpenCompany(false)}>
+        <div className="space-y-4">
+          <Field
+            label="Company Name"
+            value={draft?.company?.name || ""}
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), name: v } }))}
+            placeholder="Umair Trust Life"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Company Phone"
+              value={draft?.company?.phone || ""}
+              onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), phone: v } }))}
+              placeholder="+92 3xx xxxxxxx"
+            />
+            <Field
+              label="Company WhatsApp"
+              value={draft?.company?.whatsapp || ""}
+              onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), whatsapp: v } }))}
+              placeholder="+92 3xx xxxxxxx"
+            />
+          </div>
+          <Field
+            label="Company Email"
+            value={draft?.company?.email || ""}
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), email: v } }))}
+            placeholder="support@domain.com"
+          />
+          <Field
+            label="Company Location"
+            value={draft?.company?.location || ""}
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), location: v } }))}
+            placeholder="Karachi, Pakistan"
+          />
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setOpenCompany(false)}
+              className="h-10 px-4 rounded-lg border border-zinc-200 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={saving}
+              onClick={saveVariables}
+              className="h-10 px-5 rounded-lg bg-zinc-900 text-white text-sm font-semibold hover:bg-zinc-800 disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
         </div>
