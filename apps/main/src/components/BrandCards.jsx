@@ -14,7 +14,7 @@ export default function BrandCards() {
           </div>
 
           <div>
-            <h3 className="text-2xl font-semibold mb-2">Aamir Pet Care</h3>
+            <h3 className="text-2xl font-semibold mb-2">Haustierpflege</h3>
             <p className="text-[#665a73] dark:text-[#a195ad] leading-relaxed">
               Comprehensive health and wellness protection for your companions. Tailored plans that evolve as they do.
             </p>
@@ -22,7 +22,7 @@ export default function BrandCards() {
 
           <div className="pt-4 border-t border-black/5 dark:border-white/5">
             <span className="text-primary font-bold inline-flex items-center gap-2">
-              Explore Aamir <span className="material-symbols-outlined text-sm">open_in_new</span>
+              Explore  <span className="material-symbols-outlined text-sm">open_in_new</span>
             </span>
           </div>
         </div>
@@ -39,7 +39,7 @@ export default function BrandCards() {
           </div>
 
           <div>
-            <h3 className="text-2xl font-semibold mb-2">Umair Family Legacy</h3>
+            <h3 className="text-2xl font-semibold mb-2"> Familienerbe</h3>
             <p className="text-[#665a73] dark:text-[#a195ad] leading-relaxed">
               Securing your family's future through generational wealth protection and comprehensive life coverage.
             </p>
@@ -47,7 +47,7 @@ export default function BrandCards() {
 
           <div className="pt-4 border-t border-black/5 dark:border-white/5">
             <span className="text-primary font-bold inline-flex items-center gap-2">
-              Explore Umair <span className="material-symbols-outlined text-sm">open_in_new</span>
+              Explore  <span className="material-symbols-outlined text-sm">open_in_new</span>
             </span>
           </div>
         </div>
