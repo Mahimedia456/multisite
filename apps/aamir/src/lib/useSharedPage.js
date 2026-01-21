@@ -1,6 +1,7 @@
+// src/hooks/useSharedPage.js
 import { useEffect, useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5050").replace(/\/+$/, "");
 
 export function useSharedPage(slug) {
   const [content, setContent] = useState(null);
@@ -12,14 +13,12 @@ export function useSharedPage(slug) {
     async function load() {
       setLoading(true);
       try {
-        const r = await fetch(`${API_BASE}/public/shared-pages/${encodeURIComponent(slug)}`, {
-          cache: "no-store",
-        });
+        const r = await fetch(`${API_BASE}/public/shared-pages/${encodeURIComponent(slug)}`);
         const j = await r.json().catch(() => null);
         if (!r.ok || !j?.ok) throw new Error(j?.message || "Failed to load shared page");
 
-        const c = j?.data?.latestVersion?.content || null; // ✅ correct
-        if (!cancelled) setContent(c);
+        // latest content
+        if (!cancelled) setContent(j.data?.latestVersion?.content || null);
       } catch {
         if (!cancelled) setContent(null);
       } finally {

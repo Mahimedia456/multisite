@@ -92,7 +92,6 @@ function Field({ field, value, onChange }) {
     );
   }
 
-  // text default
   return (
     <div>
       <label className="text-xs font-bold text-zinc-500">{field.label}</label>
@@ -258,7 +257,7 @@ const DEFAULT_PAGE_CONTENT = {
 };
 
 export default function BrandInnerPageDetail() {
-  const { pageId } = useParams(); // route: /brand-inner-pages/:pageId
+  const { pageId } = useParams();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -331,11 +330,7 @@ export default function BrandInnerPageDetail() {
       if (from < 0 || to < 0 || from >= arr.length || to >= arr.length) return d;
       return { ...(d || {}), sections: move(arr, from, to) };
     });
-
-    setSelectedIdx((cur) => {
-      if (cur === from) return to;
-      return cur;
-    });
+    setSelectedIdx((cur) => (cur === from ? to : cur));
   }
 
   /* =========================
@@ -352,53 +347,52 @@ export default function BrandInnerPageDetail() {
   async function applyVersion(v) {
     const base = DEFAULT_PAGE_CONTENT;
     const next = v?.content && typeof v.content === "object" ? { ...base, ...v.content } : base;
-
     setData(next);
     setActiveVersionId(v?.id || null);
     setSelectedIdx(0);
   }
 
-  // ✅ IMPORTANT: body should be a plain object (apiFetch will JSON.stringify)
-async function saveAndMaybePublish(nextStatus) {
-  setSaving(true);
-  try {
-    console.log("Saving content =>", data);
+  /* =========================
+     ✅ Save / Publish (DB direct)
+  ========================= */
+  async function saveAndMaybePublish(nextStatus) {
+    if (!pageId) return;
 
-    const res = await apiFetch(`/admin/shared-pages/${pageId}/content`, {
-      method: "PUT",
-      body: { content: data, status: nextStatus },
-    });
+    setSaving(true);
+    try {
+      const res = await apiFetch(`/admin/shared-pages/${pageId}/content`, {
+        method: "PUT",
+        body: { content: data, status: nextStatus || undefined },
+      });
 
-    const json = await res.json().catch(() => null);
-    console.log("Save response =>", res.status, json);
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save");
 
-    if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save");
+      // reload page meta + latestVersion
+      const res2 = await apiFetch(`/admin/shared-pages/${pageId}`);
+      const j2 = await res2.json().catch(() => null);
+      if (res2.ok && j2?.ok) {
+        setPage(j2.data);
+        const latest = j2.data?.latestVersion;
+        if (latest?.content && typeof latest.content === "object") {
+          setData({ ...DEFAULT_PAGE_CONTENT, ...latest.content });
+          setActiveVersionId(latest.id || null);
+        } else {
+          setActiveVersionId(null);
+        }
+      }
 
-    // reload latest
-    const res2 = await apiFetch(`/admin/shared-pages/${pageId}`);
-    const j2 = await res2.json().catch(() => null);
-    console.log("Reload page =>", res2.status, j2);
+      // reload versions list
+      const v = await loadVersions(pageId);
+      if (Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
 
-    if (res2.ok && j2?.ok) {
-      setPage(j2.data);
-      const latest = j2.data?.latestVersion;
-      if (latest?.content) setData({ ...DEFAULT_PAGE_CONTENT, ...latest.content });
-      setActiveVersionId(latest?.id || null);
+      alert(nextStatus ? "Saved & published" : "Saved");
+    } catch (e) {
+      alert(e?.message || "Save failed");
+    } finally {
+      setSaving(false);
     }
-
-    const v = await loadVersions(pageId);
-    if (Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
-
-    alert(nextStatus ? "Saved & published" : "Saved");
-  } catch (e) {
-    console.error(e);
-    alert(e?.message || "Save failed");
-  } finally {
-    setSaving(false);
   }
-}
-
-
 
   /* =========================
      Initial load
@@ -415,7 +409,6 @@ async function saveAndMaybePublish(nextStatus) {
         const res = await apiFetch(`/admin/shared-pages/${pageId}`);
         const json = await res.json().catch(() => null);
         if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to load page");
-
         if (cancelled) return;
 
         setPage(json.data);
@@ -432,9 +425,7 @@ async function saveAndMaybePublish(nextStatus) {
         }
 
         const v = await loadVersions(pageId);
-        if (!cancelled && Array.isArray(v) && v.length) {
-          setActiveVersionId(v[0].id);
-        }
+        if (!cancelled && Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
 
         setSelectedIdx(0);
       } catch (e) {
@@ -448,7 +439,6 @@ async function saveAndMaybePublish(nextStatus) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageId]);
 
   if (loading) return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
@@ -496,23 +486,33 @@ async function saveAndMaybePublish(nextStatus) {
             Back
           </button>
 
-      <button
-  disabled={saving}
-  onClick={() => saveAndMaybePublish("published")}
-  className={[
-    "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg shadow-primary/20",
-    saving ? "bg-primary/40" : "bg-primary hover:bg-primary/90",
-  ].join(" ")}
->
-  Publish
-</button>
+          <button
+            disabled={saving}
+            onClick={() => saveAndMaybePublish(undefined)}
+            className={[
+              "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg",
+              saving ? "bg-zinc-400" : "bg-zinc-900 hover:bg-zinc-800",
+            ].join(" ")}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
 
+          <button
+            disabled={saving}
+            onClick={() => saveAndMaybePublish("published")}
+            className={[
+              "h-11 px-5 rounded-xl text-white text-sm font-extrabold shadow-lg shadow-primary/20",
+              saving ? "bg-primary/40" : "bg-primary hover:bg-primary/90",
+            ].join(" ")}
+          >
+            {saving ? "Publishing…" : "Publish"}
+          </button>
         </div>
       </div>
 
-      {/* Layout: Versions + Editor + Preview */}
+      {/* Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-[320px,540px,1fr] gap-6">
-        {/* Left: versions + sections */}
+        {/* Left */}
         <div className="space-y-6">
           {/* Versions */}
           <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
@@ -550,7 +550,7 @@ async function saveAndMaybePublish(nextStatus) {
             </div>
           </div>
 
-          {/* Sections list */}
+          {/* Sections */}
           <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between">
               <div>
@@ -642,12 +642,12 @@ async function saveAndMaybePublish(nextStatus) {
           </div>
         </div>
 
-        {/* Middle: section editor */}
+        {/* Middle */}
         <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between">
             <div>
               <div className="text-sm font-extrabold text-zinc-900">Editor</div>
-              <div className="text-xs text-zinc-500">Edit selected section fields (no JSON typing)</div>
+              <div className="text-xs text-zinc-500">Edit selected section fields</div>
             </div>
 
             {selected ? (
@@ -688,31 +688,21 @@ async function saveAndMaybePublish(nextStatus) {
                     onChange={(val) => updateSectionProps(selectedIdx, { [f.key]: val })}
                   />
                 ))}
-
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                  <div className="text-xs font-extrabold tracking-widest text-zinc-400 mb-2">SECTION JSON (read-only)</div>
-                  <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">
-                    {JSON.stringify(selected, null, 2)}
-                  </pre>
-                </div>
               </>
             )}
           </div>
         </div>
 
-        {/* Right: Preview */}
+        {/* Right */}
         <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-extrabold text-zinc-900">Preview</div>
-              <div className="text-xs text-zinc-500">Live preview (wireframe)</div>
-            </div>
+          <div className="px-6 py-5 border-b border-zinc-200">
+            <div className="text-sm font-extrabold text-zinc-900">Preview</div>
+            <div className="text-xs text-zinc-500">Live preview (wireframe)</div>
           </div>
 
           <div className="p-8 bg-zinc-50 min-h-[640px]">
             <div className="max-w-[900px] mx-auto space-y-6">
               <PreviewRenderer sections={sections} />
-
               <div className="rounded-3xl bg-white border border-zinc-200 p-6">
                 <div className="text-xs font-extrabold tracking-widest text-zinc-400 mb-2">PAGE JSON (read-only)</div>
                 <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">

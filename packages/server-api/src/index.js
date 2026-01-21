@@ -1,5 +1,5 @@
 // index.js (server-api)
-// ✅ Full updated file (UUID safe + brand variables + company fields + template/page version save fix)
+// ✅ Full updated file (UUID safe + brand variables + company fields + shared pages SINGLE VERSION (v1) save fix)
 
 import express from "express";
 import cors from "cors";
@@ -23,9 +23,7 @@ const wrap = (fn) => (req, res, next) =>
 function isUuid(v) {
   return (
     typeof v === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      v
-    )
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
   );
 }
 
@@ -150,14 +148,17 @@ app.post(
     const ok = await bcrypt.compare(password, admin.password_hash);
     if (!ok) return res.status(401).json({ ok: false, message: "Invalid email or password" });
 
-    // ✅ No req.user usage here
     const access_token = signToken({
-      id: admin.id, // uuid
+      id: admin.id,
       email: admin.email,
       role: admin.role || "admin",
     });
 
-    res.json({ ok: true, access_token, user: { id: admin.id, email: admin.email, role: admin.role || "admin" } });
+    res.json({
+      ok: true,
+      access_token,
+      user: { id: admin.id, email: admin.email, role: admin.role || "admin" },
+    });
   })
 );
 
@@ -196,7 +197,6 @@ app.get(
         id, name, route, status, updated_at,
         accent_color, primary_color, logo_type, logo_value,
         typography_json, nav_links_json, cta_json, brand_description,
-
         company_name, company_phone, company_whatsapp, company_email, company_location
       FROM brands
       ${whereSql}
@@ -250,7 +250,6 @@ app.get(
         id, name, route, status, updated_at,
         accent_color, primary_color, logo_type, logo_value,
         typography_json, nav_links_json, cta_json, brand_description,
-
         company_name, company_phone, company_whatsapp, company_email, company_location
       FROM brands
       WHERE id = $1
@@ -339,7 +338,7 @@ app.get(
 );
 
 /* =========================
-   Brand variables update (Global styles + company details)
+   Brand variables update
 ========================= */
 app.put(
   "/admin/brands/:brandId/variables",
@@ -354,7 +353,6 @@ app.put(
       logoType,
       logoValue,
       typography,
-
       companyName,
       companyPhone,
       companyWhatsapp,
@@ -371,13 +369,11 @@ app.put(
         logo_type = COALESCE($4, logo_type),
         logo_value = COALESCE($5, logo_value),
         typography_json = COALESCE($6, typography_json),
-
         company_name = COALESCE($7, company_name),
         company_phone = COALESCE($8, company_phone),
         company_whatsapp = COALESCE($9, company_whatsapp),
         company_email = COALESCE($10, company_email),
         company_location = COALESCE($11, company_location),
-
         updated_at = NOW()
       WHERE id = $1
       RETURNING
@@ -391,7 +387,6 @@ app.put(
         logoType ?? null,
         logoValue ?? null,
         typography ?? null,
-
         companyName ?? null,
         companyPhone ?? null,
         companyWhatsapp ?? null,
@@ -475,7 +470,6 @@ app.post(
     );
     const version = Number(next.rows[0].v);
 
-    // ✅ UUID-safe created_by (prevents "invalid input syntax for type uuid: '1'")
     const createdBy = isUuid(req.user?.id) ? req.user.id : null;
 
     const created = await pool.query(
@@ -549,11 +543,11 @@ app.get(
        LIMIT 1`,
       [pageId]
     );
-
     if (!pageQ.rows.length) return res.status(404).json({ ok: false, message: "Shared page not found" });
 
+    // always latest (but we keep v1 anyway)
     const latestQ = await pool.query(
-      `SELECT id, version, content, created_at, created_by
+      `SELECT id, page_id, version, content, created_at, created_by
        FROM brand_shared_page_versions
        WHERE page_id = $1
        ORDER BY version DESC
@@ -580,6 +574,7 @@ app.get(
 
     const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
 
+    // even if old data exists, show desc
     const { rows } = await pool.query(
       `SELECT id, page_id, version, content, created_at, created_by
        FROM brand_shared_page_versions
@@ -593,6 +588,41 @@ app.get(
   })
 );
 
+/* =========================
+   ✅ SINGLE VERSION SAVE (v1)
+   - PUT /content (new UI)
+   - POST /versions (old UI) -> same logic (NO new versions)
+========================= */
+async function upsertSharedPageV1({ pageId, content, status, userId }) {
+  const createdBy = isUuid(userId) ? userId : null;
+
+  const up = await pool.query(
+    `
+    INSERT INTO brand_shared_page_versions (page_id, version, content, created_by)
+    VALUES ($1, 1, $2, $3)
+    ON CONFLICT (page_id, version)
+    DO UPDATE SET
+      content = EXCLUDED.content,
+      created_at = NOW(),
+      created_by = EXCLUDED.created_by
+    RETURNING id, page_id, version, content, created_at, created_by
+    `,
+    [pageId, content, createdBy]
+  );
+
+  const nextStatus = normalizeStatus(status);
+  if (nextStatus) {
+    await pool.query(`UPDATE brand_shared_pages SET status = $2, updated_at = NOW() WHERE id = $1`, [
+      pageId,
+      nextStatus,
+    ]);
+  } else {
+    await pool.query(`UPDATE brand_shared_pages SET updated_at = NOW() WHERE id = $1`, [pageId]);
+  }
+
+  return up.rows[0];
+}
+
 app.put(
   "/admin/shared-pages/:pageId/content",
   authMiddleware,
@@ -605,38 +635,18 @@ app.put(
       return res.status(400).json({ ok: false, message: "content (object) is required" });
     }
 
-    const createdBy = isUuid(req.user?.id) ? req.user.id : null;
+    const saved = await upsertSharedPageV1({
+      pageId,
+      content,
+      status,
+      userId: req.user?.id,
+    });
 
-    // ✅ single version only (version=1)
-    const up = await pool.query(
-      `
-      INSERT INTO brand_shared_page_versions (page_id, version, content, created_by)
-      VALUES ($1, 1, $2, $3)
-      ON CONFLICT (page_id, version)
-      DO UPDATE SET
-        content = EXCLUDED.content,
-        created_at = NOW(),
-        created_by = EXCLUDED.created_by
-      RETURNING id, page_id, version, created_at, created_by
-      `,
-      [pageId, content, createdBy]
-    );
-
-    const nextStatus = normalizeStatus(status);
-    if (nextStatus) {
-      await pool.query(`UPDATE brand_shared_pages SET status = $2, updated_at = NOW() WHERE id = $1`, [
-        pageId,
-        nextStatus,
-      ]);
-    } else {
-      await pool.query(`UPDATE brand_shared_pages SET updated_at = NOW() WHERE id = $1`, [pageId]);
-    }
-
-    res.json({ ok: true, data: up.rows[0] });
+    res.json({ ok: true, data: saved });
   })
 );
 
-
+// Backward compatible: old admin might still call POST /versions
 app.post(
   "/admin/shared-pages/:pageId/versions",
   authMiddleware,
@@ -649,38 +659,14 @@ app.post(
       return res.status(400).json({ ok: false, message: "content (object) is required" });
     }
 
-    const pageQ = await pool.query(`SELECT id FROM brand_shared_pages WHERE id = $1 LIMIT 1`, [pageId]);
-    if (!pageQ.rows.length) return res.status(404).json({ ok: false, message: "Shared page not found" });
+    const saved = await upsertSharedPageV1({
+      pageId,
+      content,
+      status,
+      userId: req.user?.id,
+    });
 
-    const nextQ = await pool.query(
-      `SELECT COALESCE(MAX(version), 0) + 1 AS v
-       FROM brand_shared_page_versions
-       WHERE page_id = $1`,
-      [pageId]
-    );
-    const version = Number(nextQ.rows[0].v);
-
-    // ✅ UUID-safe created_by
-    const createdBy = isUuid(req.user?.id) ? req.user.id : null;
-
-    const ins = await pool.query(
-      `INSERT INTO brand_shared_page_versions (page_id, version, content, created_by)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, page_id, version, created_at, created_by`,
-      [pageId, version, content, createdBy]
-    );
-
-    const nextStatus = normalizeStatus(status);
-    if (nextStatus) {
-      await pool.query(`UPDATE brand_shared_pages SET status = $2, updated_at = NOW() WHERE id = $1`, [
-        pageId,
-        nextStatus,
-      ]);
-    } else {
-      await pool.query(`UPDATE brand_shared_pages SET updated_at = NOW() WHERE id = $1`, [pageId]);
-    }
-
-    res.json({ ok: true, data: ins.rows[0] });
+    res.json({ ok: true, data: saved });
   })
 );
 
@@ -704,6 +690,7 @@ app.get(
     res.json({ ok: true, data: rows });
   })
 );
+
 // PUBLIC: brand layout for frontend websites
 app.get(
   "/public/brands/:slug/layout",
@@ -755,8 +742,6 @@ app.get(
   })
 );
 
-
-
 // PUBLIC: shared page by slug (latest version)
 app.get(
   "/public/shared-pages/:slug",
@@ -764,7 +749,6 @@ app.get(
     const slug = String(req.params.slug || "").trim().toLowerCase();
     if (!slug) return res.status(400).json({ ok: false, message: "slug is required" });
 
-    // page meta
     const pageQ = await pool.query(
       `
       SELECT id, slug, title, status, updated_at
@@ -779,7 +763,6 @@ app.get(
 
     const page = pageQ.rows[0];
 
-    // latest content
     const latestQ = await pool.query(
       `
       SELECT id, version, content, created_at
@@ -810,7 +793,6 @@ app.get(
     });
   })
 );
-
 
 /* =========================
    Global error handler

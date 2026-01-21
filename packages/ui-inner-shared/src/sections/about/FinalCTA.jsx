@@ -1,16 +1,30 @@
-export default function FinalCTA() {
+export default function FinalCTA({ title, primary, secondary }) {
   return (
     <section className="text-center py-20">
-      <h2 className="text-4xl font-black mb-6">
-        Ready to choose your coverage path?
-      </h2>
-      <div className="flex justify-center gap-4">
-        <button className="bg-primary text-white px-10 py-4 rounded-2xl font-bold">
-          Get a Quote Now
-        </button>
-        <button className="bg-white/60 px-10 py-4 rounded-2xl font-bold">
-          Speak to an Advisor
-        </button>
+      <h2 className="text-4xl font-black mb-6">{title ?? ""}</h2>
+
+      <div className="flex justify-center gap-4 flex-wrap">
+        {primary?.href ? (
+          <a
+            href={primary.href}
+            className="bg-primary text-white px-10 py-4 rounded-2xl font-bold inline-flex items-center justify-center"
+          >
+            {primary?.label ?? ""}
+          </a>
+        ) : (
+          <div />
+        )}
+
+        {secondary?.href ? (
+          <a
+            href={secondary.href}
+            className="bg-white/60 px-10 py-4 rounded-2xl font-bold inline-flex items-center justify-center"
+          >
+            {secondary?.label ?? ""}
+          </a>
+        ) : (
+          <div />
+        )}
       </div>
     </section>
   );
