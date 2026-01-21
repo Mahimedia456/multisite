@@ -112,7 +112,7 @@ function TemplatePreviewDrawer({ open, template, onClose, onEdit }) {
 }
 
 export default function BrandTemplates() {
-  const { brandId } = useParams();
+const { brandId } = useParams();
   const brand = BRAND_DB[brandId] || BRAND_DB.aamir;
   const navigate = useNavigate();
 

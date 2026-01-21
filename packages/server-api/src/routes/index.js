@@ -1,15 +1,12 @@
-import express from "express";
+import { Router } from "express";
+import adminRoutes from "./admin.js";
+import brandsRoutes from "./brands.js";
 
-import authRoutes from "./auth.js";
-import brandsRoutes from "./brands.routes.js"; // ✅ add
-import pagesRoutes from "./pages.js";
-import templatesRoutes from "./templates.js";
+const router = Router();
 
-const router = express.Router();
+router.use("/admin", adminRoutes);
+router.use("/brands", brandsRoutes);
 
-router.use("/auth", authRoutes);
-router.use("/brands", brandsRoutes); // ✅ add
-router.use("/pages", pagesRoutes);
-router.use("/templates", templatesRoutes);
+router.get("/health", (req, res) => res.json({ ok: true }));
 
 export default router;

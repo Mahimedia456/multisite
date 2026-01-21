@@ -13,7 +13,7 @@ import TemplateBuilder from "./pages/TemplateBuilder";
 
 import SitePages from "./pages/SitePages";
 
-import BrandInnerPages from "./pages/BrandInnerPages";
+import BrandInnerPagesIndex from "./pages/BrandInnerPagesIndex";
 import BrandInnerPageDetail from "./pages/BrandInnerPageDetail";
 
 export default function App() {
@@ -42,19 +42,9 @@ export default function App() {
             element={<TemplateBuilder />}
           />
 
-          {/* Brand Inner Pages (global entry from sidebar) */}
-          <Route path="/brand-inner-pages" element={<BrandInnerPages />} />
-          <Route
-            path="/brand-inner-pages/:pageId"
-            element={<BrandInnerPageDetail />}
-          />
-
-          {/* (optional) per brand inner pages too */}
-          <Route path="/brands/:brandId/pages" element={<BrandInnerPages />} />
-          <Route
-            path="/brands/:brandId/pages/:pageId"
-            element={<BrandInnerPageDetail />}
-          />
+          {/* ✅ Shared Pages (used by all brands) */}
+          <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
+          <Route path="/brand-inner-pages/:pageId" element={<BrandInnerPageDetail />} />
 
           {/* Main Website */}
           <Route path="/site" element={<SitePages />} />

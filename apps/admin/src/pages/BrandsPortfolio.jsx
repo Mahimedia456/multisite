@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MIcon from "../components/MIcon";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ""; // e.g. http://localhost:4000
+import { apiFetch } from "../lib/auth";
 
 function StatusPill({ status }) {
   const active = status === "active";
@@ -85,10 +84,10 @@ export default function BrandsPortfolio() {
         if (query.trim()) params.set("q", query.trim());
         params.set("status", status);
 
-        const res = await fetch(
-          `${API_BASE}/api/brands?${params.toString()}`,
-          { signal: controller.signal }
-        );
+        // ✅ Use apiFetch so token/proxy works
+        const res = await apiFetch(`/api/brands?${params.toString()}`, {
+          signal: controller.signal,
+        });
 
         const json = await res.json().catch(() => null);
 
@@ -103,10 +102,10 @@ export default function BrandsPortfolio() {
           route: b.route,
           status: b.status || "inactive",
           templates: Number.isFinite(b.templates) ? b.templates : 0,
-          updatedAt: b.updatedAt || b.updated_at || b.updated, // supports common names
+          updatedAt: b.updatedAt || b.updated_at || b.updated,
           icon: b.icon || "business",
-          iconBg: b.iconBg || "bg-zinc-100",
-          iconColor: b.iconColor || "text-zinc-500",
+          iconBg: b.iconBg || b.icon_bg || "bg-zinc-100",
+          iconColor: b.iconColor || b.icon_color || "text-zinc-500",
         }));
 
         setBrands(normalized);
@@ -129,17 +128,16 @@ export default function BrandsPortfolio() {
     };
   }, [query, status]);
 
-  // If your API already filters, this is just brands.
-  // Keeping this allows you to later change API behavior without touching UI.
   const filtered = useMemo(() => brands, [brands]);
 
   // ✅ KPI values from real data
   const totalCount = filtered.length;
   const activeCount = filtered.filter((b) => b.status === "active").length;
   const inactiveCount = totalCount - activeCount;
-  const activeRate = totalCount ? ((activeCount / totalCount) * 100).toFixed(1) : "0.0";
+  const activeRate = totalCount
+    ? ((activeCount / totalCount) * 100).toFixed(1)
+    : "0.0";
 
-  // ✅ pagination UI (static buttons in your UI) — we’ll just show “1-total”
   const showingFrom = totalCount ? 1 : 0;
   const showingTo = totalCount;
 
@@ -370,7 +368,6 @@ export default function BrandsPortfolio() {
             brands
           </span>
 
-          {/* keep your pagination UI (static) */}
           <div className="flex items-center gap-1">
             <button
               className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-zinc-200 rounded transition-colors disabled:opacity-30"

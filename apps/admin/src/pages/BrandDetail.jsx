@@ -1,94 +1,33 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
-
-const BRAND_DB = {
-  aamir: {
-    name: "Aamir PetCare",
-    accent: "#008080",
-    logoIcon: "pets",
-    typography: { name: "Inter + Playfair", desc: "Sans & Serif Pairing" },
-    logoFile: { name: "petcare_full.svg", meta: "2.4 MB · Optimized" },
-    templates: [
-      {
-        id: "header",
-        title: "Global Header",
-        status: "live",
-        icon: "dock_to_bottom",
-        edited: "2 hours ago by Sarah M.",
-      },
-      {
-        id: "footer",
-        title: "Global Footer",
-        status: "live",
-        icon: "dock_to_bottom",
-        edited: "Oct 12, 2023",
-      },
-      {
-        id: "home",
-        title: "Home Page",
-        status: "draft",
-        icon: "home",
-        edited: "15 mins ago by You",
-      },
-      // extra (kept in DB for later)
-      { id: "about", title: "About Us", status: "live", icon: "info", edited: "Sep 28, 2023" },
-      { id: "services", title: "Services", status: "live", icon: "medical_services", edited: "Oct 05, 2023" },
-      { id: "contact", title: "Contact Us", status: "archived", icon: "mail", edited: "Aug 12, 2023" },
-    ],
-  },
-
-  umair: {
-    name: "Umair Trust Life",
-    accent: "#2563eb",
-    logoIcon: "favorite",
-    typography: { name: "Inter + DM Serif", desc: "Modern Pairing" },
-    logoFile: { name: "trustlife_full.svg", meta: "1.8 MB · Optimized" },
-    templates: [
-      {
-        id: "header",
-        title: "Global Header",
-        status: "live",
-        icon: "dock_to_bottom",
-        edited: "1 day ago by Umair",
-      },
-      {
-        id: "footer",
-        title: "Global Footer",
-        status: "live",
-        icon: "dock_to_bottom",
-        edited: "Oct 10, 2023",
-      },
-      {
-        id: "home",
-        title: "Home Page",
-        status: "live",
-        icon: "home",
-        edited: "Oct 12, 2023",
-      },
-      // extra (kept in DB for later)
-      { id: "about", title: "About Us", status: "draft", icon: "info", edited: "Dec 01, 2023" },
-      { id: "services", title: "Services", status: "live", icon: "medical_services", edited: "Oct 05, 2023" },
-      { id: "contact", title: "Contact Us", status: "archived", icon: "mail", edited: "Aug 12, 2023" },
-    ],
-  },
-};
+import { apiFetch } from "../lib/auth";
 
 function StatusBadge({ status }) {
+  const s = String(status || "").toLowerCase();
   const map = {
     live: "bg-green-50 text-green-600 border-green-100",
+    published: "bg-green-50 text-green-600 border-green-100",
+    active: "bg-green-50 text-green-600 border-green-100",
+
     draft: "bg-amber-50 text-amber-600 border-amber-100",
+    inactive: "bg-amber-50 text-amber-600 border-amber-100",
+
     archived: "bg-zinc-50 text-zinc-500 border-zinc-100",
   };
 
   const label =
-    status === "live" ? "LIVE" : status === "draft" ? "DRAFT" : "ARCHIVED";
+    s === "live" || s === "published" || s === "active"
+      ? "LIVE"
+      : s === "draft" || s === "inactive"
+      ? "DRAFT"
+      : "ARCHIVED";
 
   return (
     <span
       className={[
         "px-2 py-1 text-[10px] font-bold uppercase rounded border",
-        map[status] || map.archived,
+        map[s] || map.archived,
       ].join(" ")}
     >
       {label}
@@ -107,7 +46,9 @@ function TemplateCard({ t, onEdit, onView }) {
       </div>
 
       <h3 className="text-lg font-bold text-zinc-900 mb-1">{t.title}</h3>
-      <p className="text-xs text-zinc-400 mb-6">Last Edited: {t.edited}</p>
+      <p className="text-xs text-zinc-400 mb-6">
+        Last Edited: {t.edited || "—"}
+      </p>
 
       <div className="flex gap-3">
         <button
@@ -129,21 +70,95 @@ function TemplateCard({ t, onEdit, onView }) {
   );
 }
 
+function timeAgoOrDate(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v);
+  return d.toLocaleString();
+}
+
 export default function BrandDetail() {
   const navigate = useNavigate();
   const { brandId } = useParams();
 
-  const brand = BRAND_DB[brandId] || BRAND_DB.aamir;
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [brand, setBrand] = useState(null);
+  const [templates, setTemplates] = useState([]);
 
-  const style = useMemo(
-    () => ({ ["--brand-accent"]: brand.accent }),
-    [brand.accent]
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  // ✅ only show header/footer/home in cards
-  const topTemplates = brand.templates.filter((t) =>
-    ["header", "footer", "home"].includes(t.id)
-  );
+    async function load() {
+      setLoading(true);
+      setErr("");
+      try {
+        const res = await apiFetch(`/admin/brands/${brandId}/detail`);
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.message || "Failed to load brand");
+        }
+
+        if (!cancelled) {
+          setBrand(json.data.brand);
+          setTemplates(Array.isArray(json.data.templates) ? json.data.templates : []);
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e?.message || "Failed to load brand");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    if (brandId) load();
+    return () => {
+      cancelled = true;
+    };
+  }, [brandId]);
+
+  const style = useMemo(() => {
+    const accent = brand?.colors?.accent || brand?.colors?.primary || "#2ec2b3";
+    return { ["--brand-accent"]: accent };
+  }, [brand]);
+
+  const topTemplates = useMemo(() => {
+    // backend returns key header/footer/home
+    const mapIcon = { header: "dock_to_bottom", footer: "dock_to_bottom", home: "home" };
+    return (templates || [])
+      .filter((t) => ["header", "footer", "home"].includes(t.key))
+      .map((t) => ({
+        id: t.id,
+        key: t.key,
+        title:
+          t.key === "header"
+            ? "Global Header"
+            : t.key === "footer"
+            ? "Global Footer"
+            : "Home Page",
+        status: t.status || "draft",
+        icon: mapIcon[t.key] || "description",
+        edited: timeAgoOrDate(t.updatedAt),
+      }));
+  }, [templates]);
+
+  if (loading) {
+    return <div className="max-w-7xl mx-auto py-10 text-zinc-500">Loading…</div>;
+  }
+
+  if (err) {
+    return (
+      <div className="max-w-7xl mx-auto py-10">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {err}
+        </div>
+      </div>
+    );
+  }
+
+  const colors = brand?.colors || {};
+  const fonts = brand?.fonts || {};
+  const logo = brand?.logo || {};
 
   return (
     <div style={style} className="max-w-7xl mx-auto space-y-12">
@@ -151,11 +166,9 @@ export default function BrandDetail() {
       <section>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-zinc-900">
-              Website Templates
-            </h2>
+            <h2 className="text-2xl font-bold text-zinc-900">Website Templates</h2>
             <p className="text-zinc-500 text-sm">
-              Manage and edit the core page components for {brand.name}.
+              Manage and edit the core page components for {brand?.name || "—"}.
             </p>
           </div>
 
@@ -168,15 +181,13 @@ export default function BrandDetail() {
           </button>
         </div>
 
-        {/* ✅ ONLY 3 cards */}
+        {/* ✅ 3 cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {topTemplates.map((t) => (
             <TemplateCard
-              key={t.id}
+              key={t.key}
               t={t}
-              onEdit={() =>
-                navigate(`/brands/${brandId}/templates/${t.id}/builder`)
-              }
+              onEdit={() => navigate(`/brands/${brandId}/templates/${t.key}/builder`)}
               onView={() => navigate(`/brands/${brandId}/templates`)}
             />
           ))}
@@ -188,33 +199,43 @@ export default function BrandDetail() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-zinc-900">Brand Variables</h2>
           <p className="text-zinc-500 text-sm">
-            Global style overrides that populate into all templates for{" "}
-            {brand.name}.
+            Global style overrides that populate into all templates for {brand?.name || "—"}.
           </p>
         </div>
 
         <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x border-b border-zinc-100">
-            {/* Accent */}
+            {/* Colors */}
             <div className="p-6">
               <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">
                 Primary Accent Color
               </label>
+
               <div className="flex items-center gap-4">
                 <div
                   className="w-12 h-12 rounded-full border-4 border-white shadow-sm ring-1 ring-zinc-200"
-                  style={{ background: "var(--brand-accent)" }}
+                  style={{ background: colors.primary || colors.accent || "#2ec2b3" }}
                 />
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Brand Accent
-                  </div>
-                  <div className="text-xs text-zinc-500">{brand.accent}</div>
+                  <div className="text-sm font-semibold text-zinc-900">Primary</div>
+                  <div className="text-xs text-zinc-500">{colors.primary || colors.accent || "—"}</div>
                 </div>
-                <button className="text-primary text-xs font-bold hover:underline">
-                  Change
-                </button>
               </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="text-xs text-zinc-500">
+                  <div className="font-bold text-zinc-700">Primary Dark</div>
+                  <div>{colors.primaryDark || "—"}</div>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  <div className="font-bold text-zinc-700">Accent</div>
+                  <div>{colors.accent || "—"}</div>
+                </div>
+              </div>
+
+              <button className="mt-4 text-primary text-xs font-bold hover:underline">
+                Change
+              </button>
             </div>
 
             {/* Typography */}
@@ -223,21 +244,27 @@ export default function BrandDetail() {
                 Typography Set
               </label>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-zinc-50 rounded-lg flex items-center justify-center font-serif text-xl font-bold text-zinc-700">
+                <div className="w-12 h-12 bg-zinc-50 rounded-lg flex items-center justify-center text-xl font-bold text-zinc-700">
                   Aa
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-zinc-900">
-                    {brand.typography.name}
+                    {fonts.family || "—"}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {brand.typography.desc}
+                    {fonts.googleUrl ? "Google Fonts" : "—"}
                   </div>
                 </div>
-                <button className="text-primary text-xs font-bold hover:underline">
-                  Edit
-                </button>
               </div>
+
+              <div className="mt-4 text-xs text-zinc-500 break-all">
+                <div className="font-bold text-zinc-700">Font URL</div>
+                <div>{fonts.googleUrl || "—"}</div>
+              </div>
+
+              <button className="mt-4 text-primary text-xs font-bold hover:underline">
+                Edit
+              </button>
             </div>
 
             {/* Logo */}
@@ -247,23 +274,32 @@ export default function BrandDetail() {
               </label>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-zinc-50 rounded-lg flex items-center justify-center">
-                  <MIcon
-                    name={brand.logoIcon}
-                    className="text-zinc-700 text-[22px]"
-                  />
+                  {logo.type === "material" ? (
+                    <span className="material-symbols-outlined text-zinc-700">
+                      {logo.value || "pets"}
+                    </span>
+                  ) : (
+                    <MIcon name="image" className="text-zinc-700 text-[22px]" />
+                  )}
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-zinc-900">
-                    {brand.logoFile.name}
+                    {logo.text || brand?.name || "—"}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {brand.logoFile.meta}
+                    {logo.type || "—"} • {logo.value || "—"}
                   </div>
                 </div>
-                <button className="text-primary text-xs font-bold hover:underline">
-                  Replace
-                </button>
               </div>
+
+              <div className="mt-4 text-xs text-zinc-500 break-all">
+                <div className="font-bold text-zinc-700">Icons URL</div>
+                <div>{fonts.iconsUrl || "—"}</div>
+              </div>
+
+              <button className="mt-4 text-primary text-xs font-bold hover:underline">
+                Replace
+              </button>
             </div>
           </div>
 

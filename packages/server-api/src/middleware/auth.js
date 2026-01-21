@@ -1,16 +1,17 @@
 import jwt from "jsonwebtoken";
 
 export function requireAuth(req, res, next) {
-  const hdr = req.headers.authorization || "";
-  const token = hdr.startsWith("Bearer ") ? hdr.slice(7) : null;
+  const token = req.headers.authorization?.replace("Bearer ", "");
 
-  if (!token) return res.status(401).json({ ok: false, error: "Missing token" });
+  if (!token) {
+    return res.status(401).json({ ok: false, message: "Unauthorized" });
+  }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.adminId = decoded.adminId;
     next();
   } catch {
-    return res.status(401).json({ ok: false, error: "Invalid token" });
+    res.status(401).json({ ok: false, message: "Invalid token" });
   }
 }
