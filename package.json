@@ -9,20 +9,21 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev:all",
-    "dev:aamir": "npm run dev --workspace=apps/aamir",
-    "dev:umair": "npm run dev --workspace=apps/umair",
-    "dev:main": "npm run dev --workspace=apps/main",
-    "dev:admin": "npm run dev --workspace=apps/admin",
-    "dev:server": "npm run dev --workspace=packages/server-api",
+  "dev": "npm run dev:all",
+  "dev:aamir": "npm run dev --workspace=apps/aamir",
+  "dev:umair": "npm run dev --workspace=apps/umair",
+  "dev:main": "npm run dev --workspace=apps/main",
+  "dev:admin": "npm run dev --workspace=apps/admin",
+  "dev:server": "npm run dev --workspace=packages/server-api",
 
-    "build:aamir": "npm run build --workspace=apps/aamir",
-    "build:umair": "npm run build --workspace=apps/umair",
-    "build:main": "npm run build --workspace=apps/main",
-    "build:admin": "npm run build --workspace=apps/admin",
+  "build:aamir": "npm run build --workspace=apps/aamir",
+  "build:umair": "npm run build --workspace=apps/umair",
+  "build:main": "npm run build --workspace=apps/main",
+  "build:admin": "npm run build --workspace=apps/admin",
 
-    "dev:all": "concurrently -n aamir,umair,main,admin,server \"npm run dev:aamir\" \"npm run dev:umair\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:server\""
-  },
+  "dev:all": "concurrently -n aamir,umair,main,admin,server \"npm run dev:aamir\" \"npm run dev:umair\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:server\""
+},
+
   "devDependencies": {
     "concurrently": "^9.2.1"
   }
