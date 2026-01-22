@@ -31,9 +31,90 @@ function isRemoteHttpUrl(url) {
 }
 
 function isAlreadySupabaseStorageUrl(url) {
-  return typeof url === "string" && url.includes(".supabase.co/storage/v1/object/");
+  return (
+    typeof url === "string" &&
+    (url.includes(".supabase.co/storage/v1/object/") ||
+      url.includes(".supabase.co/storage/v1/s3/"))
+  );
 }
 
+/**
+ * Walk JSON and collect all { url } fields (including nested),
+ * upload remote images to Supabase Storage, replace urls in JSON.
+ */
+async function migrateJsonImagesToBucket({ json, folder = "shared-pages", pageKey = "unknown" }) {
+  if (!supabaseAdmin) {
+    // env not set -> return unchanged
+    return { updatedJson: json, replacements: [] };
+  }
+
+  const replacements = [];
+  const seen = new Map(); // url -> newUrl
+
+ async function uploadOne(remoteUrl, assetKeyHint) {
+  try {
+    if (!isRemoteHttpUrl(remoteUrl)) return remoteUrl;
+    if (isAlreadySupabaseStorageUrl(remoteUrl)) return remoteUrl;
+    if (seen.has(remoteUrl)) return seen.get(remoteUrl);
+
+    const resp = await fetch(remoteUrl, { redirect: "follow" });
+    if (!resp.ok) return remoteUrl;
+
+    const contentType = resp.headers.get("content-type") || "application/octet-stream";
+    const arrayBuf = await resp.arrayBuffer();
+    const buffer = Buffer.from(arrayBuf);
+
+    // ... ext + path build ...
+
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(SUPABASE_BUCKET)
+      .upload(path, buffer, { contentType, upsert: true, cacheControl: "3600" });
+
+    if (upErr) return remoteUrl;
+
+    const { data } = supabaseAdmin.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
+    const newUrl = data?.publicUrl || remoteUrl;
+
+    seen.set(remoteUrl, newUrl);
+    replacements.push({ from: remoteUrl, to: newUrl, path });
+    return newUrl;
+  } catch (e) {
+    console.error("uploadOne failed:", e?.message);
+    return remoteUrl;
+  }
+}
+
+
+  async function walk(node) {
+    if (!node) return node;
+
+    if (Array.isArray(node)) {
+      const out = [];
+      for (const item of node) out.push(await walk(item));
+      return out;
+    }
+
+    if (typeof node === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(node)) {
+        // detect common image/url objects: { url, alt, assetKey }
+        if (k === "url" && typeof v === "string") {
+          const assetKeyHint =
+            node.assetKey || node.key || node.alt || `${folder}.${pageKey}`;
+          out[k] = await uploadOne(v, assetKeyHint);
+        } else {
+          out[k] = await walk(v);
+        }
+      }
+      return out;
+    }
+
+    return node;
+  }
+
+  const updatedJson = await walk(json);
+  return { updatedJson, replacements };
+}
 const app = express();
 app.use(express.json({ limit: "10mb" })); // allow bigger JSON (image urls/arrays)
 
@@ -60,12 +141,36 @@ function normalizeStatus(s) {
   return v.toUpperCase();
 }
 async function downloadToBuffer(url) {
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`Failed to download ${url} (${resp.status})`);
-  const contentType = resp.headers.get("content-type") || "application/octet-stream";
-  const arrayBuffer = await resp.arrayBuffer();
-  return { buffer: Buffer.from(arrayBuffer), contentType };
+  const headers = {
+    // Unsplash source sometimes blocks unknown user agents
+    "user-agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+    accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    "accept-language": "en-US,en;q=0.9",
+    // optional
+    "cache-control": "no-cache",
+  };
+
+  // small retry for 503/429
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const r = await fetch(url, { redirect: "follow", headers });
+
+    if (r.ok) {
+      const contentType = r.headers.get("content-type") || "application/octet-stream";
+      const ab = await r.arrayBuffer();
+      return { buffer: Buffer.from(ab), contentType };
+    }
+
+    // retry only on temp errors
+    if ([429, 503, 502].includes(r.status) && attempt < 3) {
+      await new Promise((s) => setTimeout(s, 700 * attempt));
+      continue;
+    }
+
+    throw new Error(`Download failed ${r.status}: ${url}`);
+  }
 }
+
 
 function guessExtFromContentType(contentType) {
   const ct = (contentType || "").toLowerCase();
@@ -146,6 +251,58 @@ async function migrateImagesInJson({
 
   return { updatedJson, replacements };
 }
+// add at top with imports already present:
+// import { createClient } from "@supabase/supabase-js";
+// import crypto from "crypto";
+
+app.post(
+  "/admin/upload",
+  authMiddleware,
+  wrap(async (req, res) => {
+    if (!supabaseAdmin) {
+      return res.status(500).json({ ok: false, message: "Supabase not configured" });
+    }
+
+    const { dataUrl, fileName, folder = "shared-pages" } = req.body || {};
+    if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) {
+      return res.status(400).json({ ok: false, message: "dataUrl (base64) is required" });
+    }
+
+    // parse data url: data:image/png;base64,xxxx
+    const m = /^data:([^;]+);base64,(.+)$/i.exec(dataUrl);
+    if (!m) return res.status(400).json({ ok: false, message: "Invalid dataUrl" });
+
+    const contentType = m[1];
+    const b64 = m[2];
+    const buffer = Buffer.from(b64, "base64");
+
+    const ext =
+      contentType.includes("png") ? "png" :
+      contentType.includes("jpeg") ? "jpg" :
+      contentType.includes("webp") ? "webp" :
+      contentType.includes("gif") ? "gif" : "bin";
+
+    const safeName = String(fileName || "asset")
+      .replace(/[^a-z0-9._-]/gi, "_")
+      .slice(0, 80);
+
+    const hash = crypto.randomBytes(8).toString("hex");
+    const path = `${folder}/${Date.now()}-${hash}-${safeName}.${ext}`;
+
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(SUPABASE_BUCKET)
+      .upload(path, buffer, { contentType, upsert: true, cacheControl: "3600" });
+
+    if (upErr) {
+      return res.status(500).json({ ok: false, message: upErr.message });
+    }
+
+    const { data } = supabaseAdmin.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
+
+    return res.json({ ok: true, url: data?.publicUrl, path });
+  })
+);
+
 app.post(
   "/admin/shared-pages/:pageId/migrate-assets",
   authMiddleware,
@@ -976,14 +1133,22 @@ app.put(
         .json({ ok: false, message: "content (object) is required" });
     }
 
+    // ✅ migrate images -> supabase bucket
+    const { updatedJson, replacements } = await migrateJsonImagesToBucket({
+      json: content,
+      folder: "shared-pages",
+      pageKey: pageId,
+    });
+
+    // ✅ save json (with replaced urls)
     const saved = await upsertSharedPageV1({
       pageId,
-      content,
+      content: updatedJson,
       status,
       userId: req.user?.id,
     });
 
-    res.json({ ok: true, data: saved });
+    res.json({ ok: true, data: saved, uploads: replacements });
   })
 );
 
