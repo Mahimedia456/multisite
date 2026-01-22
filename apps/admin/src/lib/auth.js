@@ -1,4 +1,4 @@
-// admin/src/lib/auth.js
+// src/lib/auth.js
 
 const SESSION_KEY = "session";
 
@@ -17,72 +17,56 @@ export function getSession() {
 export function setSession(session) {
   try {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 export function logout() {
   try {
     localStorage.removeItem(SESSION_KEY);
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 /* =========================
-   Small utils
+   Utils
 ========================= */
-function getApiBase() {
-  // IMPORTANT: VITE_ vars are injected at build time in Vercel.
-  // If empty, it will fallback to same-origin (which causes /admin/login on Vercel => 405).
-  const raw = (import.meta?.env?.VITE_API_BASE_URL || "").trim();
+function getApiBaseStrict() {
+  const base = String(import.meta?.env?.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
-  // remove surrounding quotes if someone accidentally added
-  const unquoted = raw.replace(/^['"]|['"]$/g, "");
+  // IMPORTANT: must be full http(s) URL in production
+  if (!base) {
+    throw new Error(
+      "VITE_API_BASE_URL is missing. Set it in Vercel (admin project) to your server-api URL."
+    );
+  }
 
-  // remove trailing slashes
-  return unquoted.replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(base)) {
+    throw new Error(
+      `VITE_API_BASE_URL must start with http(s). Got: ${base}`
+    );
+  }
+
+  return base;
 }
 
 function isPlainObject(v) {
   return v && typeof v === "object" && !(v instanceof FormData) && !(v instanceof Blob);
 }
 
-function buildUrl(path) {
-  const base = getApiBase();
-
-  // If base is empty => same-origin (bad for deployed admin).
-  // But keep fallback for local proxy setups.
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${base}${p}`;
-}
-
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 /* =========================
    Login (Admin)
 ========================= */
 export async function loginApi(a = {}, b, c) {
-  // Supports BOTH:
-  // 1) loginApi(email, password, remember)
-  // 2) loginApi({ email, password, remember })
-
   let email = "";
   let password = "";
   let remember = false;
 
+  // Style 1: loginApi(email, password, remember)
   if (typeof a === "string" || typeof b === "string") {
     email = typeof a === "string" ? a : "";
     password = typeof b === "string" ? b : "";
     remember = Boolean(c);
   } else {
+    // Style 2: loginApi({ ... })
     const payload = a || {};
     const p = payload?.form ?? payload?.values ?? payload?.data ?? payload;
 
@@ -108,7 +92,8 @@ export async function loginApi(a = {}, b, c) {
   email = String(email).trim();
   password = String(password);
 
-  const url = buildUrl("/admin/login");
+  const base = getApiBaseStrict();
+  const url = `${base}/admin/login`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -116,14 +101,10 @@ export async function loginApi(a = {}, b, c) {
     body: JSON.stringify({ email, password, remember }),
   });
 
-  const data = await safeJson(res);
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const msg =
-      data?.message ||
-      data?.error ||
-      `Login failed (${res.status})`;
-    throw new Error(msg);
+    throw new Error(data?.message || data?.error || `Login failed (${res.status})`);
   }
 
   const session = {
@@ -152,32 +133,21 @@ export async function apiFetch(path, options = {}) {
 
   const headers = new Headers(options.headers || {});
   const hasBody = options.body !== undefined && options.body !== null;
-
   let body = options.body;
 
   if (hasBody && isPlainObject(body)) {
     if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     body = JSON.stringify(body);
-  } else if (
-    hasBody &&
-    !(body instanceof FormData) &&
-    !headers.has("Content-Type") &&
-    typeof body === "string"
-  ) {
-    headers.set("Content-Type", "application/json");
   }
 
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const url = buildUrl(path);
+  const base = getApiBaseStrict();
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-    body,
-  });
+  const res = await fetch(url, { ...options, body, headers });
 
   if (res.status === 401 || res.status === 403) {
     logout();
