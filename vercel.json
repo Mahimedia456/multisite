@@ -1,3 +1,4 @@
 {
-  "installCommand": "corepack enable && corepack prepare pnpm@9.15.3 --activate && pnpm install --frozen-lockfile"
+  "installCommand": "npm install",
+  "buildCommand": "npm run build"
 }
