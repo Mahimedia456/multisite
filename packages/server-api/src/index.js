@@ -1,13 +1,4 @@
-// server-api/index.js
-// ✅ Full updated file
-// - CORS fixed (localhost ports + env allowlist) + preflight
-// - Adds missing endpoint for TemplateBuilder saving:
-//   PUT /admin/brand-templates/:templateId/content  (alias)
-//   PUT /admin/brand-layout-templates/:templateId/content (main)
-//   (both use SINGLE VERSION v1 upsert like shared-pages, no new versions)
-// - Adds support for uploading/saving images as URLs in JSON (content object is stored as JSONB as-is)
-// - Adds /public/brand-assets/:path proxy (optional) to avoid CORS when loading images from a different origin
-
+// packages/server-api/src/index.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -19,7 +10,7 @@ import { parse } from "pg-connection-string";
 dotenv.config();
 
 const app = express();
-app.use(express.json({ limit: "10mb" })); // allow bigger JSON (image urls/arrays)
+app.use(express.json({ limit: "10mb" }));
 
 /* =========================
    Small utils
@@ -45,9 +36,10 @@ function normalizeStatus(s) {
 }
 
 /* =========================
-   CORS (FIXED)
-   - Allows CORS_ORIGIN allowlist if set
-   - Else allows localhost ports 5173-5185
+   CORS (LOCAL + VERCEL + CUSTOM)
+   - Uses CORS_ORIGIN allowlist if provided (comma-separated)
+   - Optional: allow any *.vercel.app with ALLOW_VERCEL_WILDCARD=true
+   - Allows localhost/127.0.0.1 ports 5173-5185
    - Handles preflight
 ========================= */
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
@@ -55,20 +47,32 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+const allowVercelWildcard = process.env.ALLOW_VERCEL_WILDCARD === "true";
+
 const corsOptions = {
   origin: (origin, cb) => {
-    // allow non-browser clients (curl/postman/server-side)
+    // allow non-browser clients
     if (!origin) return cb(null, true);
 
-    // if env list exists, use it strictly
-    if (allowedOrigins.length) {
-      return cb(null, allowedOrigins.includes(origin));
+    // explicit allowlist
+    if (allowedOrigins.length && allowedOrigins.includes(origin)) {
+      return cb(null, true);
     }
 
-    // dev: allow localhost:5173-5185
-    const m = /^http:\/\/localhost:(\d+)$/.exec(origin);
+    // optional allow any *.vercel.app
+    if (allowVercelWildcard) {
+      try {
+        const host = new URL(origin).hostname;
+        if (host.endsWith(".vercel.app")) return cb(null, true);
+      } catch {
+        // ignore parsing errors
+      }
+    }
+
+    // dev: allow localhost/127.0.0.1 ports 5173-5185
+    const m = /^http:\/\/(localhost|127\.0\.0\.1):(\d+)$/.exec(origin);
     if (m) {
-      const port = Number(m[1]);
+      const port = Number(m[2]);
       if (port >= 5173 && port <= 5185) return cb(null, true);
     }
 
@@ -80,15 +84,17 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ preflight
+app.options("*", cors(corsOptions));
 
-const PORT = Number(process.env.API_PORT || process.env.PORT || 5050);
+const PORT = Number(process.env.PORT || process.env.API_PORT || 5050);
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const isProd = process.env.NODE_ENV === "production";
 
 /* =========================
    DB (Supabase)
+   FIX: SELF_SIGNED_CERT_IN_CHAIN
+   Use rejectUnauthorized:false in production (Render+Supabase pooler)
 ========================= */
 const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!dbUrl) console.warn("⚠️ DATABASE_URL/DIRECT_URL missing in .env");
@@ -101,11 +107,14 @@ try {
 
   pool = new Pool({
     ...cfg,
-    ssl: isProd ? { rejectUnauthorized: true } : { rejectUnauthorized: false },
+    ssl: isProd ? { rejectUnauthorized: false } : false,
   });
 } catch (e) {
   console.error("❌ Failed to create DB pool:", e);
-  pool = new Pool({ connectionString: dbUrl });
+  pool = new Pool({
+    connectionString: dbUrl,
+    ssl: isProd ? { rejectUnauthorized: false } : false,
+  });
 }
 
 /* =========================
@@ -498,16 +507,11 @@ app.get(
 );
 
 /* ============================================================
-   ✅ TEMPLATE SAVE FIX (for your TemplateBuilder)
-   Adds:
-     PUT /admin/brand-templates/:id/content   (alias)
-     PUT /admin/brand-layout-templates/:id/content (main)
-   Stores as SINGLE VERSION v1 (upsert) like shared-pages.
+   TEMPLATE SAVE (TemplateBuilder)
 ============================================================ */
 async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
   const createdBy = isUuid(userId) ? userId : null;
 
-  // ensure template exists
   const t = await pool.query(
     `SELECT id FROM brand_layout_templates WHERE id = $1 LIMIT 1`,
     [templateId]
@@ -518,7 +522,6 @@ async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
     throw err;
   }
 
-  // single version row (version=1) with upsert
   const up = await pool.query(
     `
     INSERT INTO brand_layout_template_versions (template_id, version, content, created_by)
@@ -549,7 +552,6 @@ async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
   return up.rows[0];
 }
 
-// MAIN (recommended)
 app.put(
   "/admin/brand-layout-templates/:templateId/content",
   authMiddleware,
@@ -576,7 +578,6 @@ app.put(
   })
 );
 
-// ALIAS (so your existing TemplateBuilder URL works)
 app.put(
   "/admin/brand-templates/:templateId/content",
   authMiddleware,
@@ -603,68 +604,8 @@ app.put(
   })
 );
 
-// Backward compatible: old admin might still call POST /admin/layout-templates/:id/versions
-// (kept as-is, creates new versions)
-app.post(
-  "/admin/layout-templates/:templateId/versions",
-  authMiddleware,
-  wrap(async (req, res) => {
-    const { templateId } = req.params;
-    if (!isUuid(templateId))
-      return res.status(400).json({ ok: false, message: "Invalid templateId" });
-
-    const { content, status } = req.body || {};
-    if (!content || typeof content !== "object") {
-      return res
-        .status(400)
-        .json({ ok: false, message: "content (object) is required" });
-    }
-
-    const t = await pool.query(
-      `SELECT id FROM brand_layout_templates WHERE id = $1 LIMIT 1`,
-      [templateId]
-    );
-    if (!t.rows.length)
-      return res.status(404).json({ ok: false, message: "Template not found" });
-
-    const next = await pool.query(
-      `SELECT COALESCE(MAX(version), 0) + 1 AS v
-       FROM brand_layout_template_versions
-       WHERE template_id = $1`,
-      [templateId]
-    );
-    const version = Number(next.rows[0].v);
-
-    const createdBy = isUuid(req.user?.id) ? req.user.id : null;
-
-    const created = await pool.query(
-      `
-      INSERT INTO brand_layout_template_versions (template_id, version, content, created_by)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, template_id, version, created_at, created_by
-      `,
-      [templateId, version, content, createdBy]
-    );
-
-    const nextStatus = normalizeStatus(status);
-    if (nextStatus) {
-      await pool.query(
-        `UPDATE brand_layout_templates SET status = $2, updated_at = NOW() WHERE id = $1`,
-        [templateId, nextStatus]
-      );
-    } else {
-      await pool.query(
-        `UPDATE brand_layout_templates SET updated_at = NOW() WHERE id = $1`,
-        [templateId]
-      );
-    }
-
-    res.json({ ok: true, data: created.rows[0] });
-  })
-);
-
 /* =========================
-   Shared Pages (global inner pages)
+   Shared Pages
 ========================= */
 app.get(
   "/admin/shared-pages",
@@ -734,32 +675,6 @@ app.get(
   })
 );
 
-app.get(
-  "/admin/shared-pages/:pageId/versions",
-  authMiddleware,
-  wrap(async (req, res) => {
-    const { pageId } = req.params;
-    if (!isUuid(pageId))
-      return res.status(400).json({ ok: false, message: "Invalid pageId" });
-
-    const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
-
-    const { rows } = await pool.query(
-      `SELECT id, page_id, version, content, created_at, created_by
-       FROM brand_shared_page_versions
-       WHERE page_id = $1
-       ORDER BY version DESC
-       LIMIT $2`,
-      [pageId, limit]
-    );
-
-    res.json({ ok: true, data: rows });
-  })
-);
-
-/* =========================
-   ✅ SINGLE VERSION SAVE (v1) shared pages
-========================= */
 async function upsertSharedPageV1({ pageId, content, status, userId }) {
   const createdBy = isUuid(userId) ? userId : null;
 
@@ -819,118 +734,8 @@ app.put(
   })
 );
 
-app.post(
-  "/admin/shared-pages/:pageId/versions",
-  authMiddleware,
-  wrap(async (req, res) => {
-    const { pageId } = req.params;
-    if (!isUuid(pageId))
-      return res.status(400).json({ ok: false, message: "Invalid pageId" });
-
-    const { content, status } = req.body || {};
-    if (!content || typeof content !== "object") {
-      return res
-        .status(400)
-        .json({ ok: false, message: "content (object) is required" });
-    }
-
-    const saved = await upsertSharedPageV1({
-      pageId,
-      content,
-      status,
-      userId: req.user?.id,
-    });
-
-    res.json({ ok: true, data: saved });
-  })
-);
-
 /* =========================
-   Brand pages (for now same shared pages)
-========================= */
-app.get(
-  "/admin/brands/:brandId/pages",
-  authMiddleware,
-  wrap(async (req, res) => {
-    const { brandId } = req.params;
-    if (!isUuid(brandId))
-      return res.status(400).json({ ok: false, message: "Invalid brandId" });
-
-    const { rows } = await pool.query(
-      `SELECT id, slug, title, status, updated_at as "modifiedAt"
-       FROM brand_shared_pages
-       ORDER BY updated_at DESC NULLS LAST, id DESC
-       LIMIT 500`
-    );
-
-    res.json({ ok: true, data: rows });
-  })
-);
-
-/* =========================
-   PUBLIC: brand layout for frontend websites
-========================= */
-app.get(
-  "/public/brands/:slug/layout",
-  wrap(async (req, res) => {
-    const slug = String(req.params.slug || "").trim().toLowerCase();
-    if (!slug)
-      return res.status(400).json({ ok: false, message: "slug is required" });
-
-    const bq = await pool.query(
-      `SELECT id, name, slug, route
-       FROM brands
-       WHERE LOWER(slug) = $1
-       LIMIT 1`,
-      [slug]
-    );
-    if (!bq.rows.length)
-      return res.status(404).json({ ok: false, message: "Brand not found" });
-
-    const brand = bq.rows[0];
-
-    const layoutsQ = await pool.query(
-      `
-      SELECT
-        t.key,
-        v.content
-      FROM brand_layout_templates t
-      LEFT JOIN LATERAL (
-        SELECT content
-        FROM brand_layout_template_versions
-        WHERE template_id = t.id
-        ORDER BY version DESC
-        LIMIT 1
-      ) v ON true
-      WHERE t.brand_id = $1
-        AND t.key IN ('header','footer')
-      `,
-      [brand.id]
-    );
-
-    const header =
-      layoutsQ.rows.find((r) => r.key === "header")?.content || null;
-    const footer =
-      layoutsQ.rows.find((r) => r.key === "footer")?.content || null;
-
-    res.json({
-      ok: true,
-      data: {
-        brand: {
-          id: brand.id,
-          name: brand.name,
-          slug: brand.slug,
-          route: brand.route,
-        },
-        header,
-        footer,
-      },
-    });
-  })
-);
-
-/* =========================
-   PUBLIC: shared page by slug (latest version)
+   PUBLIC: shared page by slug
 ========================= */
 app.get(
   "/public/shared-pages/:slug",

@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 
 export function requireAuth(req, res, next) {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
   if (!token) {
     return res.status(401).json({ ok: false, message: "Unauthorized" });
@@ -9,9 +10,10 @@ export function requireAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.adminId = decoded.adminId;
+    req.user = decoded;
+    req.adminId = decoded.adminId || decoded.id; // support both payload styles
     next();
   } catch {
-    res.status(401).json({ ok: false, message: "Invalid token" });
+    return res.status(401).json({ ok: false, message: "Invalid token" });
   }
 }
