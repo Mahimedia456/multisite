@@ -15,6 +15,12 @@
     "dev:main": "npm run dev --workspace=apps/main",
     "dev:admin": "npm run dev --workspace=apps/admin",
     "dev:server": "npm run dev --workspace=packages/server-api",
+
+    "build:aamir": "npm run build --workspace=apps/aamir",
+    "build:umair": "npm run build --workspace=apps/umair",
+    "build:main": "npm run build --workspace=apps/main",
+    "build:admin": "npm run build --workspace=apps/admin",
+
     "dev:all": "concurrently -n aamir,umair,main,admin,server \"npm run dev:aamir\" \"npm run dev:umair\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:server\""
   },
   "devDependencies": {
