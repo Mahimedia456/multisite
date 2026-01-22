@@ -1,9 +1,4 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://multisite-server-api.onrender.com/$1"
-    },
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "source": "/api/(.*)",
+  "destination": "https://multisite-server-api.vercel.app/:path*"
 }
