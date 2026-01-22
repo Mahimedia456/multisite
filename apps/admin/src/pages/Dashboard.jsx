@@ -205,17 +205,17 @@ export default function Dashboard() {
               <div className="flex items-center gap-4 text-sm font-semibold text-gray-600">
                 <span className="inline-flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-violet-700" />
-                  Aamir
+                  
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-violet-300" />
-                  Umair
+                
                 </span>
               </div>
             }
           >
             <div className="text-sm text-violet-700 font-semibold">
-              Aamir PetCare vs Umair Trust Life
+               PetCare vs  Trust Life
             </div>
 
             <div className="mt-6 h-[280px] rounded-3xl bg-gradient-to-b from-violet-50 to-transparent border border-[#f0edf7] flex items-center justify-center text-gray-400">
@@ -252,8 +252,8 @@ export default function Dashboard() {
         <h2 className="text-xl font-extrabold text-gray-900">Tenant Status Health</h2>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <TenantCard path="/aamir" name="PetCare" active="12.4k" latency="42ms" icon="pets" />
-          <TenantCard path="/umair" name="Trust Life" active="8.9k" latency="38ms" icon="account_balance" />
+          <TenantCard path="" name="PetCare" active="12.4k" latency="42ms" icon="pets" />
+          <TenantCard path="" name="Trust Life" active="8.9k" latency="38ms" icon="account_balance" />
         </div>
       </div>
     </div>
