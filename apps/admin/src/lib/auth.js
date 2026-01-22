@@ -1,11 +1,10 @@
-// src/lib/auth.js
+// admin/src/lib/auth.js
 
 const SESSION_KEY = "session";
 
 /* =========================
    Session helpers
 ========================= */
-
 export function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -19,7 +18,7 @@ export function setSession(session) {
   try {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch {
-    // ignore storage errors
+    // ignore
   }
 }
 
@@ -34,25 +33,42 @@ export function logout() {
 /* =========================
    Small utils
 ========================= */
-
 function getApiBase() {
-  // If you set VITE_API_BASE_URL=http://localhost:5050 this works.
-  // If not set, it will fallback to same-origin "" (useful with Vite proxy).
-  return (import.meta?.env?.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+  // IMPORTANT: VITE_ vars are injected at build time in Vercel.
+  // If empty, it will fallback to same-origin (which causes /admin/login on Vercel => 405).
+  const raw = (import.meta?.env?.VITE_API_BASE_URL || "").trim();
+
+  // remove surrounding quotes if someone accidentally added
+  const unquoted = raw.replace(/^['"]|['"]$/g, "");
+
+  // remove trailing slashes
+  return unquoted.replace(/\/+$/, "");
 }
 
 function isPlainObject(v) {
   return v && typeof v === "object" && !(v instanceof FormData) && !(v instanceof Blob);
 }
 
-function safeTrim(v) {
-  return typeof v === "string" ? v.trim() : v;
+function buildUrl(path) {
+  const base = getApiBase();
+
+  // If base is empty => same-origin (bad for deployed admin).
+  // But keep fallback for local proxy setups.
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${p}`;
+}
+
+async function safeJson(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 /* =========================
    Login (Admin)
 ========================= */
-
 export async function loginApi(a = {}, b, c) {
   // Supports BOTH:
   // 1) loginApi(email, password, remember)
@@ -62,13 +78,11 @@ export async function loginApi(a = {}, b, c) {
   let password = "";
   let remember = false;
 
-  // Style 1: loginApi(email, password, remember)
   if (typeof a === "string" || typeof b === "string") {
     email = typeof a === "string" ? a : "";
     password = typeof b === "string" ? b : "";
     remember = Boolean(c);
   } else {
-    // Style 2: loginApi({ ... })
     const payload = a || {};
     const p = payload?.form ?? payload?.values ?? payload?.data ?? payload;
 
@@ -94,8 +108,7 @@ export async function loginApi(a = {}, b, c) {
   email = String(email).trim();
   password = String(password);
 
-  const base = (import.meta?.env?.VITE_API_BASE_URL || "").replace(/\/+$/, "");
-  const url = `${base}/admin/login`;
+  const url = buildUrl("/admin/login");
 
   const res = await fetch(url, {
     method: "POST",
@@ -103,10 +116,14 @@ export async function loginApi(a = {}, b, c) {
     body: JSON.stringify({ email, password, remember }),
   });
 
-  const data = await res.json().catch(() => ({}));
+  const data = await safeJson(res);
 
   if (!res.ok) {
-    throw new Error(data?.message || data?.error || `Login failed (${res.status})`);
+    const msg =
+      data?.message ||
+      data?.error ||
+      `Login failed (${res.status})`;
+    throw new Error(msg);
   }
 
   const session = {
@@ -120,10 +137,10 @@ export async function loginApi(a = {}, b, c) {
   setSession(session);
   return { ok: true, data: session };
 }
+
 /* =========================
    Authenticated API Fetch
 ========================= */
-
 export async function apiFetch(path, options = {}) {
   const session = getSession();
 
@@ -134,42 +151,34 @@ export async function apiFetch(path, options = {}) {
     session?.data?.access_token;
 
   const headers = new Headers(options.headers || {});
-
-  // Set JSON content-type if body is plain object OR stringifying is needed
   const hasBody = options.body !== undefined && options.body !== null;
 
   let body = options.body;
 
-  // If body is a plain object, stringify it (common bug)
   if (hasBody && isPlainObject(body)) {
     if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     body = JSON.stringify(body);
-  } else {
-    // If body exists and is not FormData, ensure JSON header if not already set
-    if (
-      hasBody &&
-      !(body instanceof FormData) &&
-      !headers.has("Content-Type") &&
-      typeof body === "string"
-    ) {
-      headers.set("Content-Type", "application/json");
-    }
+  } else if (
+    hasBody &&
+    !(body instanceof FormData) &&
+    !headers.has("Content-Type") &&
+    typeof body === "string"
+  ) {
+    headers.set("Content-Type", "application/json");
   }
 
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const base = getApiBase();
-  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = buildUrl(path);
 
   const res = await fetch(url, {
     ...options,
-    body,
     headers,
+    body,
   });
 
-  // Auto logout on auth failure
   if (res.status === 401 || res.status === 403) {
     logout();
     throw new Error("Session expired. Please login again.");
