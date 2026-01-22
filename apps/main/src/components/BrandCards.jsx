@@ -6,7 +6,7 @@ const CARDS = [
     icon: "pets",
     desc:
       "Comprehensive health and wellness protection for your companions. Tailored plans that evolve as they do.",
-    href: "https://multisite-aamir.vercel.app/",
+    href: "https://pet-tau-ecru.vercel.app/",
   },
   {
     id: "umair",
@@ -14,7 +14,7 @@ const CARDS = [
     icon: "family_restroom",
     desc:
       "Securing your family's future through generational wealth protection and comprehensive life coverage.",
-    href: "https://multisite-aamir.vercel.app/",
+    href: "https://trustlife-ten.vercel.app/",
   },
 ];
 

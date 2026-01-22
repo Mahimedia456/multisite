@@ -1,8 +1,10 @@
 // apps/aamir/src/hooks/useSharedPage.js
 import { useEffect, useState } from "react";
 
-const API_BASE = ""; // ✅ vite proxy use ho rahi hai
-
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : ""))
+    .replace(/\/+$/, "");
+    
 export function useSharedPage(slug) {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);

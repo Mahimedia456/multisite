@@ -434,6 +434,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // ✅ preflight
+app.use((req, res, next) => {
+  if (req.path.startsWith("/public/")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+  }
+  next();
+});
+
 
 const PORT = Number(process.env.PORT || process.env.API_PORT || 5050);
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
