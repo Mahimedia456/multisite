@@ -47,6 +47,8 @@ function getApiBaseStrict() {
 
   return base;
 }
+console.log("ENV CHECK:", import.meta.env.VITE_API_BASE_URL);
+console.log("ALL ENV KEYS:", Object.keys(import.meta.env));
 
 function isPlainObject(v) {
   return v && typeof v === "object" && !(v instanceof FormData) && !(v instanceof Blob);
