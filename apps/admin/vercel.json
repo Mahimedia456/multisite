@@ -1,9 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/admin/(.*)",
-      "destination": "https://multisite-server-api.onrender.com/admin/$1"
-    },
-    { "source": "/(.*)", "destination": "/" }
+      "source": "/api/:path*",
+      "destination": "https://multisite-server-api.onrender.com/:path*"
+    }
   ]
 }
