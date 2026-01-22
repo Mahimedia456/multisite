@@ -6,7 +6,7 @@ const CARDS = [
     icon: "pets",
     desc:
       "Comprehensive health and wellness protection for your companions. Tailored plans that evolve as they do.",
-    href: "https://pet-tau-ecru.vercel.app/",
+    href: "https://petcare-azure.vercel.app/",
   },
   {
     id: "umair",
