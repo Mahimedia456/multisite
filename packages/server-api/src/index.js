@@ -1,12 +1,9 @@
-// server-api/index.js
-// ✅ Full updated file
-// - CORS fixed (localhost ports + env allowlist) + preflight
-// - Adds missing endpoint for TemplateBuilder saving:
-//   PUT /admin/brand-templates/:templateId/content  (alias)
-//   PUT /admin/brand-layout-templates/:templateId/content (main)
-//   (both use SINGLE VERSION v1 upsert like shared-pages, no new versions)
-// - Adds support for uploading/saving images as URLs in JSON (content object is stored as JSONB as-is)
-// - Adds /public/brand-assets/:path proxy (optional) to avoid CORS when loading images from a different origin
+// packages/server-api/src/index.js
+// ✅ FULL UPDATED FILE (NO MISSING APIS)
+// - CORS: allowlist via CORS_ORIGIN + optional *.vercel.app wildcard + localhost/127.0.0.1 ports
+// - Preflight enabled
+// - Supabase/Render SSL fix: rejectUnauthorized:false in production
+// - Includes ALL APIs you posted (no missing shared-pages versions, layout versions, template save alias, etc.)
 
 import express from "express";
 import cors from "cors";
@@ -15,8 +12,27 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Pool } from "pg";
 import { parse } from "pg-connection-string";
+import { createClient } from "@supabase/supabase-js";
+import fetch from "node-fetch";
+import crypto from "crypto";
 
 dotenv.config();
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "multisite";
+
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
+
+function isRemoteHttpUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url);
+}
+
+function isAlreadySupabaseStorageUrl(url) {
+  return typeof url === "string" && url.includes(".supabase.co/storage/v1/object/");
+}
 
 const app = express();
 app.use(express.json({ limit: "10mb" })); // allow bigger JSON (image urls/arrays)
@@ -43,13 +59,140 @@ function normalizeStatus(s) {
   if (v === "draft" || v === "inactive") return "DRAFT";
   return v.toUpperCase();
 }
+async function downloadToBuffer(url) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Failed to download ${url} (${resp.status})`);
+  const contentType = resp.headers.get("content-type") || "application/octet-stream";
+  const arrayBuffer = await resp.arrayBuffer();
+  return { buffer: Buffer.from(arrayBuffer), contentType };
+}
 
-/* =========================
-   CORS (FIXED)
-   - Allows CORS_ORIGIN allowlist if set
-   - Else allows localhost ports 5173-5185
-   - Handles preflight
-========================= */
+function guessExtFromContentType(contentType) {
+  const ct = (contentType || "").toLowerCase();
+  if (ct.includes("png")) return "png";
+  if (ct.includes("jpeg") || ct.includes("jpg")) return "jpg";
+  if (ct.includes("webp")) return "webp";
+  if (ct.includes("gif")) return "gif";
+  if (ct.includes("svg")) return "svg";
+  return "bin";
+}
+
+async function migrateImagesInJson({
+  json,
+  prefix = "shared-pages",
+  pageKey = "unknown",
+}) {
+  if (!supabaseAdmin) throw new Error("Supabase client not configured");
+
+  const replacements = [];
+
+  async function handleUrl(originalUrl, suggestedKey) {
+    if (!isRemoteHttpUrl(originalUrl)) return originalUrl;
+    if (isAlreadySupabaseStorageUrl(originalUrl)) return originalUrl;
+
+    // stable filename
+    const hash = crypto.createHash("sha1").update(originalUrl).digest("hex").slice(0, 12);
+
+    const { buffer, contentType } = await downloadToBuffer(originalUrl);
+    const ext = guessExtFromContentType(contentType);
+
+    const safeKey = String(suggestedKey || `asset.${hash}`).replace(/[^a-z0-9.\-_]/gi, "_");
+    const path = `${prefix}/${pageKey}/${safeKey}.${ext}`;
+
+    const { error } = await supabaseAdmin.storage
+      .from(SUPABASE_BUCKET)
+      .upload(path, buffer, {
+        contentType,
+        upsert: true,
+        cacheControl: "3600",
+      });
+
+    if (error) throw new Error(`Supabase upload failed: ${error.message}`);
+
+    const { data } = supabaseAdmin.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
+    const publicUrl = data?.publicUrl;
+
+    replacements.push({ from: originalUrl, to: publicUrl });
+    return publicUrl;
+  }
+
+  async function walk(node, ctxKey = null) {
+    if (Array.isArray(node)) {
+      for (let i = 0; i < node.length; i++) node[i] = await walk(node[i], ctxKey);
+      return node;
+    }
+
+    if (node && typeof node === "object") {
+      // common pattern: { url, assetKey }
+      if (typeof node.url === "string" && isRemoteHttpUrl(node.url)) {
+        node.url = await handleUrl(node.url, node.assetKey || ctxKey);
+      }
+
+      for (const k of Object.keys(node)) {
+        node[k] = await walk(node[k], node.assetKey || k);
+      }
+      return node;
+    }
+
+    if (typeof node === "string" && isRemoteHttpUrl(node)) {
+      return await handleUrl(node, ctxKey);
+    }
+
+    return node;
+  }
+
+  const cloned = JSON.parse(JSON.stringify(json));
+  const updatedJson = await walk(cloned);
+
+  return { updatedJson, replacements };
+}
+app.post(
+  "/admin/shared-pages/:pageId/migrate-assets",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const { pageId } = req.params;
+    if (!isUuid(pageId)) {
+      return res.status(400).json({ ok: false, message: "Invalid pageId" });
+    }
+
+    const latestQ = await pool.query(
+      `SELECT id, page_id, version, content
+       FROM brand_shared_page_versions
+       WHERE page_id = $1
+       ORDER BY version DESC
+       LIMIT 1`,
+      [pageId]
+    );
+
+    if (!latestQ.rows.length) {
+      return res.status(404).json({ ok: false, message: "No versions found" });
+    }
+
+    const row = latestQ.rows[0];
+
+    const { updatedJson, replacements } = await migrateImagesInJson({
+      json: row.content,
+      prefix: "shared-pages",
+      pageKey: pageId,
+    });
+
+    await pool.query(
+      `UPDATE brand_shared_page_versions
+       SET content = $2, created_at = NOW()
+       WHERE id = $1`,
+      [row.id, updatedJson]
+    );
+
+    res.json({
+      ok: true,
+      updatedVersionId: row.id,
+      updatedVersion: row.version,
+      replacementsCount: replacements.length,
+      replacements,
+    });
+  })
+);
+
 /* =========================
    CORS (LOCAL + VERCEL + CUSTOM)
    - Uses CORS_ORIGIN allowlist if provided (comma-separated)
@@ -80,7 +223,7 @@ const corsOptions = {
         const host = new URL(origin).hostname;
         if (host.endsWith(".vercel.app")) return cb(null, true);
       } catch {
-        // ignore URL parsing errors
+        // ignore parsing errors
       }
     }
 
@@ -101,13 +244,14 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // ✅ preflight
 
-const PORT = Number(process.env.API_PORT || process.env.PORT || 5050);
+const PORT = Number(process.env.PORT || process.env.API_PORT || 5050);
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const isProd = process.env.NODE_ENV === "production";
 
 /* =========================
    DB (Supabase)
+   FIX: Render/Supabase pooler SSL chain issues
 ========================= */
 const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!dbUrl) console.warn("⚠️ DATABASE_URL/DIRECT_URL missing in .env");
@@ -124,7 +268,10 @@ try {
   });
 } catch (e) {
   console.error("❌ Failed to create DB pool:", e);
-  pool = new Pool({ connectionString: dbUrl });
+  pool = new Pool({
+    connectionString: dbUrl,
+    ssl: isProd ? { rejectUnauthorized: false } : false,
+  });
 }
 
 /* =========================
@@ -517,11 +664,11 @@ app.get(
 );
 
 /* ============================================================
-   ✅ TEMPLATE SAVE FIX (for your TemplateBuilder)
+   ✅ TEMPLATE SAVE FIX (TemplateBuilder)
    Adds:
-     PUT /admin/brand-templates/:id/content   (alias)
      PUT /admin/brand-layout-templates/:id/content (main)
-   Stores as SINGLE VERSION v1 (upsert) like shared-pages.
+     PUT /admin/brand-templates/:id/content        (alias)
+   Stores as SINGLE VERSION v1 (upsert)
 ============================================================ */
 async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
   const createdBy = isUuid(userId) ? userId : null;
@@ -595,7 +742,7 @@ app.put(
   })
 );
 
-// ALIAS (so your existing TemplateBuilder URL works)
+// ALIAS (so existing TemplateBuilder URL works)
 app.put(
   "/admin/brand-templates/:templateId/content",
   authMiddleware,
@@ -732,7 +879,9 @@ app.get(
       [pageId]
     );
     if (!pageQ.rows.length)
-      return res.status(404).json({ ok: false, message: "Shared page not found" });
+      return res
+        .status(404)
+        .json({ ok: false, message: "Shared page not found" });
 
     const latestQ = await pool.query(
       `SELECT id, page_id, version, content, created_at, created_by
