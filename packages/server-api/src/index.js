@@ -51,7 +51,7 @@ async function migrateJsonImagesToBucket({ json, folder = "shared-pages", pageKe
   const replacements = [];
   const seen = new Map(); // url -> newUrl
 
- async function uploadOne(remoteUrl, assetKeyHint) {
+async function uploadOne(remoteUrl, assetKeyHint) {
   try {
     if (!isRemoteHttpUrl(remoteUrl)) return remoteUrl;
     if (isAlreadySupabaseStorageUrl(remoteUrl)) return remoteUrl;
@@ -60,29 +60,63 @@ async function migrateJsonImagesToBucket({ json, folder = "shared-pages", pageKe
     const resp = await fetch(remoteUrl, { redirect: "follow" });
     if (!resp.ok) return remoteUrl;
 
-    const contentType = resp.headers.get("content-type") || "application/octet-stream";
+    const contentType =
+      resp.headers.get("content-type") || "application/octet-stream";
     const arrayBuf = await resp.arrayBuffer();
     const buffer = Buffer.from(arrayBuf);
 
-    // ... ext + path build ...
+    // ext
+    let ext = "bin";
+    const ct = contentType.toLowerCase();
+    if (ct.includes("jpeg") || ct.includes("jpg")) ext = "jpg";
+    else if (ct.includes("png")) ext = "png";
+    else if (ct.includes("webp")) ext = "webp";
+    else if (ct.includes("gif")) ext = "gif";
+    else if (ct.includes("svg")) ext = "svg";
+
+    // stable filename
+    const hash = crypto
+      .createHash("sha1")
+      .update(remoteUrl)
+      .digest("hex")
+      .slice(0, 16);
+
+    const safeAsset = String(assetKeyHint || "")
+      .replace(/[^a-z0-9._-]/gi, "_")
+      .slice(0, 80);
+
+    const fileName = safeAsset ? `${safeAsset}.${hash}.${ext}` : `${hash}.${ext}`;
+    const path = `${folder}/${pageKey}/${fileName}`;
 
     const { error: upErr } = await supabaseAdmin.storage
       .from(SUPABASE_BUCKET)
-      .upload(path, buffer, { contentType, upsert: true, cacheControl: "3600" });
+      .upload(path, buffer, {
+        contentType,
+        upsert: true,
+        cacheControl: "3600",
+      });
 
-    if (upErr) return remoteUrl;
+    if (upErr) {
+      console.error("Supabase upload error:", upErr.message);
+      return remoteUrl;
+    }
 
-    const { data } = supabaseAdmin.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
+    const { data } = supabaseAdmin.storage
+      .from(SUPABASE_BUCKET)
+      .getPublicUrl(path);
+
     const newUrl = data?.publicUrl || remoteUrl;
 
     seen.set(remoteUrl, newUrl);
     replacements.push({ from: remoteUrl, to: newUrl, path });
+
     return newUrl;
   } catch (e) {
     console.error("uploadOne failed:", e?.message);
     return remoteUrl;
   }
 }
+
 
 
   async function walk(node) {
