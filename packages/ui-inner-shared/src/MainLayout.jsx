@@ -1,33 +1,42 @@
+// apps/aamir/src/TeamLayout.jsx (or layouts/TeamLayout.jsx)
 import { useEffect, useMemo, useState } from "react";
 import { getTenantConfig } from "@multisite/sdk";
 import { useSharedPage } from "./hooks/useSharedPage";
 
-// home sections (make them accept props from DB)
 import Header from "./sections/Header";
 import SubNav from "./sections/SubNav";
-import SplitHero from "./sections/SplitHero";
-import BrandCards from "./sections/BrandCards";
-import TrustStats from "./sections/TrustStats";
-import Experience from "./sections/Experience";
 import Footer from "./sections/Footer";
 
-const HOME_SECTION_MAP = {
-  SplitHero,
-  BrandCards,
-  TrustStats,
-  Experience,
+// ✅ TEAM sections
+import TeamHero from "./sections/team/Hero";
+import TeamIntro from "./sections/team/Intro";
+import TeamGrid from "./sections/team/TeamGrid";
+import TeamGallery from "./sections/team/Gallery";
+import TeamBenefits from "./sections/team/Benefits";
+import TeamCareerCTA from "./sections/team/CareerCTA";
+
+const TEAM_SECTION_MAP = {
+  Hero: TeamHero,
+  Intro: TeamIntro,
+  TeamGrid,
+  Gallery: TeamGallery,
+  Benefits: TeamBenefits,
+  CareerCTA: TeamCareerCTA,
 };
 
-export default function MainLayout({ tenant = "main" }) {
+export default function TeamLayout({ tenant = "main" }) {
   const [config, setConfig] = useState(null);
 
   useEffect(() => {
     getTenantConfig(tenant).then(setConfig);
   }, [tenant]);
 
-  // ✅ slug "home" (DB me create karo)
-  const { content, loading } = useSharedPage("home");
-  const sections = useMemo(() => (Array.isArray(content?.sections) ? content.sections : []), [content]);
+  // ✅ slug "team"
+  const { content, loading } = useSharedPage("team");
+  const sections = useMemo(
+    () => (Array.isArray(content?.sections) ? content.sections : []),
+    [content]
+  );
 
   if (!config) return null;
   if (loading) return null;
@@ -40,9 +49,9 @@ export default function MainLayout({ tenant = "main" }) {
       <Header config={config} />
       <SubNav />
 
-      <main>
+      <main className="max-w-7xl mx-auto px-6 space-y-24 py-16">
         {sections.map((s, i) => {
-          const Comp = HOME_SECTION_MAP[s?.type];
+          const Comp = TEAM_SECTION_MAP[s?.type];
           if (!Comp) return null;
           return <Comp key={i} {...(s?.props || {})} tenantConfig={config} />;
         })}

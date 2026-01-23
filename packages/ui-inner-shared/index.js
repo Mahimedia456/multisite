@@ -1,7 +1,8 @@
 export { default as AboutPage } from "./src/pages/AboutPage.jsx";
 export { default as SiteHeader } from "./src/ui/SiteHeader.jsx";
 export { default as SiteFooter } from "./src/ui/SiteFooter.jsx";
-
+export { default as TeamPage } from "./src/pages/TeamPage.jsx";
+export { default as CareerPage } from "./src/pages/CareerPage.jsx";
 // (optional) export about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";
 export { default as SubTabs } from "./src/sections/about/SubTabs.jsx";
