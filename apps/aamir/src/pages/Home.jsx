@@ -9,13 +9,13 @@ import Footer from "../components/Footer";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background-light text-[#121716] font-display overflow-x-hidden antialiased">
-      <Header />
+      <Header brandSlug="aamir" />
       <Hero />
       <HowItWorks />
       <WhyChoose />
       <Testimonials />
       <BottomCTA />
-      <Footer brandSlug="aamir" /> {/* ✅ SAME BRAND */}
+      <Footer brandSlug="aamir" />
     </div>
   );
 }
