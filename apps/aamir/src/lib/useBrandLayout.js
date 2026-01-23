@@ -16,9 +16,34 @@ export function useBrandLayout(slug) {
       setErr("");
 
       try {
+        if (!slug) {
+          if (!cancelled) {
+            setHeader(null);
+            setFooter(null);
+            setLoading(false);
+          }
+          return;
+        }
+
         const url = `${API_BASE}/public/brands/${encodeURIComponent(slug)}/layout?t=${Date.now()}`;
-const res = await fetch(url, { cache: "no-store" });
+
+        const res = await fetch(url, {
+          cache: "no-store",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
         const json = await res.json().catch(() => null);
+
+        // ✅ DEBUG (json yahin defined hai)
+        console.log("[useBrandLayout]", {
+          slug,
+          url,
+          status: res.status,
+          ok: res.ok,
+          json,
+        });
 
         if (!res.ok || !json?.ok) {
           throw new Error(json?.message || `Failed to load layout (${res.status})`);
@@ -29,6 +54,8 @@ const res = await fetch(url, { cache: "no-store" });
           setFooter(json?.data?.footer || null);
         }
       } catch (e) {
+        console.error("[useBrandLayout] error:", e);
+
         if (!cancelled) {
           setHeader(null);
           setFooter(null);
@@ -39,7 +66,7 @@ const res = await fetch(url, { cache: "no-store" });
       }
     }
 
-    if (slug) load();
+    load();
 
     return () => {
       cancelled = true;
