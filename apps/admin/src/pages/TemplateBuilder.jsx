@@ -471,18 +471,422 @@ export default function TemplateBuilder() {
             ) : null}
 
             {/* Footer Editor */}
-            {isFooter ? (
-              <>
-                <TextArea
-                  label="Description"
-                  value={data.description || ""}
-                  onChange={(v) => setData((d) => ({ ...d, description: v }))}
-                  placeholder="Short footer description..."
-                  rows={4}
+          {/* Footer Editor */}
+{isFooter ? (
+  <>
+    <TextArea
+      label="Footer Description (optional)"
+      value={data.description || ""}
+      onChange={(v) => setData((d) => ({ ...d, description: v }))}
+      placeholder="(optional)"
+      rows={3}
+    />
+
+    {/* SOCIALS */}
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-extrabold tracking-widest text-zinc-400">
+          SOCIALS
+        </div>
+        <button
+          type="button"
+          onClick={() =>
+            setData((d) => ({
+              ...d,
+              socials: [...(d.socials || []), { label: "new", href: "#" }],
+            }))
+          }
+          className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+        >
+          <MIcon name="add" className="text-[16px]" />
+          Add
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-3">
+        {(Array.isArray(data.socials) ? data.socials : []).map((s, idx) => (
+          <div key={idx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                SOCIAL #{idx + 1}
+              </div>
+              <RowActions
+                onUp={() =>
+                  idx > 0 &&
+                  setData((d) => ({ ...d, socials: move(d.socials || [], idx, idx - 1) }))
+                }
+                onDown={() =>
+                  idx < (data.socials || []).length - 1 &&
+                  setData((d) => ({ ...d, socials: move(d.socials || [], idx, idx + 1) }))
+                }
+                onDelete={() =>
+                  setData((d) => ({
+                    ...d,
+                    socials: (d.socials || []).filter((_, i) => i !== idx),
+                  }))
+                }
+              />
+            </div>
+
+            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Input
+                label="Label"
+                value={s.label || ""}
+                onChange={(v) =>
+                  setData((d) => ({
+                    ...d,
+                    socials: (d.socials || []).map((x, i) => (i === idx ? { ...x, label: v } : x)),
+                  }))
+                }
+              />
+              <Input
+                label="URL"
+                value={s.href || ""}
+                onChange={(v) =>
+                  setData((d) => ({
+                    ...d,
+                    socials: (d.socials || []).map((x, i) => (i === idx ? { ...x, href: v } : x)),
+                  }))
+                }
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* COLUMNS / SECTIONS */}
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-extrabold tracking-widest text-zinc-400">
+          COLUMNS / SECTIONS
+        </div>
+        <button
+          type="button"
+          onClick={() =>
+            setData((d) => ({
+              ...d,
+              columns: [
+                ...(d.columns || []),
+                { title: "NEW SECTION", links: [{ label: "New Link", href: "#" }] },
+              ],
+            }))
+          }
+          className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+        >
+          <MIcon name="add" className="text-[16px]" />
+          Add
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-4">
+        {(Array.isArray(data.columns) ? data.columns : []).map((col, cIdx) => {
+          const colLinks = Array.isArray(col.links) ? col.links : [];
+          const hasCta = !!col.cta;
+          const hasRating = !!col.rating;
+
+          return (
+            <div key={cIdx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                  SECTION #{cIdx + 1}
+                </div>
+                <RowActions
+                  onUp={() =>
+                    cIdx > 0 && setData((d) => ({ ...d, columns: move(d.columns || [], cIdx, cIdx - 1) }))
+                  }
+                  onDown={() =>
+                    cIdx < (data.columns || []).length - 1 &&
+                    setData((d) => ({ ...d, columns: move(d.columns || [], cIdx, cIdx + 1) }))
+                  }
+                  onDelete={() =>
+                    setData((d) => ({
+                      ...d,
+                      columns: (d.columns || []).filter((_, i) => i !== cIdx),
+                    }))
+                  }
                 />
-                {/* (rest of footer editor unchanged from your file) */}
-              </>
-            ) : null}
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Input
+                  label="Title"
+                  value={col.title || ""}
+                  onChange={(v) =>
+                    setData((d) => ({
+                      ...d,
+                      columns: (d.columns || []).map((x, i) => (i === cIdx ? { ...x, title: v } : x)),
+                    }))
+                  }
+                />
+                <Input
+                  label="(optional) type"
+                  value={col.type || ""}
+                  onChange={(v) =>
+                    setData((d) => ({
+                      ...d,
+                      columns: (d.columns || []).map((x, i) => (i === cIdx ? { ...x, type: v } : x)),
+                    }))
+                  }
+                  placeholder="career / rating / etc"
+                />
+              </div>
+
+              <div className="mt-3">
+                <TextArea
+                  label="(optional) Description"
+                  value={col.description || ""}
+                  onChange={(v) =>
+                    setData((d) => ({
+                      ...d,
+                      columns: (d.columns || []).map((x, i) => (i === cIdx ? { ...x, description: v } : x)),
+                    }))
+                  }
+                  rows={2}
+                  placeholder="(optional)"
+                />
+              </div>
+
+              {/* CTA */}
+              <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                    CTA (OPTIONAL)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setData((d) => ({
+                        ...d,
+                        columns: (d.columns || []).map((x, i) =>
+                          i === cIdx ? { ...x, cta: x.cta ? null : { label: "BUTTON", href: "#" } } : x
+                        ),
+                      }))
+                    }
+                    className="h-8 px-3 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-extrabold hover:bg-zinc-200 flex items-center gap-2"
+                  >
+                    <MIcon name={hasCta ? "remove" : "add"} className="text-[16px]" />
+                    {hasCta ? "Remove" : "Add"}
+                  </button>
+                </div>
+
+                {hasCta ? (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input
+                      label="CTA Label"
+                      value={col.cta?.label || ""}
+                      onChange={(v) =>
+                        setData((d) => ({
+                          ...d,
+                          columns: (d.columns || []).map((x, i) =>
+                            i === cIdx ? { ...x, cta: { ...(x.cta || {}), label: v } } : x
+                          ),
+                        }))
+                      }
+                    />
+                    <Input
+                      label="CTA Href"
+                      value={col.cta?.href || ""}
+                      onChange={(v) =>
+                        setData((d) => ({
+                          ...d,
+                          columns: (d.columns || []).map((x, i) =>
+                            i === cIdx ? { ...x, cta: { ...(x.cta || {}), href: v } } : x
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Rating */}
+              <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                    RATING (OPTIONAL)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setData((d) => ({
+                        ...d,
+                        columns: (d.columns || []).map((x, i) =>
+                          i === cIdx ? { ...x, rating: x.rating ? null : { value: "5.0", count: "400+ Reviews" } } : x
+                        ),
+                      }))
+                    }
+                    className="h-8 px-3 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-extrabold hover:bg-zinc-200 flex items-center gap-2"
+                  >
+                    <MIcon name={hasRating ? "remove" : "add"} className="text-[16px]" />
+                    {hasRating ? "Remove" : "Add"}
+                  </button>
+                </div>
+
+                {hasRating ? (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input
+                      label="Rating Value"
+                      value={col.rating?.value || ""}
+                      onChange={(v) =>
+                        setData((d) => ({
+                          ...d,
+                          columns: (d.columns || []).map((x, i) =>
+                            i === cIdx ? { ...x, rating: { ...(x.rating || {}), value: v } } : x
+                          ),
+                        }))
+                      }
+                    />
+                    <Input
+                      label="Rating Count"
+                      value={col.rating?.count || ""}
+                      onChange={(v) =>
+                        setData((d) => ({
+                          ...d,
+                          columns: (d.columns || []).map((x, i) =>
+                            i === cIdx ? { ...x, rating: { ...(x.rating || {}), count: v } } : x
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Links */}
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                    LINKS
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setData((d) => ({
+                        ...d,
+                        columns: (d.columns || []).map((x, i) =>
+                          i === cIdx
+                            ? { ...x, links: [...(x.links || []), { label: "New Link", href: "#" }] }
+                            : x
+                        ),
+                      }))
+                    }
+                    className="h-8 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+                  >
+                    <MIcon name="add" className="text-[16px]" />
+                    Add
+                  </button>
+                </div>
+
+                <div className="mt-3 space-y-3">
+                  {colLinks.map((lnk, lIdx) => (
+                    <div key={lIdx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[11px] font-extrabold tracking-widest text-zinc-400">
+                          LINK #{lIdx + 1}
+                        </div>
+                        <RowActions
+                          onUp={() =>
+                            lIdx > 0 &&
+                            setData((d) => ({
+                              ...d,
+                              columns: (d.columns || []).map((x, i) =>
+                                i === cIdx ? { ...x, links: move(x.links || [], lIdx, lIdx - 1) } : x
+                              ),
+                            }))
+                          }
+                          onDown={() =>
+                            lIdx < colLinks.length - 1 &&
+                            setData((d) => ({
+                              ...d,
+                              columns: (d.columns || []).map((x, i) =>
+                                i === cIdx ? { ...x, links: move(x.links || [], lIdx, lIdx + 1) } : x
+                              ),
+                            }))
+                          }
+                          onDelete={() =>
+                            setData((d) => ({
+                              ...d,
+                              columns: (d.columns || []).map((x, i) =>
+                                i === cIdx ? { ...x, links: (x.links || []).filter((_, ii) => ii !== lIdx) } : x
+                              ),
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <Input
+                          label="Label"
+                          value={lnk.label || ""}
+                          onChange={(v) =>
+                            setData((d) => ({
+                              ...d,
+                              columns: (d.columns || []).map((x, i) =>
+                                i === cIdx
+                                  ? { ...x, links: (x.links || []).map((z, zi) => (zi === lIdx ? { ...z, label: v } : z)) }
+                                  : x
+                              ),
+                            }))
+                          }
+                        />
+                        <Input
+                          label="Href"
+                          value={lnk.href || ""}
+                          onChange={(v) =>
+                            setData((d) => ({
+                              ...d,
+                              columns: (d.columns || []).map((x, i) =>
+                                i === cIdx
+                                  ? { ...x, links: (x.links || []).map((z, zi) => (zi === lIdx ? { ...z, href: v } : z)) }
+                                  : x
+                              ),
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Bottom bar */}
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="text-xs font-extrabold tracking-widest text-zinc-400">BOTTOM BAR</div>
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Input
+          label="Bottom Left"
+          value={data.bottomLeft || ""}
+          onChange={(v) => setData((d) => ({ ...d, bottomLeft: v }))}
+        />
+        <Input
+          label="Bottom Center"
+          value={data.bottomCenter || ""}
+          onChange={(v) => setData((d) => ({ ...d, bottomCenter: v }))}
+        />
+        <Input
+          label="Bottom Right"
+          value={data.bottomRight || ""}
+          onChange={(v) => setData((d) => ({ ...d, bottomRight: v }))}
+        />
+      </div>
+    </div>
+
+    {/* Debug JSON */}
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="text-xs font-extrabold tracking-widest text-zinc-400 mb-2">CONTENT JSON</div>
+      <pre className="text-[11px] text-zinc-700 whitespace-pre-wrap break-words">
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </div>
+  </>
+) : null}
+
           </div>
         </div>
 

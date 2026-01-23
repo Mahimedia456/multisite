@@ -11,7 +11,8 @@ export default function About() {
   const { content, loading, error } = useSharedPage("about");
 
   useEffect(() => {
-    const c = getTenantConfig("aamir");
+    // 🔑 yahan se brand / tenant decide hota hai
+    const c = getTenantConfig("petcare"); // ⬅️ CHANGE PER SITE
     if (c?.primary) {
       document.documentElement.style.setProperty("--brand", c.primary);
     }
@@ -32,7 +33,7 @@ export default function About() {
   return (
     <AboutPage
       tenantConfig={config}
-      HeaderSlot={Header}
+      HeaderSlot={() => <Header brandSlug="petcare" />} // 🔑 SAME SLUG
       FooterSlot={Footer}
       content={content}
     />

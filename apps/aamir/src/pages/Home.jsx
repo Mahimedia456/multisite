@@ -15,7 +15,7 @@ export default function Home() {
       <WhyChoose />
       <Testimonials />
       <BottomCTA />
-      <Footer />
+      <Footer brandSlug="aamir" /> {/* ✅ SAME BRAND */}
     </div>
   );
 }
