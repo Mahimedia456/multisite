@@ -59,6 +59,50 @@ function setByPath(obj, path, value) {
   return next;
 }
 
+/* =========================
+   Dynamic editor helpers
+========================= */
+function isPlainObject(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function guessKind(key, value) {
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "number") return "number";
+
+  if (typeof value === "string") {
+    const k = String(key || "").toLowerCase();
+    if (k.includes("body") || k.includes("description") || k.includes("subtitle")) return "textarea";
+    if (value.length > 120) return "textarea";
+    return "text";
+  }
+
+  if (Array.isArray(value)) return "array";
+  if (isPlainObject(value)) return "object";
+  return "text";
+}
+
+function prettyLabelFromKey(path) {
+  const last = String(path).split(".").slice(-1)[0] || "";
+  return last
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function getObjectFlavor(obj) {
+  if (!isPlainObject(obj)) return "";
+  const keys = Object.keys(obj);
+  const hasLabelHref = keys.includes("label") && keys.includes("href");
+  const hasUrlAlt = keys.includes("url") && (keys.includes("alt") || keys.includes("assetKey"));
+  if (hasLabelHref) return "button";
+  if (hasUrlAlt) return "image";
+  return "object";
+}
+
+/* =========================
+   Field UI (supports boolean/number/list)
+========================= */
 function Field({ field, value, onChange }) {
   if (field.kind === "textarea") {
     return (
@@ -74,6 +118,35 @@ function Field({ field, value, onChange }) {
     );
   }
 
+  if (field.kind === "boolean") {
+    return (
+      <label className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => onChange(e.target.checked)}
+          className="h-5 w-5 rounded border-zinc-300"
+        />
+        <span className="text-sm font-bold text-zinc-700">{field.label}</span>
+      </label>
+    );
+  }
+
+  if (field.kind === "number") {
+    return (
+      <div>
+        <label className="text-xs font-bold text-zinc-500">{field.label}</label>
+        <input
+          type="number"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
+          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+        />
+      </div>
+    );
+  }
+
+  // list of primitives
   if (field.kind === "list") {
     const list = Array.isArray(value) ? value : [];
     return (
@@ -131,142 +204,200 @@ function Field({ field, value, onChange }) {
 }
 
 /* =========================
-   Section registry (NEW about layout)
+   Dynamic editor (recursive)
+========================= */
+function DynamicEditor({ value, pathPrefix = "", onChange }) {
+  // primitives
+  if (!Array.isArray(value) && !isPlainObject(value)) {
+    const kind = guessKind(pathPrefix, value);
+    return (
+      <Field
+        field={{ label: prettyLabelFromKey(pathPrefix), kind }}
+        value={value}
+        onChange={(v) => onChange(v)}
+      />
+    );
+  }
+
+  // objects
+  if (isPlainObject(value)) {
+    const flavor = getObjectFlavor(value);
+    const title =
+      flavor === "button"
+        ? "Button"
+        : flavor === "image"
+        ? "Image"
+        : prettyLabelFromKey(pathPrefix) || "Object";
+
+    return (
+      <div className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-4">
+        <div className="text-xs font-extrabold tracking-widest text-zinc-400">{title}</div>
+
+        {Object.keys(value).map((k) => {
+          const nextPath = pathPrefix ? `${pathPrefix}.${k}` : k;
+          return (
+            <DynamicEditor
+              key={nextPath}
+              value={value[k]}
+              pathPrefix={nextPath}
+              onChange={(nextVal) => {
+                const updated = { ...(value || {}) };
+                updated[k] = nextVal;
+                onChange(updated);
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  // arrays
+  if (Array.isArray(value)) {
+    const arr = value;
+    const isPrimitiveArray = arr.every((x) => !Array.isArray(x) && !isPlainObject(x));
+
+    // array of primitives => list field
+    if (isPrimitiveArray) {
+      return (
+        <Field
+          field={{ label: prettyLabelFromKey(pathPrefix), kind: "list" }}
+          value={arr}
+          onChange={(v) => onChange(v)}
+        />
+      );
+    }
+
+    // array of objects => repeater
+    return (
+      <div className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-extrabold tracking-widest text-zinc-400">
+            {prettyLabelFromKey(pathPrefix) || "Items"}
+          </div>
+
+          <button
+            type="button"
+            className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-extrabold hover:bg-primary/15 flex items-center gap-2"
+            onClick={() => onChange([...(arr || []), {}])}
+          >
+            <MIcon name="add" className="text-[16px]" />
+            Add
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {arr.map((item, idx) => {
+            const rowTitle =
+              (isPlainObject(item) && (item.title || item.name || item.label || item.year)) || `Item ${idx + 1}`;
+
+            return (
+              <div key={idx} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-extrabold text-zinc-900 truncate">{rowTitle}</div>
+
+                  <div className="flex items-center gap-1 text-zinc-500">
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-xl hover:bg-white flex items-center justify-center"
+                      onClick={() => {
+                        if (idx === 0) return;
+                        const next = [...arr];
+                        const it = next.splice(idx, 1)[0];
+                        next.splice(idx - 1, 0, it);
+                        onChange(next);
+                      }}
+                      title="Move up"
+                    >
+                      <MIcon name="keyboard_arrow_up" className="text-[18px]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-xl hover:bg-white flex items-center justify-center"
+                      onClick={() => {
+                        if (idx === arr.length - 1) return;
+                        const next = [...arr];
+                        const it = next.splice(idx, 1)[0];
+                        next.splice(idx + 1, 0, it);
+                        onChange(next);
+                      }}
+                      title="Move down"
+                    >
+                      <MIcon name="keyboard_arrow_down" className="text-[18px]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-xl hover:bg-white flex items-center justify-center"
+                      onClick={() => onChange(arr.filter((_, i) => i !== idx))}
+                      title="Delete"
+                    >
+                      <MIcon name="delete" className="text-[18px]" />
+                    </button>
+                  </div>
+                </div>
+
+                <DynamicEditor
+                  value={item}
+                  pathPrefix={`${pathPrefix}.${idx}`}
+                  onChange={(nextItem) => {
+                    const next = [...arr];
+                    next[idx] = nextItem;
+                    onChange(next);
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+/* =========================
+   Section registry (schema-less)
+   Keep only label + defaults (optional)
 ========================= */
 const SECTION_DEFS = {
   Hero: {
     label: "Hero",
-    fields: [
-      { key: "badge.label", label: "Badge Label", kind: "text", placeholder: "Our Heart & Soul" },
-      { key: "badge.icon", label: "Badge Icon", kind: "text", placeholder: "favorite" },
-
-      { key: "title.before", label: "Title Before", kind: "text", placeholder: "Born from a Love for" },
-      { key: "title.highlight", label: "Title Highlight", kind: "text", placeholder: "Furry Family" },
-      { key: "title.after", label: "Title After", kind: "text", placeholder: "." },
-
-      { key: "description", label: "Description", kind: "textarea" },
-
-      { key: "backgroundImage.url", label: "Background Image URL", kind: "text", placeholder: "STOCK_URL_FROM_DB" },
-      { key: "backgroundImage.alt", label: "Background Image Alt", kind: "text", placeholder: "Person and pet..." },
-
-      { key: "founders.name", label: "Founders Name", kind: "text", placeholder: "Sarah & Michael Jenkins" },
-      { key: "founders.role", label: "Founders Role", kind: "text", placeholder: "Founders & Pet Parents" }
-    ],
     defaults: {
       badge: { icon: "favorite", label: "Our Heart & Soul" },
       title: { before: "Born from a Love for", highlight: "Furry Family", after: "." },
-      description:
-        "Ten years ago, we lost our first dog, Cooper, to a treatable condition because we couldn't afford the emergency surgery. That heartbreak became our mission.",
-      backgroundImage: { url: "", alt: "Person and pet in natural setting", assetKey: "about.hero.bg" },
+      description: "",
+      backgroundImage: { url: "", alt: "", assetKey: "about.hero.bg" },
       founders: {
-        name: "Sarah & Michael Jenkins",
-        role: "Founders & Pet Parents",
+        name: "",
+        role: "",
         avatars: [
-          { url: "", alt: "Founder 1", assetKey: "about.founder.1" },
-          { url: "", alt: "Founder 2", assetKey: "about.founder.2" }
+          { url: "", alt: "", assetKey: "about.founder.1" },
+          { url: "", alt: "", assetKey: "about.founder.2" }
         ]
       }
     }
   },
-
   MissionValues: {
     label: "Mission + Values",
-    fields: [
-      { key: "missionTitle", label: "Mission Title", kind: "text" },
-      { key: "missionBody", label: "Mission Body", kind: "textarea" },
-      { key: "valuesTitle", label: "Values Title", kind: "text" }
-    ],
     defaults: {
       missionTitle: "Our Mission",
-      missionBody:
-        "Our mission is to empower pet parents with the tools and financial security they need to provide the best possible care for their pets.",
+      missionBody: "",
       valuesTitle: "Our Values",
-      stats: [
-        { value: "500k+", label: "Pets Protected", variant: "primary" },
-        { value: "98%", label: "Claims Satisfied", variant: "secondary" }
-      ],
-      values: [
-        {
-          icon: "visibility",
-          title: "Total Transparency",
-          body: "No hidden fine print or confusing jargon. We tell you exactly what’s covered and what’s not, in plain English.",
-          variant: "primary"
-        },
-        {
-          icon: "volunteer_activism",
-          title: "Radical Compassion",
-          body: "We know how stressful pet emergencies are. Our support team is trained in pet grief and crisis counseling.",
-          variant: "secondary"
-        },
-        {
-          icon: "lightbulb",
-          title: "Innovation for Good",
-          body: "Using technology to pay claims faster and provide 24/7 access to world-class veterinary advice via our app.",
-          variant: "primary"
-        }
-      ]
+      stats: [],
+      values: []
     }
   },
+  Timeline: { label: "Timeline", defaults: { kicker: "", title: "", items: [] } },
+  TeamGrid: { label: "Team Grid", defaults: { title: "", subtitle: "", badgeIcon: "pets", members: [] } },
+  FinalCTA: { label: "Final CTA", defaults: { title: "", primary: { label: "", href: "" }, secondary: { label: "", href: "" } } },
 
-  Timeline: {
-    label: "Timeline",
-    fields: [
-      { key: "kicker", label: "Kicker", kind: "text", placeholder: "Our Story" },
-      { key: "title", label: "Title", kind: "text", placeholder: "Our Journey So Far" }
-    ],
-    defaults: {
-      kicker: "Our Story",
-      title: "Our Journey So Far",
-      items: [
-        {
-          year: "2014",
-          icon: "lightbulb",
-          title: "The Idea is Born",
-          body: "Sarah and Michael start brainstorming a pet-first insurance model in their garage.",
-          variant: "primary"
-        }
-      ]
-    }
-  },
-
-  TeamGrid: {
-    label: "Team Grid",
-    fields: [
-      { key: "title", label: "Title", kind: "text" },
-      { key: "subtitle", label: "Subtitle", kind: "textarea" },
-      { key: "badgeIcon", label: "Badge Icon", kind: "text" }
-    ],
-    defaults: {
-      title: "The Humans (and Pets) Behind PetGuard",
-      subtitle: "Led by a group of industry experts who all share one thing: an obsession with their pets.",
-      badgeIcon: "pets",
-      members: [
-        {
-          name: "Sarah Jenkins",
-          role: "CEO & Founder",
-          petLinePrefix: "Proud mom of",
-          petLineHighlight: "Luna (Labrador)",
-          image: { url: "", alt: "Sarah Jenkins", assetKey: "about.team.sarah" }
-        }
-      ]
-    }
-  },
-
-  FinalCTA: {
-    label: "Final CTA",
-    fields: [
-      { key: "title", label: "Title", kind: "text" },
-      { key: "primary.label", label: "Primary Label", kind: "text" },
-      { key: "primary.href", label: "Primary Href", kind: "text" },
-      { key: "secondary.label", label: "Secondary Label", kind: "text" },
-      { key: "secondary.href", label: "Secondary Href", kind: "text" }
-    ],
-    defaults: {
-      title: "Ready to protect your furry family?",
-      primary: { label: "Get a Quote", href: "/quote" },
-      secondary: { label: "See Plans", href: "/plans" }
-    }
-  }
+  // You can add more types freely:
+  Intro: { label: "Intro", defaults: { id: "", title: "", body: "" } },
+  Gallery: { label: "Gallery", defaults: { id: "", title: "", images: [] } },
+  Benefits: { label: "Benefits", defaults: { id: "", title: "", subtitle: "", items: [] } }
 };
 
 /* =========================
@@ -317,19 +448,7 @@ function PreviewRenderer({ sections }) {
     <div className="space-y-4">
       {(sections || []).map((s, i) => {
         const props = s?.props || {};
-
         if (s?.type === "Hero") return <HeroPreview key={i} {...props} />;
-
-        if (s?.type === "MissionValues" || s?.type === "Timeline" || s?.type === "TeamGrid" || s?.type === "FinalCTA") {
-          return (
-            <div key={i} className="rounded-3xl bg-white border border-zinc-200 p-6">
-              <div className="text-xs font-extrabold tracking-widest text-zinc-400">{s?.type}</div>
-              <pre className="mt-3 text-[12px] text-zinc-700 whitespace-pre-wrap break-words">
-                {JSON.stringify(props, null, 2)}
-              </pre>
-            </div>
-          );
-        }
 
         return (
           <div key={i} className="rounded-3xl bg-white border border-zinc-200 p-6">
@@ -347,7 +466,7 @@ function PreviewRenderer({ sections }) {
 }
 
 /* =========================
-   Default content (NEW about layout)
+   Default content
 ========================= */
 const DEFAULT_PAGE_CONTENT = {
   templateKey: "about-shared",
@@ -383,22 +502,10 @@ export default function BrandInnerPageDetail() {
 
   const sections = data?.sections || [];
   const selected = sections[selectedIdx] || null;
-  const selectedDef = selected ? SECTION_DEFS[selected.type] : null;
 
   /* =========================
      Helpers: sections edit
   ========================= */
-  function updateSectionProps(idx, patch) {
-    setData((d) => {
-      const next = { ...(d || {}) };
-      const arr = [...(next.sections || [])];
-      const s = arr[idx] || { type: "Hero", props: {} };
-      arr[idx] = { ...s, props: { ...(s.props || {}), ...patch } };
-      next.sections = arr;
-      return next;
-    });
-  }
-
   function setSectionType(idx, nextType) {
     const defaults = SECTION_DEFS[nextType]?.defaults || {};
     setData((d) => {
@@ -411,8 +518,7 @@ export default function BrandInnerPageDetail() {
   }
 
   function addSection(type) {
-    const def = SECTION_DEFS[type];
-    const defaults = def?.defaults || {};
+    const defaults = SECTION_DEFS[type]?.defaults || {};
     setData((d) => ({
       ...(d || {}),
       sections: [...((d && d.sections) || []), { type, props: { ...defaults } }]
@@ -457,7 +563,7 @@ export default function BrandInnerPageDetail() {
   }
 
   /* =========================
-     ✅ Save / Publish (DB direct)
+     Save / Publish (DB direct)
   ========================= */
   async function saveAndMaybePublish(nextStatus) {
     if (!pageId) return;
@@ -472,7 +578,6 @@ export default function BrandInnerPageDetail() {
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to save");
 
-      // reload page meta + latestVersion
       const res2 = await apiFetch(`/admin/shared-pages/${pageId}`);
       const j2 = await res2.json().catch(() => null);
       if (res2.ok && j2?.ok) {
@@ -486,7 +591,6 @@ export default function BrandInnerPageDetail() {
         }
       }
 
-      // reload versions list
       const v = await loadVersions(pageId);
       if (Array.isArray(v) && v.length) setActiveVersionId(v[0].id);
 
@@ -751,7 +855,7 @@ export default function BrandInnerPageDetail() {
           <div className="px-6 py-5 border-b border-zinc-200 flex items-center justify-between">
             <div>
               <div className="text-sm font-extrabold text-zinc-900">Editor</div>
-              <div className="text-xs text-zinc-500">Edit selected section fields</div>
+              <div className="text-xs text-zinc-500">Schema-less dynamic editor</div>
             </div>
 
             {selected ? (
@@ -777,30 +881,27 @@ export default function BrandInnerPageDetail() {
               <>
                 <div className="rounded-2xl border border-zinc-200 bg-white p-4">
                   <div className="text-xs font-extrabold tracking-widest text-zinc-400">
-                    EDITING: {selectedDef?.label || selected.type}
+                    EDITING: {SECTION_DEFS[selected.type]?.label || selected.type}
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-1">
                     section #{selectedIdx + 1} • type: <span className="font-mono">{selected.type}</span>
                   </div>
                 </div>
 
-                {(selectedDef?.fields || []).map((f) => (
-                  <Field
-                    key={f.key}
-                    field={f}
-                    value={getByPath(selected.props, f.key)}
-                    onChange={(val) =>
-                      setData((d) => {
-                        const next = { ...(d || {}) };
-                        const arr = [...(next.sections || [])];
-                        const s = arr[selectedIdx] || { type: "Hero", props: {} };
-                        arr[selectedIdx] = { ...s, props: setByPath(s.props || {}, f.key, val) };
-                        next.sections = arr;
-                        return next;
-                      })
-                    }
-                  />
-                ))}
+                <DynamicEditor
+                  value={selected.props || {}}
+                  pathPrefix=""
+                  onChange={(nextProps) =>
+                    setData((d) => {
+                      const next = { ...(d || {}) };
+                      const arr = [...(next.sections || [])];
+                      const s = arr[selectedIdx] || { type: "Hero", props: {} };
+                      arr[selectedIdx] = { ...s, props: nextProps };
+                      next.sections = arr;
+                      return next;
+                    })
+                  }
+                />
               </>
             )}
           </div>
