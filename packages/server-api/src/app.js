@@ -679,12 +679,12 @@ app.get(
         v.content
       FROM brand_layout_templates t
       LEFT JOIN LATERAL (
-  SELECT id, version, created_at, content
-  FROM brand_layout_template_versions
-  WHERE template_id = t.id
-    AND version = 1
-  LIMIT 1
-) v ON true
+        SELECT id, version, created_at, content
+        FROM brand_layout_template_versions
+        WHERE template_id = t.id
+        ORDER BY version DESC
+        LIMIT 1
+      ) v ON true
       WHERE t.brand_id = $1
         AND t.key IN ('header','footer')
       ORDER BY t.key ASC
@@ -1273,12 +1273,12 @@ app.get(
         v.content
       FROM brand_layout_templates t
       LEFT JOIN LATERAL (
-  SELECT content
-  FROM brand_layout_template_versions
-  WHERE template_id = t.id
-    AND version = 1
-  LIMIT 1
-) v ON true
+        SELECT content
+        FROM brand_layout_template_versions
+        WHERE template_id = t.id
+        ORDER BY version DESC
+        LIMIT 1
+      ) v ON true
       WHERE t.brand_id = $1
         AND t.key IN ('header','footer')
       `,
