@@ -9,6 +9,10 @@
     @apply bg-gradient-to-r from-violet-600 to-violet-700;
   }
 
+  .select.h-10.rounded-xl.border.border-zinc-200.bg-zinc-50.px-3.text-sm.outline-none {
+  display: none !important;
+}
+
   /* hover:bg-primary/90 becomes hover gradient brightness */
   .hover\:bg-primary\/90:hover {
     @apply brightness-110;
