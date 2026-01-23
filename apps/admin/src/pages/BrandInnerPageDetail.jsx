@@ -719,7 +719,7 @@ export default function BrandInnerPageDetail() {
       </div>
 
       {/* Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-[320px,540px,1fr] gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[320px,1fr] gap-6">
         {/* Left */}
         <div className="space-y-6">
           {/* Versions */}
@@ -858,20 +858,7 @@ export default function BrandInnerPageDetail() {
               <div className="text-xs text-zinc-500">Schema-less dynamic editor</div>
             </div>
 
-            {selected ? (
-              <select
-                value={selected.type}
-                onChange={(e) => setSectionType(selectedIdx, e.target.value)}
-                className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none"
-                title="Change section type"
-              >
-                {Object.keys(SECTION_DEFS).map((k) => (
-                  <option key={k} value={k}>
-                    {SECTION_DEFS[k].label}
-                  </option>
-                ))}
-              </select>
-            ) : null}
+            
           </div>
 
           <div className="p-5 space-y-5">
@@ -908,7 +895,7 @@ export default function BrandInnerPageDetail() {
         </div>
 
         {/* Right */}
-        <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
+        {/* <div className="rounded-3xl bg-white/80 border border-zinc-200 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-zinc-200">
             <div className="text-sm font-extrabold text-zinc-900">Preview</div>
             <div className="text-xs text-zinc-500">Live preview (wireframe)</div>
@@ -925,7 +912,7 @@ export default function BrandInnerPageDetail() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Add Section Modal */}
