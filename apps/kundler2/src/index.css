@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   Kundler2 Brand Tokens
+   (Tailwind reads these via rgb(var(--...)))
+========================= */
+:root{
+  --primary: 245 196 0;        /* #f5c400 */
+  --primary-dark: 214 171 0;   /* darker yellow */
+  --accent: 245 196 0;
+
+  --bg-light: 246 247 248;     /* #f6f7f8 */
+  --bg-dark: 7 10 13;          /* #070A0D */
+}
+
+/* Base typography + smooth rendering */
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  color: #0b0f12;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Nice selection */
+::selection {
+  background: rgba(245, 196, 0, 0.35);
+}
+
+/* Prevent horizontal scroll from wide cards */
+#root {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* Optional: consistent focus ring */
+:focus-visible {
+  outline: 2px solid rgba(245, 196, 0, 0.9);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
