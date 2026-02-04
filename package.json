@@ -15,10 +15,9 @@
     "dev:umair": "npm run dev --workspace=apps/umair",
     "dev:main": "npm run dev --workspace=apps/main",
     "dev:admin": "npm run dev --workspace=apps/admin",
-    "dev:kundler2": "npm run dev --workspace=apps/kundler2",
     "dev:server": "npm run dev --workspace=packages/server-api",
 
-    "build": "npm run build:kundler2",
+    "dev:kundler2": "npm run dev --workspace=apps/kundler2",
 
     "build:aamir": "npm run build --workspace=apps/aamir",
     "build:umair": "npm run build --workspace=apps/umair",
@@ -26,7 +25,9 @@
     "build:admin": "npm run build --workspace=apps/admin",
     "build:kundler2": "npm run build --workspace=apps/kundler2",
 
-    "dev:all": "concurrently -n aamir,umair,main,admin,kundler2,server \"npm run dev:aamir\" \"npm run dev:umair\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:kundler2\" \"npm run dev:server\""
+    "build": "npm run build:kundler2",
+
+    "dev:all": "concurrently -n aamir,umair,main,admin,server \"npm run dev:aamir\" \"npm run dev:umair\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:server\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
