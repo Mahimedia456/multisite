@@ -1,0 +1,24 @@
+/* ONLY Allianz 3 header fixes */
+.brand-allianz3 nav {
+  font-size: 14px;
+}
+
+.brand-allianz3 nav .md\:flex {
+  gap: 2.5rem; /* links ke darmiyan space */
+}
+
+/* prevent words sticking together */
+.brand-allianz3 nav a {
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* optional: slightly reduce font-weight */
+.brand-allianz3 nav a {
+  font-weight: 500;
+}
+
+/* long german words safety */
+.brand-allianz3 nav {
+  word-spacing: 0.2em;
+}

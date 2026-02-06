@@ -10,6 +10,8 @@ const nav = [
   { to: "/brand-inner-pages", label: "Brand Inner Pages", icon: "description" },
 
   { to: "/site", label: "Main Website", icon: "language" },
+  // ✅ NEW: Generate Brand
+  { to: "/admin/generate-brand", label: "Generate Brand", icon: "auto_awesome" },
 ];
 
 export default function AdminSidebar() {

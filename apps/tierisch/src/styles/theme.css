@@ -1,0 +1,11 @@
+:root{
+  --brand: #00938F;
+  --brand-2: #007C79;
+  --bg: #F6F8FB;
+  --text: #0f172a;
+}
+
+body{
+  background: var(--bg);
+  color: var(--text);
+}

@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Clean scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ---------------------------------------
+   Global Theme Tokens (simple + flat)
+---------------------------------------- */
+:root{
+  --primary: 14 116 144;      /* default (other brands) */
+  --primary-dark: 13 98 122;
+
+  --background: 246 248 251;
+  --foreground: 15 23 42;
+}
+
+/* Tailwind hooks (used by shared header + buttons) */
+.bg-primary { background-color: rgb(var(--primary)); }
+.hover\:bg-primary-dark:hover { background-color: rgb(var(--primary-dark)); }
+.text-primary { color: rgb(var(--primary)); }
+.bg-primary\/10 { background-color: rgba(var(--primary), .10); }
+.shadow-primary\/20 { box-shadow: 0 10px 25px rgba(var(--primary), .20); }
+
+/* Base page */
+body{
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+}
+
+/* ---------------------------------------
+   Brand overrides (SIMPLE)
+---------------------------------------- */
+
+/* Allianz 3 → PURE BLACK */
+body[data-brand="allianz3"]{
+  --primary: 0 0 0;
+  --primary-dark: 0 0 0;
+}
+
+/* Allianz 4 → Teal */
+body[data-brand="allianz4"]{
+  --primary: 0 147 143;
+  --primary-dark: 0 124 121;
+}
+/* ---------- Icon Loader ---------- */
+.loader-icon {
+  font-size: 42px;
+  animation: pulseScale 1.2s ease-in-out infinite;
+  color: rgb(var(--primary));
+}
+
+@keyframes pulseScale {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+}

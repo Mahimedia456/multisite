@@ -29,29 +29,25 @@ export function logout() {
 /* =========================
    Utils
 ========================= */
-function getApiBaseStrict() {
-  const base = String(import.meta?.env?.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+function getApiBase() {
+  // ✅ env first, otherwise dev fallback (so local never blocks)
+  const raw = String(import.meta?.env?.VITE_API_BASE_URL || "").trim();
 
-  // IMPORTANT: must be full http(s) URL in production
-  if (!base) {
-    throw new Error(
-      "VITE_API_BASE_URL is missing. Set it in Vercel (admin project) to your server-api URL."
-    );
-  }
+  const base = (raw || "http://localhost:5050").replace(/\/+$/, "");
 
   if (!/^https?:\/\//i.test(base)) {
-    throw new Error(
-      `VITE_API_BASE_URL must start with http(s). Got: ${base}`
-    );
+    throw new Error(`VITE_API_BASE_URL must start with http(s). Got: ${base}`);
   }
 
   return base;
 }
-console.log("ENV CHECK:", import.meta.env.VITE_API_BASE_URL);
-console.log("ALL ENV KEYS:", Object.keys(import.meta.env));
 
 function isPlainObject(v) {
   return v && typeof v === "object" && !(v instanceof FormData) && !(v instanceof Blob);
+}
+
+async function safeJson(res) {
+  return await res.json().catch(() => ({}));
 }
 
 /* =========================
@@ -81,20 +77,14 @@ export async function loginApi(a = {}, b, c) {
       p?.login ??
       "";
 
-    password =
-      p?.password ??
-      p?.pass ??
-      p?.pin ??
-      p?.secret ??
-      "";
-
+    password = p?.password ?? p?.pass ?? p?.pin ?? p?.secret ?? "";
     remember = Boolean(p?.remember ?? payload?.remember);
   }
 
   email = String(email).trim();
   password = String(password);
 
-  const base = getApiBaseStrict();
+  const base = getApiBase();
   const url = `${base}/admin/login`;
 
   const res = await fetch(url, {
@@ -103,7 +93,7 @@ export async function loginApi(a = {}, b, c) {
     body: JSON.stringify({ email, password, remember }),
   });
 
-  const data = await res.json().catch(() => ({}));
+  const data = await safeJson(res);
 
   if (!res.ok) {
     throw new Error(data?.message || data?.error || `Login failed (${res.status})`);
@@ -111,7 +101,8 @@ export async function loginApi(a = {}, b, c) {
 
   const session = {
     ...data,
-    access_token: data?.access_token ?? data?.token ?? data?.jwt ?? data?.data?.access_token,
+    access_token:
+      data?.access_token ?? data?.token ?? data?.jwt ?? data?.data?.access_token,
     token: data?.token ?? data?.access_token ?? data?.jwt ?? data?.data?.access_token,
     user: data?.user ?? data?.admin ?? data?.profile ?? data?.data?.user ?? null,
     remember,
@@ -121,9 +112,10 @@ export async function loginApi(a = {}, b, c) {
   return { ok: true, data: session };
 }
 
-/* =========================
-   Authenticated API Fetch
-========================= */
+/* =========================================================
+   ✅ Authenticated API Fetch (OLD STYLE - returns Response)
+   - This keeps your older pages working as-is.
+========================================================= */
 export async function apiFetch(path, options = {}) {
   const session = getSession();
 
@@ -137,6 +129,7 @@ export async function apiFetch(path, options = {}) {
   const hasBody = options.body !== undefined && options.body !== null;
   let body = options.body;
 
+  // auto JSON stringify for plain objects
   if (hasBody && isPlainObject(body)) {
     if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     body = JSON.stringify(body);
@@ -146,7 +139,7 @@ export async function apiFetch(path, options = {}) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const base = getApiBaseStrict();
+  const base = getApiBase();
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
 
   const res = await fetch(url, { ...options, body, headers });
@@ -156,5 +149,20 @@ export async function apiFetch(path, options = {}) {
     throw new Error("Session expired. Please login again.");
   }
 
-  return res;
+  return res; // ✅ keep Response
+}
+
+/* =========================================================
+   ✅ New helper: apiFetchJSON (returns parsed JSON)
+   - Use this in new pages (GenerateBrand, AI builder, etc.)
+========================================================= */
+export async function apiFetchJSON(path, options = {}) {
+  const res = await apiFetch(path, options);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || `Request failed (${res.status})`);
+  }
+
+  return data;
 }

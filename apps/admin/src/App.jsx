@@ -1,3 +1,4 @@
+// admin/src/App.jsx  (UPDATED)
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import AdminLayout from "./components/AdminLayout";
@@ -15,6 +16,9 @@ import SitePages from "./pages/SitePages";
 
 import BrandInnerPagesIndex from "./pages/BrandInnerPagesIndex";
 import BrandInnerPageDetail from "./pages/BrandInnerPageDetail";
+
+import GenerateBrand from "./pages/GenerateBrand";
+import AISiteBuilder from "./pages/AISiteBuilder";
 
 export default function App() {
   return (
@@ -42,9 +46,18 @@ export default function App() {
             element={<TemplateBuilder />}
           />
 
-          {/* ✅ Shared Pages (used by all brands) */}
+          {/* Inner Pages */}
           <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
-          <Route path="/brand-inner-pages/:pageId" element={<BrandInnerPageDetail />} />
+          <Route
+            path="/brand-inner-pages/:pageId"
+            element={<BrandInnerPageDetail />}
+          />
+
+          {/* ✅ Generate Brand */}
+          <Route path="/admin/generate-brand" element={<GenerateBrand />} />
+
+          {/* ✅ AI Site Builder */}
+          <Route path="/admin/ai-site-builder" element={<AISiteBuilder />} />
 
           {/* Main Website */}
           <Route path="/site" element={<SitePages />} />
