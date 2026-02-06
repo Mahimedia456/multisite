@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbars (for carousels) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Marquee (Team name strip) */
+.marquee { overflow: hidden; width: 100%; background: rgba(255,255,255,0.02); }
+.marquee .track {
+  display: flex;
+  gap: 32px;
+  padding: 14px 18px;
+  width: max-content;
+  animation: marquee 10s linear infinite;
+}
+.marquee .text {
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-33.333%); } }
