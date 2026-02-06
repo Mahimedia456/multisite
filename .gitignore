@@ -1,3 +1,6 @@
 node_modules
 .vercel
 .env*.local
+.env
+*.env
+packages/server-api/.env
