@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "leaflet/dist/leaflet.css";
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+
+/* Base */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Leaflet layering */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10 !important;
+}
+
+/* Make sure tooltips/popups can appear above */
+.leaflet-tooltip,
+.leaflet-popup {
+  z-index: 50 !important;
+}
+
+/* Pin pulse animation */
+.fi-pin-pulse {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+
+.fi-pin-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 9999px;
+  background: rgba(249, 115, 22, 0.25);
+  animation: fiPulse 1.8s ease-out infinite;
+}
+
+@keyframes fiPulse {
+  0% {
+    transform: scale(0.25);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}
+
+/* Tooltip card styling */
+.leaflet-tooltip.fi-tooltip {
+  background: rgba(9, 9, 11, 0.92);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.leaflet-tooltip.fi-tooltip:before {
+  display: none;
+}
+
+/* Popup darker */
+.leaflet-popup-content-wrapper {
+  background: rgba(9, 9, 11, 0.92);
+  color: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.leaflet-popup-tip {
+  background: rgba(9, 9, 11, 0.92);
+}

@@ -32,8 +32,8 @@ function normalizeFooter(raw) {
   return {
     ...raw,
     name: raw.name ?? "",
-    logoType: raw.logoType ?? "material",
-    logoValue: raw.logoValue ?? "apartment",
+    logoType: raw.logoType ?? "emoji",
+    logoValue: raw.logoValue ?? "✨",
     logoUrl: raw.logoUrl ?? "",
     description: raw.description ?? "",
     socials,
@@ -47,6 +47,7 @@ function normalizeFooter(raw) {
 export default function Footer({ brandSlug = "kundler3" }) {
   const { footer, loading, err } = useBrandLayout(brandSlug);
 
+  // ✅ no flash
   if (loading) return null;
   if (err || !footer) return null;
 
