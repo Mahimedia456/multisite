@@ -44,11 +44,13 @@ function normalizeFooter(raw) {
   };
 }
 
-export default function Footer({ brandSlug = "allianz4" }) {
-  const { footer, loading, err } = useBrandLayout(brandSlug);
+export default function Footer() {
+  const { footer, loading, err } = useBrandLayout("allianz4");
 
   // ✅ no flash
   if (loading) return null;
+
+  // ❌ no fallback
   if (err || !footer) return null;
 
   const normalized = normalizeFooter(footer);

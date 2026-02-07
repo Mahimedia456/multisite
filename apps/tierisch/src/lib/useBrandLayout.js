@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : "http://localhost:5050")
-).replace(/\/+$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "https://multisite-server-api.vercel.app")
+  .replace(/\/+$/, "");
+
 export function useBrandLayout(slug) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -31,14 +30,11 @@ export function useBrandLayout(slug) {
 
         const res = await fetch(url, {
           cache: "no-store",
-          headers: {
-            Accept: "application/json",
-          },
+          headers: { Accept: "application/json" },
         });
 
         const json = await res.json().catch(() => null);
 
-        // ✅ DEBUG (json yahin defined hai)
         console.log("[useBrandLayout]", {
           slug,
           url,
@@ -57,7 +53,6 @@ export function useBrandLayout(slug) {
         }
       } catch (e) {
         console.error("[useBrandLayout] error:", e);
-
         if (!cancelled) {
           setHeader(null);
           setFooter(null);
@@ -69,13 +64,10 @@ export function useBrandLayout(slug) {
     }
 
     load();
-
     return () => {
       cancelled = true;
     };
   }, [slug]);
 
   return { loading, err, header, footer };
-  console.log("[useBrandLayout]", { slug, url, status, ok, json });
-
 }
