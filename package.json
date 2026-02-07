@@ -18,12 +18,19 @@
     "dev:server": "npm run dev --workspace=packages/server-api",
 
     "dev:kundler2": "npm run dev --workspace=apps/kundler2",
+    "dev:kundler": "npm run dev --workspace=apps/kundler",
+    "dev:frankfurt": "npm run dev --workspace=apps/frankfurt-intern",
+    "dev:tierisch": "npm run dev --workspace=apps/tierisch",
 
     "build:aamir": "npm run build --workspace=apps/aamir",
     "build:umair": "npm run build --workspace=apps/umair",
     "build:main": "npm run build --workspace=apps/main",
     "build:admin": "npm run build --workspace=apps/admin",
+
     "build:kundler2": "npm run build --workspace=apps/kundler2",
+    "build:kundler": "npm run build --workspace=apps/kundler",
+    "build:frankfurt": "npm run build --workspace=apps/frankfurt-intern",
+    "build:tierisch": "npm run build --workspace=apps/tierisch",
 
     "build": "npm run build:kundler2",
 

@@ -64,7 +64,6 @@ export default function SiteFooter({ brand }) {
   function SocialIcon({ label }) {
     const t = norm(label);
 
-    // Simple monochrome SVG set (no external deps)
     const common = "w-4 h-4";
     if (t.includes("facebook") || t === "fb" || t === "f") {
       return (
@@ -98,29 +97,35 @@ export default function SiteFooter({ brand }) {
       );
     }
 
-    // fallback: first 2 chars (still visible)
     return <span className="text-[10px] font-extrabold">{String(label || "").slice(0, 2).toUpperCase()}</span>;
   }
+
+  // ✅ pick 4 columns only in this order (by title)
+  const byTitle = (t) => columns.find((c) => norm(c?.title) === norm(t)) || null;
+
+  const colAllianz = byTitle("allianz");
+  const colMeine = byTitle("meine allianz");
+  const colService = byTitle("service");
+  const colKarriere = byTitle("karriere");
+
+  const fixedCols = [colAllianz, colMeine, colService, colKarriere].filter(Boolean);
 
   return (
     <footer className="bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-          {/* Brand block */}
-          <div className="col-span-2 lg:col-span-2">
+        {/* ✅ 2 blocks: left brand, right 4 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Brand block (logo + socials KEEP SAME) */}
+          <div className="lg:col-span-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-white overflow-hidden">
                 {renderSmallLogo()}
               </div>
-              <div className="font-extrabold text-sm text-white">
-                {name}
-              </div>
+              <div className="font-extrabold text-sm text-white">{name}</div>
             </div>
 
             {description ? (
-              <p className="mt-4 text-xs text-white/70 max-w-sm leading-relaxed">
-                {description}
-              </p>
+              <p className="mt-4 text-xs text-white/70 max-w-sm leading-relaxed">{description}</p>
             ) : null}
 
             {socials?.length ? (
@@ -142,58 +147,36 @@ export default function SiteFooter({ brand }) {
             ) : null}
           </div>
 
-          {/* Columns / sections */}
-          {columns.map((col, idx) => {
-            const links = Array.isArray(col.links) ? col.links : [];
-            return (
-              <div key={`${col.title || "col"}-${idx}`}>
-                <h4 className="text-xs font-extrabold text-white mb-4 uppercase tracking-widest">
-                  {col.title}
-                </h4>
+          {/* ✅ Menus: 4 columns in one row */}
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {fixedCols.map((col, idx) => {
+                const links = Array.isArray(col.links) ? col.links : [];
+                return (
+                  <div key={`${col.title || "col"}-${idx}`}>
+                    <h4 className="text-xs font-extrabold text-white mb-4 uppercase tracking-widest">
+                      {col.title}
+                    </h4>
 
-                {col.description ? (
-                  <p className="text-xs text-white/70 leading-relaxed mb-4">
-                    {col.description}
-                  </p>
-                ) : null}
-
-                {col.cta?.label ? (
-                  <a
-                    href={col.cta.href || "#"}
-                    className="inline-flex items-center gap-2 bg-white text-black text-[11px] font-extrabold px-4 py-2 rounded-xl hover:opacity-90 transition mb-4"
-                  >
-                    {col.cta.label}
-                    <span aria-hidden>↗</span>
-                  </a>
-                ) : null}
-
-                {col.rating?.value ? (
-                  <div className="mb-4">
-                    <div className="text-sm font-extrabold text-white">
-                      {col.rating.value}
-                    </div>
-                    <div className="text-xs text-white/70">
-                      {col.rating.count || ""}
-                    </div>
+                    {links.length ? (
+                      <ul className="space-y-3 text-xs text-white/70">
+                        {links.map((l) => (
+                          <li key={`${l.label}-${l.href}`}>
+                            <a className="hover:text-white transition-colors" href={l.href || "#"}>
+                              {l.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
-                ) : null}
-
-                {links.length ? (
-                  <ul className="space-y-3 text-xs text-white/70">
-                    {links.map((l) => (
-                      <li key={`${l.label}-${l.href}`}>
-                        <a className="hover:text-white transition-colors" href={l.href || "#"}>
-                          {l.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
 
+        {/* bottom */}
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-2">
           <div className="text-[10px] text-white/50">{bottomLeft}</div>
           {bottomCenter ? <div className="text-[10px] text-white/50">{bottomCenter}</div> : null}

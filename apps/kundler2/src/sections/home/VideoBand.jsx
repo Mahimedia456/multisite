@@ -1,3 +1,4 @@
+import Reveal from "../../components/Reveal";
 import { HOME_IMAGES } from "../../data/homeImages";
 
 export default function VideoBand() {
@@ -9,15 +10,21 @@ export default function VideoBand() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-        <div className="text-2xl sm:text-3xl font-extrabold">
-          Wir erklären in 60 Sekunden: So finden Sie die passende Absicherung
-        </div>
+        <Reveal>
+          <div className="text-2xl sm:text-3xl font-extrabold">
+            Wir erklären in 60 Sekunden: So finden Sie die passende Absicherung
+          </div>
+        </Reveal>
 
-        <button className="mt-8 w-16 h-16 rounded-full bg-[#f5c400] text-black font-extrabold inline-flex items-center justify-center hover:opacity-90">
-          ▶
-        </button>
+        <Reveal delay={120}>
+          <button className="mt-8 w-16 h-16 rounded-full bg-[#f5c400] text-black font-extrabold inline-flex items-center justify-center hover:opacity-90">
+            ▶
+          </button>
+        </Reveal>
 
-        <div className="mt-4 text-sm text-white/70">Kurzvideo • Beratung, Produkte & Services</div>
+        <Reveal delay={180}>
+          <div className="mt-4 text-sm text-white/70">Kurzvideo • Beratung, Produkte & Services</div>
+        </Reveal>
       </div>
     </section>
   );

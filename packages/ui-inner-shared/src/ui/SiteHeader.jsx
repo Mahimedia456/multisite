@@ -1,4 +1,7 @@
-// SiteHeader.jsx (shared)
+// packages/ui-inner-shared/src/SiteHeader.jsx
+
+import React from "react";
+
 const DefaultLink = ({ to, href, children, ...rest }) => {
   const finalHref = href ?? to ?? "#";
   return (
@@ -11,7 +14,7 @@ const DefaultLink = ({ to, href, children, ...rest }) => {
 export default function SiteHeader({
   brand,
   LinkComponent = DefaultLink,
-  variant = "bar", // ✅ NEW: "bar" | "boxed"
+  variant = "bar", // "bar" | "boxed"
 }) {
   const Link = LinkComponent;
 
@@ -29,81 +32,118 @@ export default function SiteHeader({
   const renderLogo = () => {
     if (LogoIcon) return <LogoIcon className="text-3xl" />;
     if (logoType === "image" && logoUrl) {
-      return <img src={logoUrl} alt={name || "logo"} className="w-6 h-6 object-contain" />;
+      return (
+        <img
+          src={logoUrl}
+          alt={name || "logo"}
+          className="w-6 h-6 object-contain"
+        />
+      );
     }
-    if (logoType === "emoji") return <span className="text-2xl leading-none">{logoValue}</span>;
-    return <span className="material-symbols-outlined text-2xl leading-none">{logoValue}</span>;
+    if (logoType === "emoji")
+      return <span className="text-2xl leading-none">{logoValue}</span>;
+    return (
+      <span className="material-symbols-outlined text-2xl leading-none">
+        {logoValue}
+      </span>
+    );
   };
-
-const baseNavClass =
-  "text-sm font-medium text-slate-800 hover:text-primary transition-colors";
-
 
   const hasAboutAlready = (homeLinks || []).some((l) => {
     const label = String(l?.label || "").trim().toLowerCase();
     const href = String(l?.href || l?.to || "").trim().toLowerCase();
-    return label === "about" || label === "about us" || href === "/about" || href.startsWith("/about");
+    return (
+      label === "about" ||
+      label === "about us" ||
+      href === "/about" ||
+      href.startsWith("/about")
+    );
   });
+
+  const navItem =
+    "leading-none font-medium text-slate-800 hover:text-primary transition-colors " +
+    "whitespace-nowrap " +
+    "text-[clamp(11px,0.9vw,14px)] " +
+    "px-2 xl:px-3 py-3";
 
   const renderNavItem = (item, idx) => {
     const key = `${item?.label || "link"}-${idx}`;
-    if (item?.to) return <Link key={key} className={baseNavClass} to={item.to}>{item.label}</Link>;
-    return <a key={key} className={baseNavClass} href={item?.href || "#"}>{item?.label || "Link"}</a>;
+    if (item?.to)
+      return (
+        <Link key={key} className={navItem} to={item.to}>
+          {item.label}
+        </Link>
+      );
+    return (
+      <a key={key} className={navItem} href={item?.href || "#"}>
+        {item?.label || "Link"}
+      </a>
+    );
   };
 
   const renderCta = () => {
-    // ✅ button theme color by CSS vars (bg-primary)
     const cls =
       "h-10 px-5 rounded-xl bg-primary hover:bg-primary-dark " +
       "text-white text-sm font-bold shadow-lg shadow-primary/20 transition-all " +
-      "inline-flex items-center justify-center leading-none";
+      "inline-flex items-center justify-center leading-none whitespace-nowrap";
 
     if (cta?.to) return <Link to={cta.to} className={cls}>{cta.label}</Link>;
     if (cta?.href) return <a href={cta.href} className={cls}>{cta.label}</a>;
-    return <button type="button" className={cls} onClick={cta?.onClick}>{cta?.label}</button>;
+    return (
+      <button type="button" className={cls} onClick={cta?.onClick}>
+        {cta?.label}
+      </button>
+    );
   };
 
+  // ✅ TWO-ROW HEADER (NO OVERLAP)
   const Inner = (
-    <div className="h-20 flex items-center justify-between">
-      {/* Logo */}
-      <Link to="/" className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-          {renderLogo()}
-        </div>
-<span className="text-base font-extrabold tracking-tight text-slate-900">
-          {name}
-        </span>
-      </Link>
+    <div className="w-full">
+      {/* Row 1: Logo + Right actions */}
+      <div className="h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            {renderLogo()}
+          </div>
+          <span className="text-base font-extrabold tracking-tight text-slate-900 whitespace-nowrap">
+            {name}
+          </span>
+        </Link>
 
-      {/* Links */}
-      <div className="hidden md:flex items-center gap-10">
-        {(homeLinks || []).map(renderNavItem)}
-        {!hasAboutAlready ? (
-          <Link className={baseNavClass} to="/about">About Us</Link>
-        ) : null}
+        <div className="flex items-center gap-3 shrink-0">
+          {login?.to ? (
+            <Link
+              className="hidden sm:inline-flex text-sm font-medium text-slate-700 hover:text-primary transition-colors whitespace-nowrap"
+              to={login.to}
+            >
+              {login.label ?? "Log In"}
+            </Link>
+          ) : null}
+          {renderCta()}
+        </div>
       </div>
 
-      {/* Right */}
-      <div className="flex items-center gap-5">
-        {login?.to ? (
-          <Link
-            className="hidden sm:block text-sm font-semibold text-slate-800 hover:text-primary transition-colors"
-            to={login.to}
-          >
-            {login.label ?? "Log In"}
-          </Link>
-        ) : null}
-        {renderCta()}
+      {/* Row 2: Nav below (centered) */}
+      <div className="border-t border-gray-100">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center flex-nowrap min-w-0">
+            {(homeLinks || []).map(renderNavItem)}
+            {!hasAboutAlready ? (
+              <Link className={navItem} to="/about">
+                About Us
+              </Link>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
 
-  // ✅ Variant Switch
   if (variant === "boxed") {
     return (
       <div className="sticky top-3 z-50 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className=" backdrop-blur-md border bg-white/90 border-gray-100 rounded-2xl shadow-sm">
+          <nav className="backdrop-blur-md border bg-white/90 border-gray-100 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-4 sm:px-6 lg:px-8">{Inner}</div>
           </nav>
         </div>
@@ -111,9 +151,8 @@ const baseNavClass =
     );
   }
 
-  // default "bar"
   return (
-    <nav className="sticky top-0 z-50 w-full  backdrop-blur-md border-b bg-white/90 border-gray-100">
+    <nav className="sticky top-0 z-50 w-full backdrop-blur-md border-b bg-white/90 border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{Inner}</div>
     </nav>
   );

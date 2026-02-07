@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Team from "./pages/Team";
+import BrandLoader from "./components/BrandLoader";
 
 export default function App() {
   useEffect(() => {
@@ -16,17 +17,22 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* HOME */}
-        <Route path="/" element={<Home />} />
+    <>
+      {/* ✅ 3 sec brand loader */}
+      <BrandLoader duration={3000} />
 
-        {/* ABOUT (shared page) */}
-        <Route path="/about" element={<About />} />
+      <BrowserRouter>
+        <Routes>
+          {/* HOME */}
+          <Route path="/" element={<Home />} />
 
-        {/* TEAM (shared page) */}
-        <Route path="/team" element={<Team />} />
-      </Routes>
-    </BrowserRouter>
+          {/* ABOUT (shared page) */}
+          <Route path="/about" element={<About />} />
+
+          {/* TEAM (shared page) */}
+          <Route path="/team" element={<Team />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }

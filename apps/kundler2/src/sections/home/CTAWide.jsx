@@ -1,3 +1,4 @@
+import Reveal from "../../components/Reveal";
 import { HOME_IMAGES } from "../../data/homeImages";
 
 export default function CTAWide() {
@@ -9,28 +10,30 @@ export default function CTAWide() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-10 sm:p-12 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-          <div>
-            <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
-              Wir sind für Sie da
+        <Reveal>
+          <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-10 sm:p-12 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
+                Wir sind für Sie da
+              </div>
+              <div className="mt-3 text-2xl sm:text-3xl font-extrabold">
+                Persönliche oder digitale Beratung – einfach Kontakt aufnehmen
+              </div>
+              <div className="mt-2 text-sm text-white/70 max-w-2xl">
+                Mo–Fr 8–20 Uhr telefonisch oder digital. Finden Sie jetzt die passende Unterstützung.
+              </div>
             </div>
-            <div className="mt-3 text-2xl sm:text-3xl font-extrabold">
-              Persönliche oder digitale Beratung – einfach Kontakt aufnehmen
-            </div>
-            <div className="mt-2 text-sm text-white/70 max-w-2xl">
-              Mo–Fr 8–20 Uhr telefonisch oder digital. Finden Sie jetzt die passende Unterstützung.
-            </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button className="h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-              Ansprechpartner:in finden
-            </button>
-            <button className="h-11 px-6 rounded-xl bg-white/10 border border-white/15 text-white font-extrabold text-sm hover:bg-white/15">
-              Online-Services
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button className="h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
+                Ansprechpartner:in finden
+              </button>
+              <button className="h-11 px-6 rounded-xl bg-white/10 border border-white/15 text-white font-extrabold text-sm hover:bg-white/15">
+                Online-Services
+              </button>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

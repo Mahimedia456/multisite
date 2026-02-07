@@ -1,22 +1,10 @@
+import Reveal from "../../components/Reveal";
+import Stagger from "../../components/Stagger";
+
 const plans = [
-  {
-    name: "Basis",
-    price: "ab 1,60 %",
-    desc: "Kurzfristig und sicher parken: Allianz ParkDepot (Beispiel).",
-    highlight: false,
-  },
-  {
-    name: "Empfehlung",
-    price: "Premium",
-    desc: "Sofortleistung ohne Wartezeit – bis zu 100 % Kostenerstattung (Beispiel).",
-    highlight: true,
-  },
-  {
-    name: "Individuell",
-    price: "Beratung",
-    desc: "Passende Lösungen für Ihre Situation – persönlich oder digital.",
-    highlight: false,
-  },
+  { name: "Basis", price: "ab 1,60 %", desc: "Kurzfristig und sicher parken: Allianz ParkDepot (Beispiel).", highlight: false },
+  { name: "Empfehlung", price: "Premium", desc: "Sofortleistung ohne Wartezeit – bis zu 100 % Kostenerstattung (Beispiel).", highlight: true },
+  { name: "Individuell", price: "Beratung", desc: "Passende Lösungen für Ihre Situation – persönlich oder digital.", highlight: false },
 ];
 
 export default function Pricing() {
@@ -24,16 +12,22 @@ export default function Pricing() {
     <section className="py-16 bg-[#070A0D] text-white" id="pricing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
-            Angebote im Überblick
-          </div>
-          <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">Empfehlungen & Highlights</h2>
-          <p className="mt-3 text-sm text-white/70 max-w-2xl mx-auto">
-            Transparent, verständlich und passend zu Ihrem Bedarf (Demo-Inhalte).
-          </p>
+          <Reveal>
+            <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
+              Angebote im Überblick
+            </div>
+          </Reveal>
+          <Reveal delay={80}>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">Empfehlungen & Highlights</h2>
+          </Reveal>
+          <Reveal delay={140}>
+            <p className="mt-3 text-sm text-white/70 max-w-2xl mx-auto">
+              Transparent, verständlich und passend zu Ihrem Bedarf (Demo-Inhalte).
+            </p>
+          </Reveal>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Stagger className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6" from={120} step={90}>
           {plans.map((p) => (
             <div
               key={p.name}
@@ -65,7 +59,7 @@ export default function Pricing() {
               </button>
             </div>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );

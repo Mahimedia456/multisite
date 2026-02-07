@@ -1,3 +1,6 @@
+import Reveal from "../../components/Reveal";
+import Stagger from "../../components/Stagger";
+
 const faqs = [
   { q: "Wie finde ich eine Ansprechpartner:in vor Ort?", a: "Nutzen Sie die Standortsuche und wählen Sie Ihren Ort oder PLZ aus." },
   { q: "Kann ich Schäden online melden?", a: "Ja. Viele Schäden können Sie digital melden – schnell und unkompliziert." },
@@ -11,20 +14,30 @@ export default function FAQ() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-5">
-            <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">FAQ</div>
-            <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">
-              Häufige Fragen – kurz & verständlich
-            </h2>
-            <p className="mt-3 text-sm text-black/60">
-              Sie haben eine andere Frage? Schreiben Sie uns – wir helfen gerne weiter.
-            </p>
+            <Reveal>
+              <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">FAQ</div>
+            </Reveal>
 
-            <button className="mt-6 h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-              Beratung & Kontakt
-            </button>
+            <Reveal delay={80}>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">
+                Häufige Fragen – kurz & verständlich
+              </h2>
+            </Reveal>
+
+            <Reveal delay={140}>
+              <p className="mt-3 text-sm text-black/60">
+                Sie haben eine andere Frage? Schreiben Sie uns – wir helfen gerne weiter.
+              </p>
+            </Reveal>
+
+            <Reveal delay={220}>
+              <button className="mt-6 h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
+                Beratung & Kontakt
+              </button>
+            </Reveal>
           </div>
 
-          <div className="lg:col-span-7 space-y-4">
+          <Stagger className="lg:col-span-7 space-y-4" from={120} step={90}>
             {faqs.map((f) => (
               <details key={f.q} className="group rounded-3xl bg-white border border-black/5 p-6 shadow-sm">
                 <summary className="cursor-pointer list-none flex items-center justify-between gap-4">
@@ -36,7 +49,7 @@ export default function FAQ() {
                 <div className="mt-4 text-sm text-black/60 leading-relaxed">{f.a}</div>
               </details>
             ))}
-          </div>
+          </Stagger>
         </div>
       </div>
     </section>
