@@ -1514,13 +1514,13 @@ app.get(
 );
 
 /* ============================================================
-   ✅ TEMPLATE SAVE FIX (TemplateBuilder)
-   Adds:
-     PUT /admin/brand-layout-templates/:id/content (main)
-     PUT /admin/brand-templates/:id/content        (alias)
-   Stores as SINGLE VERSION v1 (upsert)
+   ✅ TEMPLATE SAVE (ALWAYS CREATE NEW VERSION)
+   Replaces the old "single v1 upsert" logic.
+   - PUT /admin/brand-layout-templates/:id/content  (main)
+   - PUT /admin/brand-templates/:id/content         (alias)
 ============================================================ */
-async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
+
+async function createLayoutTemplateVersion({ templateId, content, status, userId }) {
   const createdBy = isUuid(userId) ? userId : null;
 
   // ensure template exists
@@ -1534,21 +1534,26 @@ async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
     throw err;
   }
 
-  // single version row (version=1) with upsert
-  const up = await pool.query(
+  // ✅ next version number
+  const next = await pool.query(
+    `SELECT COALESCE(MAX(version), 0) + 1 AS v
+     FROM brand_layout_template_versions
+     WHERE template_id = $1`,
+    [templateId]
+  );
+  const version = Number(next.rows[0].v);
+
+  // ✅ insert new version row
+  const created = await pool.query(
     `
     INSERT INTO brand_layout_template_versions (template_id, version, content, created_by)
-    VALUES ($1, 1, $2, $3)
-    ON CONFLICT (template_id, version)
-    DO UPDATE SET
-      content = EXCLUDED.content,
-      created_at = NOW(),
-      created_by = EXCLUDED.created_by
+    VALUES ($1, $2, $3, $4)
     RETURNING id, template_id, version, content, created_at, created_by
     `,
-    [templateId, content, createdBy]
+    [templateId, version, content, createdBy]
   );
 
+  // update template updated_at/status
   const nextStatus = normalizeStatus(status);
   if (nextStatus) {
     await pool.query(
@@ -1562,7 +1567,7 @@ async function upsertLayoutTemplateV1({ templateId, content, status, userId }) {
     );
   }
 
-  return up.rows[0];
+  return created.rows[0];
 }
 
 // MAIN (recommended)
@@ -1571,24 +1576,23 @@ app.put(
   authMiddleware,
   wrap(async (req, res) => {
     const { templateId } = req.params;
-    if (!isUuid(templateId))
+    if (!isUuid(templateId)) {
       return res.status(400).json({ ok: false, message: "Invalid templateId" });
+    }
 
     const { content, status } = req.body || {};
     if (!content || typeof content !== "object") {
-      return res
-        .status(400)
-        .json({ ok: false, message: "content (object) is required" });
+      return res.status(400).json({ ok: false, message: "content (object) is required" });
     }
 
-    const saved = await upsertLayoutTemplateV1({
+    const saved = await createLayoutTemplateVersion({
       templateId,
       content,
       status,
       userId: req.user?.id,
     });
 
-    res.json({ ok: true, data: saved });
+    return res.json({ ok: true, data: saved });
   })
 );
 
@@ -1598,26 +1602,26 @@ app.put(
   authMiddleware,
   wrap(async (req, res) => {
     const { templateId } = req.params;
-    if (!isUuid(templateId))
+    if (!isUuid(templateId)) {
       return res.status(400).json({ ok: false, message: "Invalid templateId" });
+    }
 
     const { content, status } = req.body || {};
     if (!content || typeof content !== "object") {
-      return res
-        .status(400)
-        .json({ ok: false, message: "content (object) is required" });
+      return res.status(400).json({ ok: false, message: "content (object) is required" });
     }
 
-    const saved = await upsertLayoutTemplateV1({
+    const saved = await createLayoutTemplateVersion({
       templateId,
       content,
       status,
       userId: req.user?.id,
     });
 
-    res.json({ ok: true, data: saved });
+    return res.json({ ok: true, data: saved });
   })
 );
+
 
 // Backward compatible: old admin might still call POST /admin/layout-templates/:id/versions
 // (kept as-is, creates new versions)
@@ -1897,11 +1901,23 @@ app.get(
 /* =========================
    PUBLIC: brand layout for frontend websites
 ========================= */
+/* =========================
+   PUBLIC: brand layout for frontend websites
+   ✅ returns latest header/footer (same as admin)
+========================= */
 app.get(
   "/public/brands/:slug/layout",
   wrap(async (req, res) => {
     const slug = String(req.params.slug || "").trim().toLowerCase();
     if (!slug) return res.status(400).json({ ok: false, message: "slug is required" });
+
+    // extra no-cache headers (vercel safe)
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("CDN-Cache-Control", "no-store");
+    res.setHeader("Vercel-CDN-Cache-Control", "no-store");
 
     const bq = await pool.query(
       `SELECT id, name, slug, route
@@ -1910,11 +1926,13 @@ app.get(
        LIMIT 1`,
       [slug]
     );
-    if (!bq.rows.length) return res.status(404).json({ ok: false, message: "Brand not found" });
+
+    if (!bq.rows.length) {
+      return res.status(404).json({ ok: false, message: "Brand not found" });
+    }
 
     const brand = bq.rows[0];
 
-    // ✅ SAME AS ADMIN (LATEST VERSION per template)
     const layoutsQ = await pool.query(
       `
       SELECT
@@ -1929,7 +1947,7 @@ app.get(
         SELECT id, version, created_at, content
         FROM brand_layout_template_versions
         WHERE template_id = t.id
-        ORDER BY version DESC, created_at DESC
+        ORDER BY created_at DESC, version DESC
         LIMIT 1
       ) v ON true
       WHERE t.brand_id = $1
@@ -1949,15 +1967,20 @@ app.get(
         header: headerRow?.content || null,
         footer: footerRow?.content || null,
 
-        // optional debug
+        // helpful debug for frontend
         debug: {
+          headerTemplateId: headerRow?.template_id || null,
           headerVersion: headerRow?.version || null,
+          headerCreatedAt: headerRow?.created_at || null,
+          footerTemplateId: footerRow?.template_id || null,
           footerVersion: footerRow?.version || null,
+          footerCreatedAt: footerRow?.created_at || null,
         },
       },
     });
   })
 );
+
 
 
 /* =========================

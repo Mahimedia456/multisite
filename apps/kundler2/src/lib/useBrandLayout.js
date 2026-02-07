@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-const API_BASE =
-  (import.meta.env.VITE_API_BASE_URL ||
-    (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : ""))
-  .replace(/\/+$/, "");
+const API_BASE = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : "http://localhost:5050")
+).replace(/\/+$/, "");
 export function useBrandLayout(slug) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
