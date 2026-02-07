@@ -1901,53 +1901,64 @@ app.get(
   "/public/brands/:slug/layout",
   wrap(async (req, res) => {
     const slug = String(req.params.slug || "").trim().toLowerCase();
-    if (!slug)
-      return res.status(400).json({ ok: false, message: "slug is required" });
+    if (!slug) return res.status(400).json({ ok: false, message: "slug is required" });
 
-const layoutsQ = await pool.query(
-  `
-  SELECT DISTINCT ON (t.key)
-    t.key,
-    v.content
-  FROM brand_layout_templates t
-  LEFT JOIN LATERAL (
-    SELECT content
-    FROM brand_layout_template_versions
-    WHERE template_id = t.id
-    ORDER BY created_at DESC NULLS LAST, version DESC
-    LIMIT 1
-  ) v ON true
-  WHERE t.brand_id = $1
-    AND t.key IN ('header','footer')
-  ORDER BY
-    t.key,
-    t.updated_at DESC NULLS LAST,
-    t.id DESC
-  `,
-  [brand.id]
-);
+    const bq = await pool.query(
+      `SELECT id, name, slug, route
+       FROM brands
+       WHERE LOWER(slug) = $1
+       LIMIT 1`,
+      [slug]
+    );
+    if (!bq.rows.length) return res.status(404).json({ ok: false, message: "Brand not found" });
 
+    const brand = bq.rows[0];
 
-    const header =
-      layoutsQ.rows.find((r) => r.key === "header")?.content || null;
-    const footer =
-      layoutsQ.rows.find((r) => r.key === "footer")?.content || null;
+    // ✅ SAME AS ADMIN (LATEST VERSION per template)
+    const layoutsQ = await pool.query(
+      `
+      SELECT
+        t.key,
+        t.id as template_id,
+        v.id as version_id,
+        v.version,
+        v.created_at,
+        v.content
+      FROM brand_layout_templates t
+      LEFT JOIN LATERAL (
+        SELECT id, version, created_at, content
+        FROM brand_layout_template_versions
+        WHERE template_id = t.id
+        ORDER BY version DESC, created_at DESC
+        LIMIT 1
+      ) v ON true
+      WHERE t.brand_id = $1
+        AND t.key IN ('header','footer')
+      ORDER BY t.key ASC
+      `,
+      [brand.id]
+    );
 
-    res.json({
+    const headerRow = layoutsQ.rows.find((r) => r.key === "header") || null;
+    const footerRow = layoutsQ.rows.find((r) => r.key === "footer") || null;
+
+    return res.json({
       ok: true,
       data: {
-        brand: {
-          id: brand.id,
-          name: brand.name,
-          slug: brand.slug,
-          route: brand.route,
+        brand,
+        header: headerRow?.content || null,
+        footer: footerRow?.content || null,
+
+        // optional debug
+        debug: {
+          headerVersion: headerRow?.version || null,
+          footerVersion: footerRow?.version || null,
         },
-        header,
-        footer,
       },
     });
   })
 );
+
 
 /* =========================
    PUBLIC: shared page by slug (latest version)

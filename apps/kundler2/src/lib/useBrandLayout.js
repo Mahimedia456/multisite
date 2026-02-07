@@ -1,26 +1,17 @@
-// src/lib/useBrandLayout.js
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : "http://localhost:5050")
-).replace(/\/+$/, "");
-
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL ||
+    (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : ""))
+  .replace(/\/+$/, "");
 export function useBrandLayout(slug) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [header, setHeader] = useState(null);
   const [footer, setFooter] = useState(null);
 
-  // stable url builder
-  const layoutUrl = useMemo(() => {
-    if (!slug) return "";
-    const s = encodeURIComponent(String(slug).trim().toLowerCase());
-    return `${API_BASE}/public/brands/${s}/layout?t=${Date.now()}`;
-  }, [slug]);
-
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
 
     async function load() {
       setLoading(true);
@@ -28,31 +19,29 @@ export function useBrandLayout(slug) {
 
       try {
         if (!slug) {
-          setHeader(null);
-          setFooter(null);
-          setLoading(false);
+          if (!cancelled) {
+            setHeader(null);
+            setFooter(null);
+            setLoading(false);
+          }
           return;
         }
 
-        if (!API_BASE) {
-          throw new Error(
-            "API base missing. Set VITE_API_BASE_URL in .env (or ensure server is running on localhost:5050)."
-          );
-        }
+        const url = `${API_BASE}/public/brands/${encodeURIComponent(slug)}/layout?t=${Date.now()}`;
 
-        const res = await fetch(layoutUrl, {
+        const res = await fetch(url, {
           cache: "no-store",
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
+          headers: {
+            Accept: "application/json",
+          },
         });
 
         const json = await res.json().catch(() => null);
 
-        // ✅ DEBUG
+        // ✅ DEBUG (json yahin defined hai)
         console.log("[useBrandLayout]", {
           slug,
-          API_BASE,
-          url: layoutUrl,
+          url,
           status: res.status,
           ok: res.ok,
           json,
@@ -62,23 +51,31 @@ export function useBrandLayout(slug) {
           throw new Error(json?.message || `Failed to load layout (${res.status})`);
         }
 
-        setHeader(json?.data?.header || null);
-        setFooter(json?.data?.footer || null);
+        if (!cancelled) {
+          setHeader(json?.data?.header || null);
+          setFooter(json?.data?.footer || null);
+        }
       } catch (e) {
-        if (e?.name === "AbortError") return;
-
         console.error("[useBrandLayout] error:", e);
-        setHeader(null);
-        setFooter(null);
-        setErr(e?.message || "Failed to load layout");
+
+        if (!cancelled) {
+          setHeader(null);
+          setFooter(null);
+          setErr(e?.message || "Failed to load layout");
+        }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     load();
-    return () => controller.abort();
-  }, [slug, layoutUrl]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   return { loading, err, header, footer };
+  console.log("[useBrandLayout]", { slug, url, status, ok, json });
+
 }
