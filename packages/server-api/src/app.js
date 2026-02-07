@@ -1904,7 +1904,7 @@ app.get(
     if (!slug)
       return res.status(400).json({ ok: false, message: "slug is required" });
 
-    const layoutsQ = await pool.query(
+const layoutsQ = await pool.query(
   `
   SELECT DISTINCT ON (t.key)
     t.key,
@@ -1914,7 +1914,7 @@ app.get(
     SELECT content
     FROM brand_layout_template_versions
     WHERE template_id = t.id
-    ORDER BY created_at DESC, version DESC
+    ORDER BY created_at DESC NULLS LAST, version DESC
     LIMIT 1
   ) v ON true
   WHERE t.brand_id = $1
@@ -1926,6 +1926,7 @@ app.get(
   `,
   [brand.id]
 );
+
 
     const header =
       layoutsQ.rows.find((r) => r.key === "header")?.content || null;
