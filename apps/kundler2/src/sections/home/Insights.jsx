@@ -1,9 +1,9 @@
 import { HOME_IMAGES } from "../../data/homeImages";
 
 const posts = [
-  { title: "Construction trends shaping modern cities", img: HOME_IMAGES.insight1 },
-  { title: "Concrete, geometry & future-ready facades", img: HOME_IMAGES.insight2 },
-  { title: "Sustainable build practices that last", img: HOME_IMAGES.insight3 },
+  { title: "Was ist eine Sterbeurkunde? Funktion, Inhalt & Antrag", img: HOME_IMAGES.insight1 },
+  { title: "Pflege im Ausland: Kosten & Besonderheiten", img: HOME_IMAGES.insight2 },
+  { title: "Was kostet ein Hund im Monat? Tipps für Ihre Budgetplanung", img: HOME_IMAGES.insight3 },
 ];
 
 export default function Insights() {
@@ -12,10 +12,10 @@ export default function Insights() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
-            Insights
+            Tipps der Redaktion
           </div>
           <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">
-            Ideas, innovation & inspiration from the world of architecture
+            Lesen lohnt sich: Ratgeber & Insights
           </h2>
         </div>
 
@@ -24,12 +24,10 @@ export default function Insights() {
             <article key={p.title} className="rounded-[2.2rem] overflow-hidden border border-black/5 shadow-sm">
               <img src={p.img} alt="" className="w-full h-56 object-cover" />
               <div className="p-6">
-                <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
-                  Article
-                </div>
+                <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">Ratgeber</div>
                 <h3 className="mt-2 font-extrabold text-lg leading-snug">{p.title}</h3>
                 <button className="mt-5 h-10 px-5 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-                  Read More
+                  Mehr lesen
                 </button>
               </div>
             </article>

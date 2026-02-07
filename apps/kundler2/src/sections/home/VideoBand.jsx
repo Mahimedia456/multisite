@@ -10,16 +10,14 @@ export default function VideoBand() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
         <div className="text-2xl sm:text-3xl font-extrabold">
-          Tailored architectural and construction solutions for every budget
+          Wir erklären in 60 Sekunden: So finden Sie die passende Absicherung
         </div>
 
         <button className="mt-8 w-16 h-16 rounded-full bg-[#f5c400] text-black font-extrabold inline-flex items-center justify-center hover:opacity-90">
           ▶
         </button>
 
-        <div className="mt-4 text-sm text-white/70">
-          Watch our 60s process overview
-        </div>
+        <div className="mt-4 text-sm text-white/70">Kurzvideo • Beratung, Produkte & Services</div>
       </div>
     </section>
   );

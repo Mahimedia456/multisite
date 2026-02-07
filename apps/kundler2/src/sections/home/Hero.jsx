@@ -34,14 +34,12 @@ export default function Hero() {
 
     const onPlay = () => setReady(true);
     const onCanPlay = () => {
-      // force play attempt (some browsers need this even if muted)
       v.play?.().catch(() => {});
     };
 
     v.addEventListener("playing", onPlay);
     v.addEventListener("canplay", onCanPlay);
 
-    // try immediately
     v.play?.().catch(() => {});
 
     return () => {
@@ -54,14 +52,8 @@ export default function Hero() {
     <section className="relative overflow-hidden">
       {/* background */}
       <div className="absolute inset-0">
-        {/* poster always visible */}
-        <img
-          src={HOME_IMAGES.heroPoster}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={HOME_IMAGES.heroPoster} alt="" className="absolute inset-0 w-full h-full object-cover" />
 
-        {/* video fades in only when it REALLY starts */}
         <video
           ref={videoRef}
           className={[
@@ -79,10 +71,9 @@ export default function Hero() {
           ))}
         </video>
 
-  {/* overlays – lighter so video shows */}
-<div className="absolute inset-0 bg-black/40" />
-<div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
-</div>  
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
+      </div>
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-16 lg:pt-20 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -90,59 +81,57 @@ export default function Hero() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 text-[10px] font-extrabold tracking-widest uppercase">
               <span className="w-2 h-2 rounded-full bg-[#f4c300]" />
-              Kundler® Construction
+              Allianz Versicherung • Privatkunden
             </div>
 
             <h1 className="mt-5 text-white font-extrabold tracking-tight text-[38px] leading-[1.05] sm:text-5xl lg:text-6xl">
-              Where innovative design meets precision construction to create spaces that{" "}
-              <span className="text-[#f4c300]">inspire</span> and endure.
+              Die kalte Jahreszeit genießen –{" "}
+              <span className="text-[#f4c300]">mit starker Absicherung</span> an Ihrer Seite.
             </h1>
 
             <p className="mt-5 text-white/70 text-sm sm:text-base max-w-xl">
-              Premium architectural and construction solutions crafted for modern projects.
-              Built with strength, sustainability, and lasting value.
+              Empfehlungen, Services und persönliche Beratung – damit Sie im Alltag und in besonderen Momenten gut
+              vorbereitet sind.
             </p>
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
               <a
-                href="/quote"
+                href="/beratung"
                 className="h-10 px-5 rounded-xl bg-[#f4c300] text-black font-extrabold text-xs inline-flex items-center justify-center hover:opacity-90 transition"
               >
-                Start a Project
+                Ansprechpartner:in vor Ort finden
               </a>
               <a
-                href="#projects"
+                href="/login"
                 className="h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white font-extrabold text-xs inline-flex items-center justify-center hover:bg-white/15 transition"
               >
-                View Portfolio
+                Meine Allianz • Anmelden
               </a>
             </div>
 
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md">
-              <StatPill value="15k+" label="Projects Delivered" />
-              <StatPill value="250+" label="Skilled Team" />
-              <StatPill value="4.9★" label="Client Rating" />
+              <StatPill value="24/7" label="Schaden melden" />
+              <StatPill value="Mo–Fr" label="Beratung 8–20 Uhr" />
+              <StatPill value="Top" label="Online-Antrag" />
             </div>
           </div>
 
           {/* right */}
           <div className="relative">
             <div className="grid grid-cols-2 gap-4">
-              <TinyCard img={HOME_IMAGES.heroCard1} title="Premium Service" subtitle="Design + Build" />
-              <TinyCard img={HOME_IMAGES.heroCard2} title="Built Quality" subtitle="Trusted Delivery" />
+              <TinyCard img={HOME_IMAGES.heroCard1} title="Kfz-Versicherung" subtitle="Optimaler Schutz fürs Auto" />
+              <TinyCard img={HOME_IMAGES.heroCard2} title="Zahnzusatz" subtitle="Premium-Schutz ohne Wartezeit" />
             </div>
 
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-white/60 text-[10px] uppercase tracking-widest font-extrabold">
-                    Client Status
+                    Unser Highlight
                   </div>
-                  <div className="text-white font-extrabold mt-1">
-                    Project delivered in 9 weeks
-                  </div>
+                  <div className="text-white font-extrabold mt-1">Schnelle & unkomplizierte Schadensabwicklung</div>
                 </div>
-                <div className="text-[#f4c300] font-extrabold">Approved</div>
+                <div className="text-[#f4c300] font-extrabold">Aktiv</div>
               </div>
 
               <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
@@ -150,12 +139,12 @@ export default function Hero() {
               </div>
 
               <div className="mt-3 flex items-center justify-between text-[11px] text-white/60">
-                <span>Berlin, DE</span>
+                <span>Deutschlandweit</span>
                 <a
-                  href="/about"
+                  href="/produkte"
                   className="px-3 py-1 rounded-full bg-black/40 border border-white/10 text-white font-extrabold hover:bg-black/60 transition"
                 >
-                  Learn More
+                  Mehr entdecken
                 </a>
               </div>
             </div>

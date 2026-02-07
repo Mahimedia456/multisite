@@ -1904,36 +1904,28 @@ app.get(
     if (!slug)
       return res.status(400).json({ ok: false, message: "slug is required" });
 
-    const bq = await pool.query(
-      `SELECT id, name, slug, route
-       FROM brands
-       WHERE LOWER(slug) = $1
-       LIMIT 1`,
-      [slug]
-    );
-    if (!bq.rows.length)
-      return res.status(404).json({ ok: false, message: "Brand not found" });
-
-    const brand = bq.rows[0];
-
     const layoutsQ = await pool.query(
-      `
-      SELECT
-        t.key,
-        v.content
-      FROM brand_layout_templates t
-      LEFT JOIN LATERAL (
-        SELECT content
-        FROM brand_layout_template_versions
-        WHERE template_id = t.id
-        ORDER BY version DESC
-        LIMIT 1
-      ) v ON true
-      WHERE t.brand_id = $1
-        AND t.key IN ('header','footer')
-      `,
-      [brand.id]
-    );
+  `
+  SELECT DISTINCT ON (t.key)
+    t.key,
+    v.content
+  FROM brand_layout_templates t
+  LEFT JOIN LATERAL (
+    SELECT content
+    FROM brand_layout_template_versions
+    WHERE template_id = t.id
+    ORDER BY created_at DESC, version DESC
+    LIMIT 1
+  ) v ON true
+  WHERE t.brand_id = $1
+    AND t.key IN ('header','footer')
+  ORDER BY
+    t.key,
+    t.updated_at DESC NULLS LAST,
+    t.id DESC
+  `,
+  [brand.id]
+);
 
     const header =
       layoutsQ.rows.find((r) => r.key === "header")?.content || null;

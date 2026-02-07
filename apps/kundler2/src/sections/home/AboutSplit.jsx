@@ -1,9 +1,9 @@
 import { HOME_IMAGES } from "../../data/homeImages";
 
 const bullets = [
-  { title: "Precision Contracts", body: "Clear scope, clean terms, no hidden costs." },
-  { title: "Trusted Partnerships", body: "Dedicated team with consistent project updates." },
-  { title: "Worksite Safety", body: "Processes built around safety and compliance." },
+  { title: "Persönliche Beratung", body: "Ansprechpartner:innen vor Ort – einfach finden & kontaktieren." },
+  { title: "Digitale Services", body: "Online-Services, Hotlines und schnelle Hilfe im Schadenfall." },
+  { title: "Transparente Leistungen", body: "Klare Vorteile, verständliche Optionen und passende Empfehlungen." },
 ];
 
 export default function AboutSplit() {
@@ -12,14 +12,15 @@ export default function AboutSplit() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6">
-            <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
-              About us
-            </div>
+            <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">Wir sind für Sie da</div>
+
             <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold leading-tight">
-              Blending architecture engineering and artistry to create timeless spaces
+              Beratung, Schutz und Vorsorge – passend zu Ihrem Leben
             </h2>
+
             <p className="mt-3 text-sm text-black/60 max-w-xl">
-              We deliver modern builds with robust systems, quality materials, and a clear process from start to finish.
+              Wir empfehlen Ihnen, Ihre persönliche Situation und Ihren Bedarf gemeinsam mit Fachleuten zu besprechen –
+              gerne unterstützen wir Sie.
             </p>
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -35,7 +36,7 @@ export default function AboutSplit() {
             </div>
 
             <button className="mt-8 h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-              Learn About Us
+              Mehr über uns
             </button>
           </div>
 

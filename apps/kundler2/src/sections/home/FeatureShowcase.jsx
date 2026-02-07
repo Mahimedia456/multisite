@@ -2,8 +2,8 @@ import { HOME_IMAGES } from "../../data/homeImages";
 
 const items = [
   {
-    title: "Redefining the future of construction through design excellence",
-    body: "From concept to completion, we make every detail count with clear communication and measurable outcomes.",
+    title: "Empfehlungen für Sie – schnell finden, was zu Ihnen passt",
+    body: "Von Kfz bis Rechtsschutz: entdecken Sie Highlights, Vorteile und passende Optionen – transparent und verständlich.",
     left: HOME_IMAGES.featureLeft,
     right: HOME_IMAGES.featureRight,
   },
@@ -21,23 +21,17 @@ export default function FeatureShowcase() {
 
             <div className="lg:col-span-7 rounded-3xl bg-white border border-black/5 shadow-sm p-8 flex flex-col justify-between">
               <div>
-                <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
-                  Featured
-                </div>
-                <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold leading-tight">
-                  {x.title}
-                </h2>
-                <p className="mt-3 text-sm text-black/60 max-w-2xl">
-                  {x.body}
-                </p>
+                <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">Empfehlungen</div>
+                <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold leading-tight">{x.title}</h2>
+                <p className="mt-3 text-sm text-black/60 max-w-2xl">{x.body}</p>
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <button className="h-10 px-5 rounded-xl bg-black text-white font-extrabold text-sm hover:opacity-90">
-                  View Portfolio
+                  Produkte ansehen
                 </button>
                 <button className="h-10 px-5 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-                  Get Consultation
+                  Beratung & Kontakt
                 </button>
               </div>
 

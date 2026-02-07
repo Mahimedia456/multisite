@@ -12,22 +12,22 @@ export default function CTAWide() {
         <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-10 sm:p-12 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           <div>
             <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
-              Let’s build together
+              Wir sind für Sie da
             </div>
             <div className="mt-3 text-2xl sm:text-3xl font-extrabold">
-              Partner with us to design and build the future you envision
+              Persönliche oder digitale Beratung – einfach Kontakt aufnehmen
             </div>
             <div className="mt-2 text-sm text-white/70 max-w-2xl">
-              Clear scope, strong delivery, and craftsmanship you can measure.
+              Mo–Fr 8–20 Uhr telefonisch oder digital. Finden Sie jetzt die passende Unterstützung.
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button className="h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-              Book a Call
+              Ansprechpartner:in finden
             </button>
             <button className="h-11 px-6 rounded-xl bg-white/10 border border-white/15 text-white font-extrabold text-sm hover:bg-white/15">
-              View Portfolio
+              Online-Services
             </button>
           </div>
         </div>

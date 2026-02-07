@@ -1,7 +1,7 @@
 const stats = [
-  { value: "15k+", label: "Projects Delivered" },
-  { value: "250+", label: "Satisfied Clients" },
-  { value: "4.9★", label: "Average Rating" },
+  { value: "24/7", label: "Schaden melden" },
+  { value: "8–20", label: "Mo–Fr Beratung" },
+  { value: "Top", label: "Kundenzufriedenheit" },
 ];
 
 export default function StatsBand() {
@@ -11,13 +11,13 @@ export default function StatsBand() {
         <div className="rounded-[2.5rem] bg-[#f6f7f8] border border-black/5 p-8 sm:p-10">
           <div className="text-center">
             <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
-              Trusted Performance
+              Meine Allianz & Services
             </div>
             <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">
-              Driven by passion for quality and innovation
+              Schnell erledigt – online oder mit persönlicher Unterstützung
             </h2>
             <p className="mt-3 text-sm text-black/60 max-w-2xl mx-auto">
-              We build spaces that reflect strength, sustainability, and lasting value.
+              Adressänderung, Kontaktdaten, Services und Hilfe – damit alles reibungslos läuft.
             </p>
           </div>
 
@@ -35,7 +35,7 @@ export default function StatsBand() {
 
           <div className="mt-10 flex justify-center">
             <button className="h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-              Request a Proposal
+              Online-Services öffnen
             </button>
           </div>
         </div>

@@ -1,7 +1,22 @@
 const plans = [
-  { name: "Starter", price: "$1,999.00", desc: "Best for small upgrades & quick renovations.", highlight: false },
-  { name: "Pro", price: "$2,999.00", desc: "Ideal for commercial builds & structured delivery.", highlight: true },
-  { name: "Enterprise", price: "$4,999.00", desc: "Full-scale design + build with dedicated PM.", highlight: false },
+  {
+    name: "Basis",
+    price: "ab 1,60 %",
+    desc: "Kurzfristig und sicher parken: Allianz ParkDepot (Beispiel).",
+    highlight: false,
+  },
+  {
+    name: "Empfehlung",
+    price: "Premium",
+    desc: "Sofortleistung ohne Wartezeit – bis zu 100 % Kostenerstattung (Beispiel).",
+    highlight: true,
+  },
+  {
+    name: "Individuell",
+    price: "Beratung",
+    desc: "Passende Lösungen für Ihre Situation – persönlich oder digital.",
+    highlight: false,
+  },
 ];
 
 export default function Pricing() {
@@ -10,13 +25,11 @@ export default function Pricing() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
-            Pricing
+            Angebote im Überblick
           </div>
-          <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">
-            Tailored solutions for every budget
-          </h2>
+          <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">Empfehlungen & Highlights</h2>
           <p className="mt-3 text-sm text-white/70 max-w-2xl mx-auto">
-            Transparent packages that match your scope. Customization available.
+            Transparent, verständlich und passend zu Ihrem Bedarf (Demo-Inhalte).
           </p>
         </div>
 
@@ -26,9 +39,7 @@ export default function Pricing() {
               key={p.name}
               className={[
                 "rounded-[2.2rem] border p-7 shadow-sm",
-                p.highlight
-                  ? "bg-[#f5c400] text-black border-[#f5c400]"
-                  : "bg-white/5 text-white border-white/10",
+                p.highlight ? "bg-[#f5c400] text-black border-[#f5c400]" : "bg-white/5 text-white border-white/10",
               ].join(" ")}
             >
               <div className="text-sm font-extrabold">{p.name}</div>
@@ -38,10 +49,10 @@ export default function Pricing() {
               </div>
 
               <ul className={["mt-6 space-y-3 text-sm", p.highlight ? "text-black/80" : "text-white/80"].join(" ")}>
-                <li>• Timeline planning</li>
-                <li>• Materials estimate</li>
-                <li>• Dedicated support</li>
-                <li>• Site supervision</li>
+                <li>• Online abschließen</li>
+                <li>• Leistungen vergleichen</li>
+                <li>• Persönliche Beratung</li>
+                <li>• Schnelle Hilfe im Schadenfall</li>
               </ul>
 
               <button
@@ -50,7 +61,7 @@ export default function Pricing() {
                   p.highlight ? "bg-black text-white" : "bg-[#f5c400] text-black",
                 ].join(" ")}
               >
-                Get Started
+                Mehr erfahren
               </button>
             </div>
           ))}
