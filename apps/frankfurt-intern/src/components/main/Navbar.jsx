@@ -73,9 +73,13 @@ export default function Navbar() {
 
             {/* Desktop actions */}
             <div className="hidden items-center gap-3 md:flex">
-              <button className="rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold text-white ring-1 ring-white/15 hover:bg-white/15">
-                Login
-              </button>
+         <a
+  href="https://multisite-admin.vercel.app/"
+  className="rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold text-white ring-1 ring-white/15 hover:bg-white/15"
+>
+  Login
+</a>
+
              a
               <a
                 href="#kontakt"

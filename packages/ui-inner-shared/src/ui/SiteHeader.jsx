@@ -1,6 +1,6 @@
 // packages/ui-inner-shared/src/SiteHeader.jsx
 
-import React from "react";
+import React, { useState } from "react";
 
 const DefaultLink = ({ to, href, children, ...rest }) => {
   const finalHref = href ?? to ?? "#";
@@ -17,6 +17,8 @@ export default function SiteHeader({
   variant = "bar", // "bar" | "boxed"
 }) {
   const Link = LinkComponent;
+
+  const [mobileOpen, setMobileOpen] = useState(false); // ✅ MOBILE MENU STATE
 
   const {
     name,
@@ -62,9 +64,7 @@ export default function SiteHeader({
 
   const navItem =
     "leading-none font-medium text-slate-800 hover:text-primary transition-colors " +
-    "whitespace-nowrap " +
-    "text-[clamp(11px,0.9vw,14px)] " +
-    "px-2 xl:px-3 py-3";
+    "whitespace-nowrap text-[clamp(11px,0.9vw,14px)] px-2 xl:px-3 py-3";
 
   const renderNavItem = (item, idx) => {
     const key = `${item?.label || "link"}-${idx}`;
@@ -96,7 +96,9 @@ export default function SiteHeader({
     );
   };
 
-  // ✅ TWO-ROW HEADER (NO OVERLAP)
+  // -------------------------------
+  // MAIN HEADER CONTENT
+  // -------------------------------
   const Inner = (
     <div className="w-full">
       {/* Row 1: Logo + Right actions */}
@@ -119,12 +121,24 @@ export default function SiteHeader({
               {login.label ?? "Log In"}
             </Link>
           ) : null}
+
           {renderCta()}
+
+          {/* ✅ MOBILE HAMBURGER BUTTON */}
+         <button
+  className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
+  onClick={() => setMobileOpen(!mobileOpen)}
+>
+  <span className="material-symbols-outlined text-3xl">
+    {mobileOpen ? "close" : "menu"}
+  </span>
+</button>
+
         </div>
       </div>
 
-      {/* Row 2: Nav below (centered) */}
-      <div className="border-t border-gray-100">
+      {/* Row 2: Desktop Nav (hidden on mobile) */}
+      <div className="border-t border-gray-100 hidden sm:block">
         <div className="flex items-center justify-center">
           <div className="flex items-center justify-center flex-nowrap min-w-0">
             {(homeLinks || []).map(renderNavItem)}
@@ -136,6 +150,45 @@ export default function SiteHeader({
           </div>
         </div>
       </div>
+
+      {/* ✅ MOBILE DROPDOWN MENU */}
+      {mobileOpen && (
+        <div className="sm:hidden border-t border-gray-100 bg-white">
+          <div className="flex flex-col py-2">
+            {(homeLinks || []).map((item, idx) => (
+              <div key={idx} className="px-4 py-2">
+                {item.to ? (
+                  <Link
+                    to={item.to}
+                    className="block text-slate-700 text-sm font-medium"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={item.href}
+                    className="block text-slate-700 text-sm font-medium"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                )}
+              </div>
+            ))}
+
+            {!hasAboutAlready && (
+              <Link
+                to="/about"
+                className="px-4 py-2 block text-slate-700 text-sm font-medium"
+                onClick={() => setMobileOpen(false)}
+              >
+                About Us
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 
