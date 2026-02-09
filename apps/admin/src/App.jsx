@@ -1,4 +1,4 @@
-// admin/src/App.jsx  (UPDATED)
+// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import AdminLayout from "./components/AdminLayout";
@@ -28,43 +28,39 @@ export default function App() {
         <Route path="/login" element={<AdminLogin />} />
 
         {/* Protected */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* Brands */}
-          <Route path="/brands" element={<BrandsPortfolio />} />
-          <Route path="/brands/:brandId" element={<BrandDetail />} />
-          <Route path="/brands/:brandId/templates" element={<BrandTemplates />} />
-          <Route
-            path="/brands/:brandId/templates/:templateId/builder"
-            element={<TemplateBuilder />}
-          />
+            {/* Brands */}
+            <Route path="/brands" element={<BrandsPortfolio />} />
+            <Route path="/brands/:brandId" element={<BrandDetail />} />
+            <Route path="/brands/:brandId/templates" element={<BrandTemplates />} />
+            <Route
+              path="/brands/:brandId/templates/:templateId/builder"
+              element={<TemplateBuilder />}
+            />
 
-          {/* Inner Pages */}
-          <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
-          <Route
-            path="/brand-inner-pages/:pageId"
-            element={<BrandInnerPageDetail />}
-          />
+            {/* Inner Pages */}
+            <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
+            <Route
+              path="/brand-inner-pages/:pageId"
+              element={<BrandInnerPageDetail />}
+            />
 
-          {/* ✅ Generate Brand */}
-          <Route path="/admin/generate-brand" element={<GenerateBrand />} />
+            {/* Generate Brand */}
+            <Route path="/admin/generate-brand" element={<GenerateBrand />} />
 
-          {/* ✅ AI Site Builder */}
-          <Route path="/admin/ai-site-builder" element={<AISiteBuilder />} />
+            {/* AI Site Builder */}
+            <Route path="/admin/ai-site-builder" element={<AISiteBuilder />} />
 
-          {/* Main Website */}
-          <Route path="/site" element={<SitePages />} />
-          <Route
-            path="/site/templates/:templateId/builder"
-            element={<TemplateBuilder />}
-          />
+            {/* Main Website */}
+            <Route path="/site" element={<SitePages />} />
+            <Route
+              path="/site/templates/:templateId/builder"
+              element={<TemplateBuilder />}
+            />
+          </Route>
         </Route>
 
         {/* Default */}

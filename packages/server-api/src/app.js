@@ -783,9 +783,7 @@ app.post(
   wrap(async (req, res) => {
     const { email, password } = req.body || {};
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "Email and password are required" });
+      return res.status(400).json({ ok: false, message: "Email and password are required" });
     }
 
     const { rows } = await pool.query(
@@ -797,27 +795,45 @@ app.post(
     );
 
     const admin = rows[0];
-    if (!admin)
-      return res
-        .status(401)
-        .json({ ok: false, message: "Invalid email or password" });
+    if (!admin) return res.status(401).json({ ok: false, message: "Invalid email or password" });
 
     const ok = await bcrypt.compare(password, admin.password_hash);
-    if (!ok)
-      return res
-        .status(401)
-        .json({ ok: false, message: "Invalid email or password" });
+    if (!ok) return res.status(401).json({ ok: false, message: "Invalid email or password" });
+
+    // ✅ Decide brandSlug from email (your rule)
+    let brandSlug = null;
+    const lowerEmail = String(admin.email || "").toLowerCase();
+    if (lowerEmail.includes("allianz3")) brandSlug = "kundler3";
+    if (lowerEmail.includes("allianz4")) brandSlug = "allianz4";
+
+    // ✅ Decide role: keep admin only for true admin
+    const role = admin.role || (brandSlug ? "brand_admin" : "admin");
 
     const access_token = signToken({
       id: admin.id,
       email: admin.email,
-      role: admin.role || "admin",
+      role,
+      brandSlug, // ✅ IMPORTANT (used in /api/brands)
     });
 
-    res.json({
+    // ✅ permissions
+    let permissions = ["Overview", "Brands", "Main Website"];
+    if (role === "admin") {
+      permissions = ["Overview", "Brands", "Brand Inner Pages", "Generate Brand", "Main Website"];
+    }
+
+    return res.json({
       ok: true,
       access_token,
-      user: { id: admin.id, email: admin.email, role: admin.role || "admin" },
+      user: {
+        id: admin.id,
+        email: admin.email,
+        role,
+        permissions,
+        name: admin.email.split("@")[0],
+        slug: brandSlug || "holding",
+        brandSlug, // helpful in frontend too
+      },
     });
   })
 );
@@ -840,12 +856,27 @@ app.get(
     const where = [];
     const vals = [];
 
-    // status filter (only if not "all")
+    // ✅ HARD RESTRICTION by logged-in email (cannot fail)
+    const email = String(req.user?.email || "").toLowerCase();
+
+    // brand users
+    let forcedSlug = "";
+    if (email.includes("allianz3")) forcedSlug = "kundler3";
+    if (email.includes("allianz4")) forcedSlug = "allianz4";
+
+    // if brand user => restrict to single slug
+    if (forcedSlug) {
+      vals.push(forcedSlug);
+      where.push(`LOWER(COALESCE(slug,'')) = $${vals.length}`);
+    }
+
+    // status filter
     if (status !== "all") {
       vals.push(status);
       where.push(`LOWER(COALESCE(status,'')) = $${vals.length}`);
     }
 
+    // search filter
     if (q) {
       vals.push(`%${q}%`);
       const idx = vals.length;
@@ -861,22 +892,7 @@ app.get(
 
     const { rows } = await pool.query(
       `
-      SELECT
-        id, name, slug, route, status, updated_at,
-
-        accent_color, primary_color, primary_dark_color, accent_color_2,
-        background_light, background_dark, surface_light, surface_dark,
-
-        font_family, font_google_url, icon_font_url,
-
-        logo_type, logo_value, logo_text, logo_url,
-
-        typography_json, nav_links_json, cta_json,
-        brand_description,
-
-        company_name, company_phone, company_whatsapp, company_email, company_location,
-
-        reference_image_url
+      SELECT id, name, slug, route, status, updated_at
       FROM brands
       ${whereSql}
       ORDER BY updated_at DESC NULLS LAST, id DESC
@@ -885,89 +901,17 @@ app.get(
       vals
     );
 
-    const data = rows.map((r) => {
-      const safeSlug =
-        r.slug ||
-        String(r.route || "")
-          .replace("/", "")
-          .trim()
-          .toLowerCase() ||
-        "";
-
-      return {
-        // ✅ BASIC (snake_case also)
-        id: r.id,
-        name: r.name,
-        slug: safeSlug,
-        route: r.route,
-        status: r.status || "inactive",
-        updated_at: r.updated_at,
-
-        reference_image_url: r.reference_image_url || null,
-
-        // ✅ For your older UI (snake_case)
-        accent_color: r.accent_color,
-        primary_color: r.primary_color,
-        primary_dark_color: r.primary_dark_color,
-        accent_color_2: r.accent_color_2,
-
-        background_light: r.background_light,
-        background_dark: r.background_dark,
-        surface_light: r.surface_light,
-        surface_dark: r.surface_dark,
-
-        font_family: r.font_family,
-        font_google_url: r.font_google_url,
-        icon_font_url: r.icon_font_url,
-
-        logo_type: r.logo_type,
-        logo_value: r.logo_value,
-        logo_text: r.logo_text,
-        logo_url: r.logo_url,
-
-        typography_json: r.typography_json,
-        nav_links_json: r.nav_links_json,
-        cta_json: r.cta_json,
-
-        brand_description: r.brand_description,
-
-        company_name: r.company_name,
-        company_phone: r.company_phone,
-        company_whatsapp: r.company_whatsapp,
-        company_email: r.company_email,
-        company_location: r.company_location,
-
-        // ✅ ALSO camelCase (future-proof)
-        updatedAt: r.updated_at,
-        accentColor: r.accent_color,
-        primaryColor: r.primary_color,
-        primaryDarkColor: r.primary_dark_color,
-        accentColor2: r.accent_color_2,
-        backgroundLight: r.background_light,
-        backgroundDark: r.background_dark,
-        surfaceLight: r.surface_light,
-        surfaceDark: r.surface_dark,
-        fontFamily: r.font_family,
-        fontGoogleUrl: r.font_google_url,
-        iconFontUrl: r.icon_font_url,
-        logoType: r.logo_type,
-        logoValue: r.logo_value,
-        logoText: r.logo_text,
-        logoUrl: r.logo_url,
-        description: r.brand_description,
-        company: {
-          name: r.company_name,
-          phone: r.company_phone,
-          whatsapp: r.company_whatsapp,
-          email: r.company_email,
-          location: r.company_location,
-        },
-      };
+    // ✅ debug (temporary) to confirm restriction is applied
+    return res.json({
+      ok: true,
+      debug: { email, forcedSlug, whereSql, vals },
+      data: rows,
     });
-
-    return res.json({ ok: true, data });
   })
 );
+
+
+
 
 
 

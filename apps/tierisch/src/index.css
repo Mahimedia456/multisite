@@ -1,3 +1,4 @@
+/* index.css (LIGHT ONLY) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,26 +6,20 @@
 /* Clean scrollbar */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-thumb { background: #000000; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #000000; }
 
 /* ---------------------------------------
-   Global Theme Tokens (simple + flat)
+   Global Theme Tokens (LIGHT ONLY)
 ---------------------------------------- */
 :root{
-  --primary: 14 116 144;      /* default (other brands) */
+  /* default brand (fallback) */
+  --primary: 14 116 144;
   --primary-dark: 13 98 122;
 
   --background: 246 248 251;
   --foreground: 15 23 42;
 }
-
-/* Tailwind hooks (used by shared header + buttons) */
-.bg-primary { background-color: rgb(var(--primary)); }
-.hover\:bg-primary-dark:hover { background-color: rgb(var(--primary-dark)); }
-.text-primary { color: rgb(var(--primary)); }
-.bg-primary\/10 { background-color: rgba(var(--primary), .10); }
-.shadow-primary\/20 { box-shadow: 0 10px 25px rgba(var(--primary), .20); }
 
 /* Base page */
 body{
@@ -33,7 +28,22 @@ body{
 }
 
 /* ---------------------------------------
-   Brand overrides (SIMPLE)
+   ✅ Tailwind-like hooks used in UI
+   (Keep these because your shared header/buttons rely on them)
+---------------------------------------- */
+.bg-primary { background-color: rgb(var(--primary)); }
+.hover\:bg-primary-dark:hover { background-color: rgb(var(--primary-dark)); }
+.text-primary { color: rgb(var(--primary)); }
+.bg-primary\/10 { background-color: rgba(var(--primary), .10); }
+.shadow-primary\/20 { box-shadow: 0 10px 25px rgba(var(--primary), .20); }
+
+/* Optional helpers (safe) */
+.border-primary\/20 { border-color: rgba(var(--primary), .20); }
+.ring-primary\/20 { --tw-ring-color: rgba(var(--primary), .20); }
+.ring-primary\/30 { --tw-ring-color: rgba(var(--primary), .30); }
+
+/* ---------------------------------------
+   Brand overrides (LIGHT ONLY)
 ---------------------------------------- */
 
 /* Allianz 3 → PURE BLACK */
@@ -47,7 +57,10 @@ body[data-brand="allianz4"]{
   --primary: 0 147 143;
   --primary-dark: 0 124 121;
 }
-/* ---------- Icon Loader ---------- */
+
+/* ---------------------------------------
+   Loader Icon (SAFE)
+---------------------------------------- */
 .loader-icon {
   font-size: 42px;
   animation: pulseScale 1.2s ease-in-out infinite;
@@ -55,16 +68,14 @@ body[data-brand="allianz4"]{
 }
 
 @keyframes pulseScale {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.9);
-    opacity: 0.6;
-  }
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
 }
+
+/* ---------------------------------------
+   IMPORTANT FIX
+   ❌ DO NOT override Tailwind utilities like .h-10
+   (It breaks header/logo/buttons everywhere)
+---------------------------------------- */
+/* Removed: .h-10 { height: 0; } */

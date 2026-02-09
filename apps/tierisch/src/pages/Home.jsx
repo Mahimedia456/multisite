@@ -29,7 +29,7 @@ export default function Home() {
       <LeistungTabsSection />
       <FAQSection />
       <AngebotSection />
-      <Footer brandSlug="aamir" />
+      <Footer brandSlug="allianz4" />
       <div className="h-10" />
     </main>
   );

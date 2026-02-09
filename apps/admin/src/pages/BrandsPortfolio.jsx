@@ -128,7 +128,10 @@ export default function BrandsPortfolio() {
     };
   }, [query, status]);
 
-  const filtered = useMemo(() => brands, [brands]);
+const filtered = useMemo(() => {
+  const allow = new Set(["/kundler3", "/allianz4"]);
+  return (brands || []).filter((b) => allow.has(String(b?.route || "").trim()));
+}, [brands]);
 
   // ✅ KPI values from real data
   const totalCount = filtered.length;

@@ -4,21 +4,24 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
-    // if you import shared UI package components directly:
     "../../packages/ui-inner-shared/src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
       fontFamily: {
-        display: ['ui-sans-serif', 'system-ui', 'Inter', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial'],
+        display: ["ui-sans-serif", "system-ui", "Inter", "Segoe UI", "Roboto", "Helvetica", "Arial"],
       },
       colors: {
-        // ✅ Brand tokens (use these everywhere)
+        // ✅ Brand tokens
         primary: "rgb(var(--primary) / <alpha-value>)",
         "primary-dark": "rgb(var(--primary-dark) / <alpha-value>)",
         accent: "rgb(var(--accent) / <alpha-value>)",
         "background-light": "rgb(var(--bg-light) / <alpha-value>)",
         "background-dark": "rgb(var(--bg-dark) / <alpha-value>)",
+
+        // ✅ ADD THESE (used by your About design)
+        "allianz-blue": "rgb(var(--allianz-blue) / <alpha-value>)",
+        "text-dark": "rgb(var(--text-dark) / <alpha-value>)",
       },
       boxShadow: {
         soft: "0 18px 50px rgba(0,0,0,0.12)",

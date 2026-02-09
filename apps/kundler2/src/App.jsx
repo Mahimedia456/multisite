@@ -2,9 +2,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 
 import Home from "./pages/Home";
-import About from "./pages/About";
 import Team from "./pages/Team";
 import BrandLoader from "./components/BrandLoader";
+import AboutKundler2 from "./pages/about-kundler2/AboutKundler2";
 
 export default function App() {
   useEffect(() => {
@@ -27,10 +27,12 @@ export default function App() {
           <Route path="/" element={<Home />} />
 
           {/* ABOUT (shared page) */}
-          <Route path="/about" element={<About />} />
+        
 
           {/* TEAM (shared page) */}
           <Route path="/team" element={<Team />} />
+          <Route path="/about-kundler2" element={<AboutKundler2 />} />
+
         </Routes>
       </BrowserRouter>
     </>

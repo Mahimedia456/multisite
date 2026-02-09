@@ -1,5 +1,4 @@
 // src/lib/auth.js
-
 const SESSION_KEY = "session";
 
 /* =========================
@@ -26,19 +25,20 @@ export function logout() {
   } catch {}
 }
 
+export function getCurrentUser() {
+  const session = getSession();
+  return session?.user ?? null;
+}
+
 /* =========================
    Utils
 ========================= */
 function getApiBase() {
-  // ✅ env first, otherwise dev fallback (so local never blocks)
   const raw = String(import.meta?.env?.VITE_API_BASE_URL || "").trim();
-
   const base = (raw || "http://localhost:5050").replace(/\/+$/, "");
-
   if (!/^https?:\/\//i.test(base)) {
     throw new Error(`VITE_API_BASE_URL must start with http(s). Got: ${base}`);
   }
-
   return base;
 }
 
@@ -58,13 +58,13 @@ export async function loginApi(a = {}, b, c) {
   let password = "";
   let remember = false;
 
-  // Style 1: loginApi(email, password, remember)
+  // loginApi(email, password, remember)
   if (typeof a === "string" || typeof b === "string") {
     email = typeof a === "string" ? a : "";
     password = typeof b === "string" ? b : "";
     remember = Boolean(c);
   } else {
-    // Style 2: loginApi({ ... })
+    // loginApi({ ... })
     const payload = a || {};
     const p = payload?.form ?? payload?.values ?? payload?.data ?? payload;
 
@@ -95,15 +95,23 @@ export async function loginApi(a = {}, b, c) {
 
   const data = await safeJson(res);
 
-  if (!res.ok) {
+  if (!res.ok || !data?.ok) {
     throw new Error(data?.message || data?.error || `Login failed (${res.status})`);
   }
 
+  // ✅ backend returns access_token
+  const token =
+    data?.token ??
+    data?.access_token ??
+    data?.jwt ??
+    data?.data?.access_token ??
+    null;
+
   const session = {
     ...data,
-    access_token:
-      data?.access_token ?? data?.token ?? data?.jwt ?? data?.data?.access_token,
-    token: data?.token ?? data?.access_token ?? data?.jwt ?? data?.data?.access_token,
+    ok: true,
+    access_token: token,
+    token: token, // ✅ ensure ProtectedRoute finds it
     user: data?.user ?? data?.admin ?? data?.profile ?? data?.data?.user ?? null,
     remember,
   };
@@ -112,25 +120,22 @@ export async function loginApi(a = {}, b, c) {
   return { ok: true, data: session };
 }
 
-/* =========================================================
-   ✅ Authenticated API Fetch (OLD STYLE - returns Response)
-   - This keeps your older pages working as-is.
-========================================================= */
+/* =========================
+   Authenticated API Fetch
+========================= */
 export async function apiFetch(path, options = {}) {
   const session = getSession();
 
   const token =
-    session?.access_token ||
     session?.token ||
+    session?.access_token ||
     session?.jwt ||
     session?.data?.access_token;
 
   const headers = new Headers(options.headers || {});
-  const hasBody = options.body !== undefined && options.body !== null;
   let body = options.body;
 
-  // auto JSON stringify for plain objects
-  if (hasBody && isPlainObject(body)) {
+  if (body !== undefined && body !== null && isPlainObject(body)) {
     if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     body = JSON.stringify(body);
   }
@@ -149,18 +154,14 @@ export async function apiFetch(path, options = {}) {
     throw new Error("Session expired. Please login again.");
   }
 
-  return res; // ✅ keep Response
+  return res;
 }
 
-/* =========================================================
-   ✅ New helper: apiFetchJSON (returns parsed JSON)
-   - Use this in new pages (GenerateBrand, AI builder, etc.)
-========================================================= */
 export async function apiFetchJSON(path, options = {}) {
   const res = await apiFetch(path, options);
   const data = await safeJson(res);
 
-  if (!res.ok) {
+  if (!res.ok || !data?.ok) {
     throw new Error(data?.message || data?.error || `Request failed (${res.status})`);
   }
 

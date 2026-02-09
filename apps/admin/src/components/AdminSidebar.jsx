@@ -1,21 +1,23 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import MIcon from "./MIcon";
-import { logout } from "../lib/auth";
+import { logout, getCurrentUser } from "../lib/auth";
 
-const nav = [
+// Full nav items
+const NAV_ITEMS = [
   { to: "/dashboard", label: "Overview", icon: "grid_view" },
   { to: "/brands", label: "Brands", icon: "layers" },
-
-  // ✅ This MUST match App.jsx route
   { to: "/brand-inner-pages", label: "Brand Inner Pages", icon: "description" },
-
   { to: "/site", label: "Main Website", icon: "language" },
-  // ✅ NEW: Generate Brand
-  { to: "/admin/generate-brand", label: "Generate Brand", icon: "auto_awesome" },
 ];
 
 export default function AdminSidebar() {
   const navigate = useNavigate();
+  const user = getCurrentUser();
+
+  // Only show nav items that the user has permission for
+  const nav = user?.permissions
+    ? NAV_ITEMS.filter((item) => user.permissions.includes(item.label))
+    : NAV_ITEMS;
 
   function handleLogout() {
     logout();
@@ -24,6 +26,7 @@ export default function AdminSidebar() {
 
   return (
     <aside className="w-[270px] shrink-0 min-h-screen bg-white/70 border-r border-[#efeaf6] flex flex-col">
+      {/* Tenant Info */}
       <div className="px-6 pt-6 pb-5">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-violet-600 to-violet-700 text-white flex items-center justify-center shadow-lg shadow-violet-500/20">
@@ -31,15 +34,16 @@ export default function AdminSidebar() {
           </div>
           <div>
             <div className="font-extrabold text-gray-900 leading-tight">
-              Holding Co.
+              {user?.name || "Holding Co."}
             </div>
             <div className="text-xs text-violet-600 font-semibold">
-              Global Admin
+              {user?.slug || "Global Admin"}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Nav Links */}
       <nav className="px-4 py-2 space-y-1">
         {nav.map((item) => (
           <NavLink
@@ -60,6 +64,7 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
+      {/* Bottom Buttons */}
       <div className="mt-auto px-4 pb-6 pt-6">
         <button
           onClick={() => navigate("/site")}

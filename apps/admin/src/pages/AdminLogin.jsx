@@ -1,3 +1,4 @@
+// src/pages/AdminLogin.jsx
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../lib/auth";
@@ -29,28 +30,42 @@ export default function AdminLogin() {
     [email, password]
   );
 
-  async function onSubmit(e) {
-    e.preventDefault();
+  async function doLogin(nextEmail, nextPassword) {
     setError("");
     setLoading(true);
 
-    // tiny UX delay (optional)
-    await new Promise((r) => setTimeout(r, 250));
+    try {
+      const res = await loginApi(nextEmail, nextPassword, remember);
 
-    const res = await loginApi(email, password, remember);
+      console.log("Login success", res);
 
-    setLoading(false);
+      // ✅ safer navigation (lets React finish state/paint)
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
 
-    if (!res.ok) {
-      setError(res.error || "Login failed.");
-      return;
+        // ✅ fallback if router doesn’t move (rare but happens)
+        setTimeout(() => {
+          if (window.location.pathname === "/login") {
+            window.location.assign("/dashboard");
+          }
+        }, 50);
+      }, 0);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    navigate("/dashboard", { replace: true });
+  async function onSubmit(e) {
+    e.preventDefault();
+    await doLogin(email, password);
   }
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-[#f5f1fb]">
+      {/* Background effects */}
       <div className="pointer-events-none absolute -top-44 -left-52 w-[520px] h-[520px] rounded-full bg-violet-300/50 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-56 -right-44 w-[620px] h-[620px] rounded-full bg-violet-400/40 blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40" />
@@ -64,6 +79,48 @@ export default function AdminLogin() {
         <p className="mt-2 text-sm text-gray-500">
           Insurance Holding Co. Management
         </p>
+
+        {/* ➤ QUICK LOGIN BUTTONS */}
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={() => {
+              const e = "aamir@mahimediasolutions.com";
+              const p = "mahimediasolutions";
+              setEmail(e);
+              setPassword(p);
+              setTimeout(() => doLogin(e, p), 0);
+            }}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+          >
+            Login Admin
+          </button>
+
+          <button
+            onClick={() => {
+              const e = "allianz3@yopmail.com";
+              const p = "mahimediasolutions";
+              setEmail(e);
+              setPassword(p);
+              setTimeout(() => doLogin(e, p), 0);
+            }}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+          >
+            Login Allianz 3
+          </button>
+
+          <button
+            onClick={() => {
+              const e = "allianz4@yopmail.com";
+              const p = "mahimediasolutions";
+              setEmail(e);
+              setPassword(p);
+              setTimeout(() => doLogin(e, p), 0);
+            }}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+          >
+            Login Allianz 4
+          </button>
+        </div>
 
         <div className="mt-10 w-full max-w-md">
           <div className="rounded-3xl bg-white/80 backdrop-blur-xl shadow-2xl shadow-black/10 border border-black/5 p-7">
@@ -145,13 +202,10 @@ export default function AdminLogin() {
               >
                 <span className="inline-flex items-center justify-center gap-2">
                   {loading ? "Signing In..." : "Sign In"}
-                  <span aria-hidden className="text-base">
-                    →
-                  </span>
+                  <span aria-hidden className="text-base">→</span>
                 </span>
               </button>
 
-              {/* ✅ Removed Forgot Password (as requested) */}
               <div className="pt-1 flex items-center justify-end text-sm">
                 <button
                   type="button"
@@ -182,3 +236,4 @@ export default function AdminLogin() {
     </div>
   );
 }
+  

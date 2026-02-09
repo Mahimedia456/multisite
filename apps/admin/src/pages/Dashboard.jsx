@@ -1,15 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MIcon from "../components/MIcon";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, getSession, logout } from "../lib/auth";
 
-function StatCard({ title, value, note, noteColor = "text-green-600", icon = "bar_chart" }) {
+function StatCard({
+  title,
+  value,
+  note,
+  noteColor = "text-green-600",
+  icon = "bar_chart",
+}) {
   return (
     <div className="rounded-3xl bg-white/80 border border-[#efeaf6] shadow-sm p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm font-semibold text-violet-700">{title}</div>
-          <div className="mt-3 text-4xl font-extrabold text-gray-900">{value}</div>
+          <div className="mt-3 text-4xl font-extrabold text-gray-900">
+            {value}
+          </div>
           <div className={`mt-2 text-sm font-semibold ${noteColor}`}>{note}</div>
         </div>
 
@@ -79,7 +87,11 @@ function TenantCard({ path, name, active, latency, icon }) {
 
         <div className="hidden md:flex items-end gap-1 h-10">
           {[8, 14, 10, 18, 12, 16, 9].map((h, i) => (
-            <div key={i} className="w-2 rounded bg-violet-300" style={{ height: `${h * 2}px` }} />
+            <div
+              key={i}
+              className="w-2 rounded bg-violet-300"
+              style={{ height: `${h * 2}px` }}
+            />
           ))}
         </div>
       </div>
@@ -90,6 +102,35 @@ function TenantCard({ path, name, active, latency, icon }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const session = getSession();
+
+  const email = String(session?.user?.email || session?.email || "").toLowerCase();
+
+  // ✅ Determine which tenants to show:
+  // - Admin: show both Allianz 3 + Allianz 4
+  // - Allianz3 user: show only Allianz 3
+  // - Allianz4 user: show only Allianz 4
+  const visibleTenants = useMemo(() => {
+    const all = [
+      {
+        key: "allianz3",
+        name: "Allianz 3",
+        path: "/kundler3",
+        slug: "kundler3",
+        icon: "shield",
+      },
+      {
+        key: "allianz4",
+        name: "Allianz 4",
+        path: "/allianz4",
+        slug: "allianz4",
+        icon: "shield",
+      },
+    ];
+
+    if (email.includes("allianz3")) return all.filter((t) => t.key === "allianz3");
+    if (email.includes("allianz4")) return all.filter((t) => t.key === "allianz4");
+    return all; // admin
+  }, [email]);
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -112,29 +153,38 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        // ✅ You will implement these endpoints in server-api:
-        // GET /admin/stats
-        // GET /admin/activity
+        // ✅ Stats
         const sRes = await apiFetch("/admin/stats");
-        const s = await sRes.json();
+        const sJson = await sRes.json().catch(() => ({}));
 
-        const aRes = await apiFetch("/admin/activity");
-        const a = await aRes.json();
+        // Your server returns: { ok:true, data:{ brands, sharedPages } }
+        const sData = sJson?.data || sJson || {};
+
+        // ✅ Activity (optional)
+        let aJson = [];
+        try {
+          const aRes = await apiFetch("/admin/activity");
+          aJson = await aRes.json().catch(() => []);
+        } catch {
+          aJson = [];
+        }
 
         if (!alive) return;
 
         setStats({
-          totalBrands: s.totalBrands ?? 0,
-          totalTemplates: s.totalTemplates ?? 0,
-          totalInnerPages: s.totalInnerPages ?? 0,
-          uptime: s.uptime ?? "99.9%",
+          totalBrands:
+            Number(sData?.brands ?? sData?.totalBrands ?? 0) || 0,
+          totalTemplates:
+            Number(sData?.templates ?? sData?.totalTemplates ?? 0) || 0,
+          totalInnerPages:
+            Number(sData?.sharedPages ?? sData?.totalInnerPages ?? 0) || 0,
+          uptime: String(sData?.uptime ?? "99.9%"),
         });
 
-        setActivity(Array.isArray(a) ? a : []);
+        setActivity(Array.isArray(aJson?.data) ? aJson.data : Array.isArray(aJson) ? aJson : []);
       } catch (e) {
-        // if token invalid -> apiFetch already logs out
         if (!alive) return;
-        // fallback: keep UI working
+        // keep UI working silently
       } finally {
         if (alive) setLoading(false);
       }
@@ -146,15 +196,34 @@ export default function Dashboard() {
     };
   }, []);
 
+  // ✅ If brand-admin, tweak stat display to "1 brand" feeling
+  const effectiveStats = useMemo(() => {
+    const isBrandUser = email.includes("allianz3") || email.includes("allianz4");
+    if (!isBrandUser) return stats;
+
+    return {
+      ...stats,
+      totalBrands: Math.min(stats.totalBrands || 1, 1),
+    };
+  }, [stats, email]);
+
+  // ✅ Performance title text
+  const perfTitle = useMemo(() => {
+    if (visibleTenants.length === 1) return `${visibleTenants[0].name} Performance`;
+    return "Allianz 3 vs Allianz 4";
+  }, [visibleTenants]);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
           Logged in as{" "}
           <span className="font-bold text-gray-900">
-            {session?.email || session?.user?.email || "Admin"}
+            {session?.user?.email || session?.email || "Admin"}
           </span>
-          {loading ? <span className="ml-2 text-xs text-gray-400">(loading…)</span> : null}
+          {loading ? (
+            <span className="ml-2 text-xs text-gray-400">(loading…)</span>
+          ) : null}
         </div>
 
         <button
@@ -166,31 +235,31 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Stats (now real numbers from API) */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
           title="Total Brands"
-          value={String(stats.totalBrands)}
+          value={String(effectiveStats.totalBrands)}
           note="Across portfolio"
           noteColor="text-violet-700"
           icon="layers"
         />
         <StatCard
           title="Templates"
-          value={String(stats.totalTemplates)}
+          value={String(effectiveStats.totalTemplates)}
           note="Headers, footers, pages"
           icon="view_quilt"
         />
         <StatCard
           title="Inner Pages"
-          value={String(stats.totalInnerPages)}
+          value={String(effectiveStats.totalInnerPages)}
           note="Policies, FAQs, TOS…"
           noteColor="text-violet-700"
           icon="description"
         />
         <StatCard
           title="System Health"
-          value={stats.uptime}
+          value={effectiveStats.uptime}
           note="Uptime across services"
           noteColor="text-violet-700"
           icon="verified"
@@ -205,17 +274,20 @@ export default function Dashboard() {
               <div className="flex items-center gap-4 text-sm font-semibold text-gray-600">
                 <span className="inline-flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-violet-700" />
-                  
+                  {visibleTenants[0]?.name || "Allianz 3"}
                 </span>
-                <span className="inline-flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-violet-300" />
-                
-                </span>
+
+                {visibleTenants.length > 1 ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-violet-300" />
+                    {visibleTenants[1]?.name || "Allianz 4"}
+                  </span>
+                ) : null}
               </div>
             }
           >
             <div className="text-sm text-violet-700 font-semibold">
-               PetCare vs  Trust Life
+              {perfTitle}
             </div>
 
             <div className="mt-6 h-[280px] rounded-3xl bg-gradient-to-b from-violet-50 to-transparent border border-[#f0edf7] flex items-center justify-center text-gray-400">
@@ -231,13 +303,39 @@ export default function Dashboard() {
         <div>
           <Card title="Recent Activity">
             <div className="divide-y divide-[#f0edf7]">
-              {(activity.length ? activity : [
-                { icon: "edit", title: "Template updated", sub: "Global Header", time: "Just now" },
-                { icon: "add", title: "New page created", sub: "Privacy Policy", time: "10 mins ago" },
-                { icon: "check_circle", title: "Published", sub: "Home Page", time: "1 hour ago" },
-              ]).slice(0, 6).map((it, idx) => (
-                <ActivityItem key={idx} icon={it.icon} title={it.title} sub={it.sub} time={it.time} />
-              ))}
+              {(activity.length
+                ? activity
+                : [
+                    {
+                      icon: "edit",
+                      title: "Template updated",
+                      sub: "Global Header",
+                      time: "Just now",
+                    },
+                    {
+                      icon: "add",
+                      title: "New page created",
+                      sub: "Privacy Policy",
+                      time: "10 mins ago",
+                    },
+                    {
+                      icon: "check_circle",
+                      title: "Published",
+                      sub: "Home Page",
+                      time: "1 hour ago",
+                    },
+                  ]
+              )
+                .slice(0, 6)
+                .map((it, idx) => (
+                  <ActivityItem
+                    key={idx}
+                    icon={it.icon}
+                    title={it.title}
+                    sub={it.sub}
+                    time={it.time}
+                  />
+                ))}
             </div>
 
             <button className="mt-6 w-full h-11 rounded-2xl bg-violet-100 text-violet-700 font-bold hover:bg-violet-200 transition inline-flex items-center justify-center gap-2">
@@ -249,11 +347,21 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-extrabold text-gray-900">Tenant Status Health</h2>
+        <h2 className="text-xl font-extrabold text-gray-900">
+          Tenant Status Health
+        </h2>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <TenantCard path="" name="PetCare" active="12.4k" latency="42ms" icon="pets" />
-          <TenantCard path="" name="Trust Life" active="8.9k" latency="38ms" icon="account_balance" />
+          {visibleTenants.map((t) => (
+            <TenantCard
+              key={t.key}
+              path={t.path}
+              name={t.name}
+              active={t.key === "allianz3" ? "12.4k" : "8.9k"}
+              latency={t.key === "allianz3" ? "42ms" : "38ms"}
+              icon={t.icon}
+            />
+          ))}
         </div>
       </div>
     </div>
