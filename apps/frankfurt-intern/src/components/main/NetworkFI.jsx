@@ -3,74 +3,71 @@ import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
 
-/* ---------- PRESET COORDS (INSTANT) ----------
-   These are approximate city-center coordinates.
-   Add more cities here anytime (instant improvement).
---------------------------------------------- */
+/* ---------- PRESET COORDS (INSTANT) ---------- */
 const CITY_PRESET = {
-  "Aachen": { lat: 50.7753, lng: 6.0839 },
-  "Ampfing": { lat: 48.2559, lng: 12.4160 },
-  "Bad Baden": { lat: 48.7606, lng: 8.2398 }, // (typo in data sometimes)
+  Aachen: { lat: 50.7753, lng: 6.0839 },
+  Ampfing: { lat: 48.2559, lng: 12.416 },
+  "Bad Baden": { lat: 48.7606, lng: 8.2398 },
   "Baden Baden": { lat: 48.7606, lng: 8.2398 },
   "Bad Honnef": { lat: 50.6455, lng: 7.2308 },
-  "Bad Homburg": { lat: 50.2267, lng: 8.6160 },
+  "Bad Homburg": { lat: 50.2267, lng: 8.616 },
   "Bad Krozingen": { lat: 47.9168, lng: 7.7018 },
-  "Bad Schussenried": { lat: 48.0040, lng: 9.6592 },
+  "Bad Schussenried": { lat: 48.004, lng: 9.6592 },
   "Bad Vilbel": { lat: 50.1833, lng: 8.7333 },
-  "Berlin": { lat: 52.5200, lng: 13.4050 },
-  "Biberach": { lat: 48.0984, lng: 9.7900 },
-  "Bielefeld": { lat: 52.0302, lng: 8.5325 },
-  "Bremerhaven": { lat: 53.5396, lng: 8.5809 },
-  "Coburg": { lat: 50.2590, lng: 10.9640 },
-  "Detmold": { lat: 51.9385, lng: 8.8732 },
-  "Dudenhofen": { lat: 49.3181, lng: 8.3886 },
-  "Duisburg": { lat: 51.4344, lng: 6.7623 },
-  "Emsdetten": { lat: 52.1731, lng: 7.5286 },
+  Berlin: { lat: 52.52, lng: 13.405 },
+  Biberach: { lat: 48.0984, lng: 9.79 },
+  Bielefeld: { lat: 52.0302, lng: 8.5325 },
+  Bremerhaven: { lat: 53.5396, lng: 8.5809 },
+  Coburg: { lat: 50.259, lng: 10.964 },
+  Detmold: { lat: 51.9385, lng: 8.8732 },
+  Dudenhofen: { lat: 49.3181, lng: 8.3886 },
+  Duisburg: { lat: 51.4344, lng: 6.7623 },
+  Emsdetten: { lat: 52.1731, lng: 7.5286 },
   "Enkenbach-Alsenborn": { lat: 49.4906, lng: 7.9016 },
-  "Essen": { lat: 51.4556, lng: 7.0116 },
+  Essen: { lat: 51.4556, lng: 7.0116 },
   "Frankfurt am Main": { lat: 50.1109, lng: 8.6821 },
   "Frechen-Königsdorf": { lat: 50.9137, lng: 6.8107 },
-  "Freiburg": { lat: 47.9990, lng: 7.8421 },
-  "Friedberg": { lat: 50.3358, lng: 8.7555 },
+  Freiburg: { lat: 47.999, lng: 7.8421 },
+  Friedberg: { lat: 50.3358, lng: 8.7555 },
   "Garmisch-Partenkirchen": { lat: 47.4917, lng: 11.0955 },
   "Gießen": { lat: 50.5841, lng: 8.6784 },
-  "Grebenhain": { lat: 50.4860, lng: 9.3380 },
-  "Grünstadt": { lat: 49.5641, lng: 8.1622 },
-  "Gummersbach": { lat: 51.0263, lng: 7.5647 },
-  "Halle": { lat: 51.4825, lng: 11.9705 },
-  "Hamburg": { lat: 53.5511, lng: 9.9937 },
-  "Hameln": { lat: 52.1046, lng: 9.3560 },
-  "Hanau": { lat: 50.1347, lng: 8.9160 },
-  "Hattersheim": { lat: 50.0693, lng: 8.4865 },
-  "Herborn": { lat: 50.6818, lng: 8.2996 },
-  "Karben": { lat: 50.2333, lng: 8.7667 },
-  "Köln": { lat: 50.9375, lng: 6.9603 },
-  "Kulmbach": { lat: 50.1033, lng: 11.4503 },
-  "Limburg": { lat: 50.3833, lng: 8.0500 },
-  "Lübeck": { lat: 53.8655, lng: 10.6866 },
-  "Maintal": { lat: 50.1500, lng: 8.8333 },
-  "Mannheim": { lat: 49.4875, lng: 8.4660 },
-  "Markdorf": { lat: 47.7198, lng: 9.3900 },
-  "Monschau": { lat: 50.5550, lng: 6.2422 },
-  "Monsheim": { lat: 49.6344, lng: 8.2115 },
-  "Mönchengladbach": { lat: 51.1805, lng: 6.4428 },
+  Grebenhain: { lat: 50.486, lng: 9.338 },
+  Grünstadt: { lat: 49.5641, lng: 8.1622 },
+  Gummersbach: { lat: 51.0263, lng: 7.5647 },
+  Halle: { lat: 51.4825, lng: 11.9705 },
+  Hamburg: { lat: 53.5511, lng: 9.9937 },
+  Hameln: { lat: 52.1046, lng: 9.356 },
+  Hanau: { lat: 50.1347, lng: 8.916 },
+  Hattersheim: { lat: 50.0693, lng: 8.4865 },
+  Herborn: { lat: 50.6818, lng: 8.2996 },
+  Karben: { lat: 50.2333, lng: 8.7667 },
+  Köln: { lat: 50.9375, lng: 6.9603 },
+  Kulmbach: { lat: 50.1033, lng: 11.4503 },
+  Limburg: { lat: 50.3833, lng: 8.05 },
+  Lübeck: { lat: 53.8655, lng: 10.6866 },
+  Maintal: { lat: 50.15, lng: 8.8333 },
+  Mannheim: { lat: 49.4875, lng: 8.466 },
+  Markdorf: { lat: 47.7198, lng: 9.39 },
+  Monschau: { lat: 50.555, lng: 6.2422 },
+  Monsheim: { lat: 49.6344, lng: 8.2115 },
+  Mönchengladbach: { lat: 51.1805, lng: 6.4428 },
   "Mülheim-Ruhr": { lat: 51.4332, lng: 6.8797 },
   "Mülheim-Kärlich": { lat: 50.3859, lng: 7.5051 },
-  "München": { lat: 48.1351, lng: 11.5820 },
-  "Münster": { lat: 51.9607, lng: 7.6261 },
-  "Oberhausen": { lat: 51.4963, lng: 6.8638 },
-  "Offenbach": { lat: 50.0956, lng: 8.7761 },
-  "Ochtrup": { lat: 52.2103, lng: 7.1876 },
-  "Osnabrück": { lat: 52.2799, lng: 8.0472 },
-  "Pirmasens": { lat: 49.2017, lng: 7.6057 },
-  "Rellingen": { lat: 53.6510, lng: 9.8317 },
-  "Scheeßel": { lat: 53.1650, lng: 9.4830 },
-  "Schöneck": { lat: 50.2015, lng: 8.8336 }, // Schöneck (Hessen)
-  "Steinen": { lat: 47.6448, lng: 7.7397 },
-  "Viernheim": { lat: 49.5400, lng: 8.5780 },
-  "Weissenburg": { lat: 49.0300, lng: 10.9700 }, // Weißenburg i. Bay.
-  "Willich": { lat: 51.2650, lng: 6.5480 },
-  "Wittingen": { lat: 52.7260, lng: 10.7380 }
+  München: { lat: 48.1351, lng: 11.582 },
+  Münster: { lat: 51.9607, lng: 7.6261 },
+  Oberhausen: { lat: 51.4963, lng: 6.8638 },
+  Offenbach: { lat: 50.0956, lng: 8.7761 },
+  Ochtrup: { lat: 52.2103, lng: 7.1876 },
+  Osnabrück: { lat: 52.2799, lng: 8.0472 },
+  Pirmasens: { lat: 49.2017, lng: 7.6057 },
+  Rellingen: { lat: 53.651, lng: 9.8317 },
+  Scheeßel: { lat: 53.165, lng: 9.483 },
+  Schöneck: { lat: 50.2015, lng: 8.8336 },
+  Steinen: { lat: 47.6448, lng: 7.7397 },
+  Viernheim: { lat: 49.54, lng: 8.578 },
+  Weissenburg: { lat: 49.03, lng: 10.97 },
+  Willich: { lat: 51.265, lng: 6.548 },
+  Wittingen: { lat: 52.726, lng: 10.738 },
 };
 
 function normalizeCity(c) {
@@ -82,25 +79,35 @@ function normalizeCity(c) {
     .replace(/^Frankfurt$/, "Frankfurt am Main");
 }
 
-/* ---------- PIN ICON ---------- */
-const pinSvg = encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none">
-    <path d="M12 22s7-5.2 7-12a7 7 0 1 0-14 0c0 6.8 7 12 7 12z" fill="#f97316"/>
-    <circle cx="12" cy="10" r="3.2" fill="#111827"/>
-  </svg>
-`);
+/* ---------- PIN ICONS ---------- */
+function makePinSvg(fill = "#f97316") {
+  return encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none">
+      <path d="M12 22s7-5.2 7-12a7 7 0 1 0-14 0c0 6.8 7 12 7 12z" fill="${fill}"/>
+      <circle cx="12" cy="10" r="3.2" fill="#111827"/>
+    </svg>
+  `);
+}
 
-const pinIcon = new L.DivIcon({
-  className: "fi-pin",
-  html: `
-    <div class="fi-pin-pulse">
-      <img src="data:image/svg+xml,${pinSvg}" style="width:30px;height:30px;display:block;" />
-    </div>
-  `,
-  iconSize: [30, 30],
-  iconAnchor: [15, 28],
-  popupAnchor: [0, -24],
-});
+const pinSvgOrange = makePinSvg("#f97316");
+const pinSvgGreen = makePinSvg("#22c55e");
+
+function makePinIcon(svgEncoded, className = "fi-pin") {
+  return new L.DivIcon({
+    className,
+    html: `
+      <div class="fi-pin-pulse">
+        <img src="data:image/svg+xml,${svgEncoded}" style="width:30px;height:30px;display:block;" />
+      </div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 28],
+    popupAnchor: [0, -24],
+  });
+}
+
+const pinIconOrange = makePinIcon(pinSvgOrange, "fi-pin fi-pin--orange");
+const pinIconGreen = makePinIcon(pinSvgGreen, "fi-pin fi-pin--green");
 
 /* ---------- CLUSTER ICON ---------- */
 function clusterIcon(cluster) {
@@ -194,17 +201,17 @@ const membersRaw = [
   { label: "Ralf Drude Generalvertretung", city: "Frankfurt", url: null },
   { label: "Rene Capitain Generalvertretung", city: "Mülheim-Kärlich", url: null },
   { label: "Romeo Berente KG Allianz Generalvertretung", city: "Frankfurt", url: null },
-  { label: "Ronnie Kuhlmann Generalvertretung", city: "Friedberg", url: null }, // not preset; add if needed
+  { label: "Ronnie Kuhlmann Generalvertretung", city: "Friedberg", url: null },
   { label: "Roskos und Meier Generalvertretung OHG", city: "Berlin", url: null },
   { label: "Rouven Stieghahn Generalvertretung", city: "Scheeßel", url: null },
   { label: "Samed Topuzovic Generalvertretung", city: "Hamburg", url: null },
-  { label: "Sandkühler OHG Generalvertretung", city: "Oberhausen", url: null }, // not preset; add if needed
+  { label: "Sandkühler OHG Generalvertretung", city: "Oberhausen", url: null },
   { label: "Schlossmacher & Vogt OHG", city: "Frankfurt", url: null },
   { label: "Senftl OHG Generalvertretung der Allianz", city: "Ampfing", url: null },
   { label: "Solz und Zimmermann Inh. K. Müller u. J. Ruppel", city: "Frankfurt a. M.", url: null },
   { label: "Stephan Hungerland e.K. Hauptvertretung", city: "Köln", url: null },
   { label: "Thilo Maurer Generalvertretung", city: "Weissenburg", url: null },
-  { label: "Thomas Fessler Generalvertretung", city: "Bad Schussenried", url: null }, // not preset; add if needed
+  { label: "Thomas Fessler Generalvertretung", city: "Bad Schussenried", url: null },
   { label: "Thomas H. Fülbier Generalvertretung", city: "Viernheim", url: null },
   { label: "Tim Oberbeckmann Allianz Generalvertretung", city: "Essen", url: null },
   { label: "Ungeheuer Dr. Theobald Dr. Casmir OHG", city: "Frankfurt / Main", url: null },
@@ -314,7 +321,8 @@ function ClusterLayer({ markers, onCitySelect }) {
     });
 
     (markers || []).forEach((m) => {
-      const marker = L.marker([m.lat, m.lng], { icon: pinIcon });
+      const baseIcon = m.isAllianz ? pinIconGreen : pinIconOrange;
+      const marker = L.marker([m.lat, m.lng], { icon: baseIcon });
 
       marker.bindTooltip(
         `
@@ -325,6 +333,15 @@ function ClusterLayer({ markers, onCitySelect }) {
         `,
         { sticky: true, direction: "top", opacity: 1, className: "fi-tooltip" }
       );
+
+      // ✅ hover: non-allianz -> green on hover, back to orange on out
+      marker.on("mouseover", () => {
+        if (!m.isAllianz) marker.setIcon(pinIconGreen);
+      });
+
+      marker.on("mouseout", () => {
+        if (!m.isAllianz) marker.setIcon(pinIconOrange);
+      });
 
       marker.on("click", () => onCitySelect?.(m));
       cluster.addLayer(marker);
@@ -370,9 +387,15 @@ export default function NetworkFI() {
 
   const loadingRef = useRef(false);
 
-  const uniqueCities = useMemo(() => Array.from(new Set(members.map((m) => m.city))).filter(Boolean), [members]);
+  const uniqueCities = useMemo(
+    () => Array.from(new Set(members.map((m) => m.city))).filter(Boolean),
+    [members]
+  );
 
-  const missingCities = useMemo(() => uniqueCities.filter((c) => !coordsByCity[c]), [uniqueCities, coordsByCity]);
+  const missingCities = useMemo(
+    () => uniqueCities.filter((c) => !coordsByCity[c]),
+    [uniqueCities, coordsByCity]
+  );
 
   // ✅ fallback geocode only if really missing (usually 0)
   const geocodeMissingFallback = useCallback(async () => {
@@ -420,7 +443,8 @@ export default function NetworkFI() {
     return Array.from(byCity.entries()).map(([city, list]) => {
       const { lat, lng } = coordsByCity[city];
       const region = regionFromLatLng(lat, lng);
-      return { city, lat, lng, region, members: list, count: list.length };
+      const isAllianz = list.some((x) => x.label === "Allianz 3" || x.label === "Allianz 4");
+      return { city, lat, lng, region, members: list, count: list.length, isAllianz };
     });
   }, [members, coordsByCity]);
 
@@ -496,7 +520,9 @@ export default function NetworkFI() {
                 ) : (
                   "Pins werden geladen…"
                 )}
-                {missingCities.length ? <span className="ml-2 text-white/35">({missingCities.length} fehlen)</span> : null}
+                {missingCities.length ? (
+                  <span className="ml-2 text-white/35">({missingCities.length} fehlen)</span>
+                ) : null}
               </div>
             </div>
           </div>
