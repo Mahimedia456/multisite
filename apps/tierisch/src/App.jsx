@@ -16,9 +16,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/team" element={<Team />} />
-          <Route path="/about" element={<AboutTierisch />} />
-          <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
-          <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
+      <Route path="/about" element={<AboutTierisch />} />
+<Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
+<Route path="/kfz-versicherung" element={<KfzVersicherung />} />
+
         </Routes>
       </BrowserRouter>
     </>
