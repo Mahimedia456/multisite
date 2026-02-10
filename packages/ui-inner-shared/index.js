@@ -3,7 +3,14 @@ export { default as SiteHeader } from "./src/ui/SiteHeader.jsx";
 export { default as SiteFooter } from "./src/ui/SiteFooter.jsx";
 export { default as TeamPage } from "./src/pages/TeamPage.jsx";
 export { default as CareerPage } from "./src/pages/CareerPage.jsx";
-// (optional) export about sections
+
+export { default as Reveal } from "./src/components/Reveal.jsx";          // ✅
+export { default as AutoReveal } from "./src/components/AutoReveal.jsx";  // ✅
+
+export { default as EAautoVersicherungPage } from "./src/pages/EAautoVersicherungPage.jsx";
+export { default as KfzVersicherungPage } from "./src/pages/KfzVersicherungPage.jsx";
+
+// about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";
 export { default as SubTabs } from "./src/sections/about/SubTabs.jsx";
 export { default as Hero } from "./src/sections/about/Hero.jsx";

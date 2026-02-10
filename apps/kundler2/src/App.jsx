@@ -5,6 +5,10 @@ import Home from "./pages/Home";
 import Team from "./pages/Team";
 import BrandLoader from "./components/BrandLoader";
 import AboutKundler2 from "./pages/about-kundler2/AboutKundler2";
+import EAautoVersicherung from "./pages/EAautoVersicherung"; // ✅ ADD THIS
+import KfzVersicherung from "./pages/KfzVersicherung"; // ✅ MUST
+
+
 
 export default function App() {
   useEffect(() => {
@@ -32,6 +36,10 @@ export default function App() {
           {/* TEAM (shared page) */}
           <Route path="/team" element={<Team />} />
           <Route path="/about-kundler2" element={<AboutKundler2 />} />
+          <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
+          <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
+
+
 
         </Routes>
       </BrowserRouter>
