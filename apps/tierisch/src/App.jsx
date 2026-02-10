@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Team from "./pages/Team";
-import AboutTierisch from "./pages/AboutTierisch";
+import AboutTierisch from "./pages/about-tierisch/AboutTierisch";
 import EAautoVersicherung from "./pages/EAautoVersicherung";
 import KfzVersicherung from "./pages/KfzVersicherung";
 
