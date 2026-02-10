@@ -12,16 +12,15 @@ export default function App() {
   return (
     <>
       <BrandLoader duration={3000} />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/team" element={<Team />} />
-      <Route path="/about" element={<AboutTierisch />} />
-<Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
-<Route path="/kfz-versicherung" element={<KfzVersicherung />} />
-
-        </Routes>
-      </BrowserRouter>
+ <BrowserRouter>
+  <Routes>
+    <Route path="/" element={<Home />} />
+    <Route path="/team" element={<Team />} />
+    <Route path="/about" element={<AboutTierisch />} />
+    <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
+    <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
+  </Routes>
+</BrowserRouter>
     </>
   );
 }
