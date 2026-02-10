@@ -10,15 +10,17 @@ import BrandLoader from "./components/BrandLoader";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
       <BrandLoader duration={3000} />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/team" element={<Team />} />
-        <Route path="/about" element={<AboutTierisch />} />
-        <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
-        <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
-      </Routes>
-    </BrowserRouter>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/about" element={<AboutTierisch />} />
+          <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
+          <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }

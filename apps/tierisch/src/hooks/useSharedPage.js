@@ -1,4 +1,4 @@
-// apps/aamir/src/hooks/useSharedPage.js
+// apps/tierisch/src/hooks/useSharedPage.js
 import { useEffect, useState } from "react";
 
 const API_BASE =

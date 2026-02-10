@@ -1,36 +1,48 @@
 // Browser-safe SDK (NO Node imports)
 
+/**
+ * Tenant config used by brand apps
+ * - apiBaseUrl:
+ *   - If VITE_API_BASE_URL is set -> use it
+ *   - else -> use "" (same-origin). This works on Vercel because /api/* is rewritten to your server API.
+ */
 export function getTenantConfig(tenant) {
-  // You can replace this with API call or config map later.
-  // For now it returns a safe default structure.
+  const envBase = import.meta?.env?.VITE_API_BASE_URL;
+
   return {
     tenant,
-    apiBaseUrl: import.meta?.env?.VITE_API_BASE_URL ?? "http://localhost:4000",
+    apiBaseUrl: envBase || "", // ✅ default same-origin (uses Vercel rewrites)
     brand: {
       name: tenant?.toUpperCase?.() ?? "Multisite",
       logoType: "material",
       logoValue: "pets",
       homeLinks: [
         { label: "Home", to: "/" },
-        { label: "About", to: "/about" }
+        { label: "About", to: "/about" },
       ],
       login: { label: "Log In", to: "/login" },
-      cta: { label: "Get a Quote", to: "/about" }
-    }
+      cta: { label: "Get a Quote", to: "/about" },
+    },
   };
 }
 
-export function createApiClient({ baseUrl }) {
-  const finalBaseUrl = baseUrl || (import.meta?.env?.VITE_API_BASE_URL ?? "http://localhost:4000");
+/**
+ * API client
+ * - If baseUrl provided -> use it
+ * - else if env set -> use it
+ * - else -> "" (same-origin)
+ */
+export function createApiClient({ baseUrl } = {}) {
+  const finalBaseUrl = baseUrl ?? (import.meta?.env?.VITE_API_BASE_URL || "");
 
   async function request(path, options = {}) {
-    const url = `${finalBaseUrl}${path}`;
+    const url = `${finalBaseUrl}${path}`; // path should start with "/api/..."
     const res = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
-        ...(options.headers || {})
+        ...(options.headers || {}),
       },
-      ...options
+      ...options,
     });
 
     const text = await res.text();
@@ -52,6 +64,15 @@ export function createApiClient({ baseUrl }) {
   return {
     getBrands() {
       return request("/api/brands");
-    }
+    },
+
+    // (optional) add shared pages endpoints if you use them
+    getSharedPageBySlug(slug) {
+      return request(`/api/brand_shared_pages/${encodeURIComponent(slug)}`);
+    },
+
+    getSharedPageLatest(slug) {
+      return request(`/api/brand_shared_pages/${encodeURIComponent(slug)}/latest`);
+    },
   };
 }
