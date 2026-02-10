@@ -14,7 +14,7 @@ export default function EAautoVersicherung() {
   const { content, loading, error } = useSharedPage("e-auto-versicherung");
 
   useEffect(() => {
-    const c = getTenantConfig("allianz3"); // ✅ tenant slug here
+    const c = getTenantConfig("allianz4"); // ✅ tenant slug here
     if (c?.primary) document.documentElement.style.setProperty("--brand", c.primary);
     setConfig(c);
   }, []);
