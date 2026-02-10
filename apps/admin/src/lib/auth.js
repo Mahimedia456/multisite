@@ -35,7 +35,7 @@ export function getCurrentUser() {
 ========================= */
 function getApiBase() {
   const raw = String(import.meta?.env?.VITE_API_BASE_URL || "").trim();
-  const base = (raw || "http://localhost:5050").replace(/\/+$/, "");
+  const base = (raw || "https://multisite-server-api.vercel.app/").replace(/\/+$/, "");
   if (!/^https?:\/\//i.test(base)) {
     throw new Error(`VITE_API_BASE_URL must start with http(s). Got: ${base}`);
   }

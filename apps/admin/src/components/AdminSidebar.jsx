@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", label: "Overview", icon: "grid_view" },
   { to: "/brands", label: "Brands", icon: "layers" },
   { to: "/brand-inner-pages", label: "Brand Inner Pages", icon: "description" },
-  { to: "/site", label: "Main Website", icon: "language" },
+  // { to: "/site", label: "Main Website", icon: "language" },
 ];
 
 export default function AdminSidebar() {
