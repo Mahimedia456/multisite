@@ -140,8 +140,8 @@ function clusterIcon(cluster) {
 
 /* ---------- DATA ---------- */
 const membersRaw = [
-  { label: "Allianz 3", city: "Frankfurt", url: "https://multisite-kundler2.vercel.app/" },
-  { label: "Allianz 4", city: "Berlin", url: "https://tierisch.vercel.app/" },
+  { label: "Allianz 3", city: "Frankfurt", url: "https://digitraffic.de/" },
+  { label: "Allianz 4", city: "Berlin", url: "https://maamfashion.com/" },
 
   { label: "Mitglieder von Frankfurt Intern e.V.", city: "", url: null },
   { label: "Achim Stollenwerk", city: "Aachen", url: null },
