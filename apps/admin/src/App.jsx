@@ -19,6 +19,7 @@ import BrandInnerPageDetail from "./pages/BrandInnerPageDetail";
 
 import GenerateBrand from "./pages/GenerateBrand";
 import AISiteBuilder from "./pages/AISiteBuilder";
+import VisualPageBuilder from "./pages/VisualPageBuilder";
 
 export default function App() {
   return (
@@ -61,6 +62,7 @@ export default function App() {
               element={<TemplateBuilder />}
             />
           </Route>
+          <Route path="/admin/page-builder/:pageId" element={<VisualPageBuilder />} />
         </Route>
 
         {/* Default */}
