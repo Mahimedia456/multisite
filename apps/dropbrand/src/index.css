@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: 15 74 44;        /* #0f4a2c */
+  --primary-dark: 7 54 31;    /* #07361f */
+  --accent: 255 179 71;       /* #ffb347 */
+
+  --bg-light: 248 244 237;    /* #f8f4ed */
+  --bg-dark: 7 54 31;
+
+  --text-dark: 16 32 24;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--brand-cream);
+  color: #102018;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
