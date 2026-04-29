@@ -17,6 +17,10 @@ import SitePages from "./pages/SitePages";
 import BrandInnerPagesIndex from "./pages/BrandInnerPagesIndex";
 import BrandInnerPageDetail from "./pages/BrandInnerPageDetail";
 
+import BrandUniquePagesIndex from "./pages/BrandUniquePagesIndex";
+import BrandUniquePagesList from "./pages/BrandUniquePagesList";
+import BrandUniquePageBuilder from "./pages/BrandUniquePageBuilder";
+
 import GenerateBrand from "./pages/GenerateBrand";
 import AISiteBuilder from "./pages/AISiteBuilder";
 import VisualPageBuilder from "./pages/VisualPageBuilder";
@@ -49,6 +53,17 @@ export default function App() {
               element={<BrandInnerPageDetail />}
             />
 
+            {/* Brand Unique Pages */}
+            <Route path="/brand-unique-pages" element={<BrandUniquePagesIndex />} />
+            <Route
+              path="/brand-unique-pages/:brandId"
+              element={<BrandUniquePagesList />}
+            />
+            <Route
+              path="/brand-unique-pages/:brandId/pages/:pageId/builder"
+              element={<BrandUniquePageBuilder />}
+            />
+
             {/* Generate Brand */}
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />
 
@@ -62,6 +77,7 @@ export default function App() {
               element={<TemplateBuilder />}
             />
           </Route>
+
           <Route path="/admin/page-builder/:pageId" element={<VisualPageBuilder />} />
         </Route>
 

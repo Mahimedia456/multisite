@@ -2,11 +2,11 @@ import { NavLink, useNavigate } from "react-router-dom";
 import MIcon from "./MIcon";
 import { logout, getCurrentUser } from "../lib/auth";
 
-// Full nav items
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Overview", icon: "grid_view" },
   { to: "/brands", label: "Brands", icon: "layers" },
   { to: "/brand-inner-pages", label: "Brand Inner Pages", icon: "description" },
+  { to: "/brand-unique-pages", label: "Brand Unique Pages", icon: "web" },
   // { to: "/site", label: "Main Website", icon: "language" },
 ];
 
@@ -14,10 +14,9 @@ export default function AdminSidebar() {
   const navigate = useNavigate();
   const user = getCurrentUser();
 
-  // Only show nav items that the user has permission for
-  const nav = user?.permissions
-    ? NAV_ITEMS.filter((item) => user.permissions.includes(item.label))
-    : NAV_ITEMS;
+ const nav = user?.permissions
+  ? NAV_ITEMS.filter((item) => user.permissions.includes(item.label))
+  : NAV_ITEMS;
 
   function handleLogout() {
     logout();
@@ -26,12 +25,12 @@ export default function AdminSidebar() {
 
   return (
     <aside className="w-[270px] shrink-0 min-h-screen bg-white/70 border-r border-[#efeaf6] flex flex-col">
-      {/* Tenant Info */}
       <div className="px-6 pt-6 pb-5">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-violet-600 to-violet-700 text-white flex items-center justify-center shadow-lg shadow-violet-500/20">
             <MIcon name="shield" className="text-[22px]" />
           </div>
+
           <div>
             <div className="font-extrabold text-gray-900 leading-tight">
               {user?.name || "Holding Co."}
@@ -43,7 +42,6 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      {/* Nav Links */}
       <nav className="px-4 py-2 space-y-1">
         {nav.map((item) => (
           <NavLink
@@ -64,7 +62,6 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      {/* Bottom Buttons */}
       <div className="mt-auto px-4 pb-6 pt-6">
         <button
           onClick={() => navigate("/site")}

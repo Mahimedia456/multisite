@@ -23,7 +23,7 @@ import adminAiContentRoutes from "./routes/adminAiContent.js";
 import adminAiThemeRoutes from "./routes/adminAiTheme.js";
 import adminAiPagePlanRoutes from "./routes/adminAiPagePlan.js";
 import adminAiSectionCodeRoutes from "./routes/adminAiSectionCode.js";
-
+import brandUniquePagesRoutes from "./routes/brandUniquePages.js";
 
 dotenv.config();
 
@@ -343,6 +343,15 @@ function normalizeStatus(s) {
   if (v === "draft" || v === "inactive") return "DRAFT";
   return v.toUpperCase();
 }
+app.use(
+  brandUniquePagesRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+    isUuid,
+    normalizeStatus,
+  })
+);
 async function downloadToBuffer(url) {
   const headers = {
     // Unsplash source sometimes blocks unknown user agents
@@ -818,9 +827,19 @@ app.post(
 
     // ✅ permissions
     let permissions = ["Overview", "Brands", "Main Website"];
-    if (role === "admin") {
-      permissions = ["Overview", "Brands", "Brand Inner Pages", "Generate Brand", "Main Website"];
-    }
+if (role === "admin") {
+  permissions = [
+    "Overview",
+    "Brands",
+    "Brand Inner Pages",
+    "Generate Brand",
+    "Main Website",
+  ];
+
+ if (lowerEmail === "admin2@mahimediasolutions.com") {
+  permissions.push("Brand Unique Pages");
+}
+}
 
     return res.json({
       ok: true,
@@ -1758,6 +1777,7 @@ async function upsertSharedPageV1({ pageId, content, status, userId }) {
 
   return up.rows[0];
 }
+
 
 app.put(
   "/admin/shared-pages/:pageId/content",

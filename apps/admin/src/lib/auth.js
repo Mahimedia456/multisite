@@ -30,6 +30,18 @@ export function getCurrentUser() {
   return session?.user ?? null;
 }
 
+export function getToken() {
+  const session = getSession();
+
+  return (
+    session?.token ||
+    session?.access_token ||
+    session?.jwt ||
+    session?.data?.access_token ||
+    null
+  );
+}
+
 /* =========================
    Utils
 ========================= */
