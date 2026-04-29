@@ -2,7 +2,7 @@
   import { useBrandLayout } from "../lib/useBrandLayout";
 
   export default function Header() {
-    const { header, loading } = useBrandLayout("kundler3"); // brand slug
+    const { header, loading } = useBrandLayout("dropbrand"); // brand slug
 
     // ⏳ optional: loading state (agar hook provide karta hai)
     if (loading) return null;

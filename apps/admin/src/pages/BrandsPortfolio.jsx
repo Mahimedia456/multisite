@@ -96,17 +96,18 @@ export default function BrandsPortfolio() {
         }
 
         // ✅ Normalize response to match UI fields (safe defaults)
-        const normalized = (json.data || []).map((b) => ({
-          id: b.id,
-          name: b.name,
-          route: b.route,
-          status: b.status || "inactive",
-          templates: Number.isFinite(b.templates) ? b.templates : 0,
-          updatedAt: b.updatedAt || b.updated_at || b.updated,
-          icon: b.icon || "business",
-          iconBg: b.iconBg || b.icon_bg || "bg-zinc-100",
-          iconColor: b.iconColor || b.icon_color || "text-zinc-500",
-        }));
+       const normalized = (json.data || []).map((b) => ({
+  id: b.id,
+  name: b.name,
+  slug: b.slug,
+  route: b.route || `/${b.slug}`,
+  status: b.status || "inactive",
+  templates: Number.isFinite(b.templates) ? b.templates : 0,
+  updatedAt: b.updatedAt || b.updated_at || b.updated,
+  icon: b.icon || "business",
+  iconBg: b.iconBg || b.icon_bg || "bg-zinc-100",
+  iconColor: b.iconColor || b.icon_color || "text-zinc-500",
+}));
 
         setBrands(normalized);
       } catch (e) {
@@ -129,8 +130,36 @@ export default function BrandsPortfolio() {
   }, [query, status]);
 
 const filtered = useMemo(() => {
-  const allow = new Set(["/kundler3", "/allianz4"]);
-  return (brands || []).filter((b) => allow.has(String(b?.route || "").trim()));
+  let email = "";
+
+  for (const key of Object.keys(localStorage)) {
+    try {
+      const value = localStorage.getItem(key);
+      const parsed = JSON.parse(value || "{}");
+
+      if (parsed?.email) {
+        email = String(parsed.email).toLowerCase();
+        break;
+      }
+
+      if (parsed?.user?.email) {
+        email = String(parsed.user.email).toLowerCase();
+        break;
+      }
+    } catch {}
+  }
+
+  const allowSlugs =
+    email === "admin2@mahimediasolutions.com"
+      ? new Set(["kundler3", "allianz4", "dropbrand"])
+      : new Set(["kundler3", "allianz4"]);
+
+  return (brands || []).filter((b) => {
+    const slug = String(b?.slug || "").trim().toLowerCase();
+    const route = String(b?.route || "").trim().toLowerCase().replace("/", "");
+
+    return allowSlugs.has(slug) || allowSlugs.has(route);
+  });
 }, [brands]);
 
   // ✅ KPI values from real data

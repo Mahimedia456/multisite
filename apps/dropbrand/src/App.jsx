@@ -7,7 +7,7 @@ import Team from "./pages/Team.jsx";
 import Career from "./pages/Career.jsx";
 import KfzVersicherung from "./pages/KfzVersicherung.jsx";
 import EAautoVersicherung from "./pages/EAautoVersicherung.jsx";
-import AdminPreviewPage from "./pages/AdminPreviewPage";
+import AdminPreviewPage from "./pages/AdminPreviewPage.jsx";
 
 export default function App() {
   return (
@@ -16,6 +16,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dropbrand" element={<Home />} />
 
+        <Route path="/about" element={<About />} />
         <Route path="/about-static" element={<About />} />
         <Route path="/contact" element={<Contact />} />
 
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/career" element={<Career />} />
         <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
         <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
+
         <Route path="/admin-preview/:slug" element={<AdminPreviewPage />} />
       </Routes>
     </BrowserRouter>

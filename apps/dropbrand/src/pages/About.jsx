@@ -1,19 +1,25 @@
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import DropbrandAboutRenderer from "../components/about/DropbrandAboutRenderer";
+import { useBrandUniquePage } from "../hooks/useBrandUniquePage";
 
 export default function About() {
-  return (
-    <main className="bg-brand-cream">
-      <Header />
-      <section className="mx-auto max-w-5xl px-6 py-24">
-        <p className="text-sm font-black text-brand-green">About DropBrand</p>
-        <h1 className="mt-4 text-5xl font-black">A demo insurance brand for builder testing.</h1>
-        <p className="mt-6 text-lg text-zinc-600">
-          This page is static for now. Later we will connect it to the same draggable
-          section builder and versioned JSON system.
-        </p>
-      </section>
-      <Footer />
-    </main>
-  );
+  const { content, loading, error } = useBrandUniquePage("dropbrand", "about");
+  const sections = Array.isArray(content?.sections) ? content.sections : [];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background-light py-24 text-center text-zinc-500">
+        Loading page...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background-light py-24 text-center text-red-600">
+        {error}
+      </div>
+    );
+  }
+
+  return <DropbrandAboutRenderer brandSlug="dropbrand" sections={sections} />;
 }

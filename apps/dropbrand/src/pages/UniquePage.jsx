@@ -1,28 +1,20 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import DropbrandUniquePageRenderer from "../components/unique-pages/DropbrandUniquePageRenderer";
-import { useBrandUniquePagePreview } from "../hooks/useBrandUniquePagePreview";
+import { useBrandUniquePage } from "../hooks/useBrandUniquePage";
 
 const BRAND_SLUG = "dropbrand";
 
-export default function AdminPreviewPage() {
+export default function UniquePage() {
   const { slug } = useParams();
-  const [searchParams] = useSearchParams();
-
-  const pageId = searchParams.get("pageId");
   const pageSlug = slug || "home";
 
-  const { content, loading, error } = useBrandUniquePagePreview({
-    brandSlug: BRAND_SLUG,
-    pageSlug,
-    pageId,
-  });
-
+  const { content, loading, error } = useBrandUniquePage(BRAND_SLUG, pageSlug);
   const sections = Array.isArray(content?.sections) ? content.sections : [];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background-light py-24 text-center text-zinc-500">
-        Loading preview...
+        Loading page...
       </div>
     );
   }
