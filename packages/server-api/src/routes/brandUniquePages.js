@@ -272,5 +272,91 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
     })
   );
 
+    router.get(
+    "/public/brand-unique-pages/preview",
+    wrap(async (req, res) => {
+      const pageId = String(req.query.pageId || "").trim();
+      const brandSlug = String(req.query.brandSlug || "").trim().toLowerCase();
+      const pageSlug = String(req.query.pageSlug || "").trim().toLowerCase();
+
+      let pageQ;
+
+      if (pageId) {
+        if (!isUuid(pageId)) {
+          return res.status(400).json({ ok: false, message: "Invalid pageId" });
+        }
+
+        pageQ = await pool.query(
+          `
+          SELECT
+            p.id,
+            p.slug,
+            p.title,
+            p.status,
+            b.id as "brandId",
+            b.name as "brandName",
+            b.slug as "brandSlug"
+          FROM brand_unique_pages p
+          JOIN brands b ON b.id = p.brand_id
+          WHERE p.id=$1
+          LIMIT 1
+          `,
+          [pageId]
+        );
+      } else {
+        if (!brandSlug || !pageSlug) {
+          return res.status(400).json({
+            ok: false,
+            message: "pageId or brandSlug/pageSlug is required",
+          });
+        }
+
+        pageQ = await pool.query(
+          `
+          SELECT
+            p.id,
+            p.slug,
+            p.title,
+            p.status,
+            b.id as "brandId",
+            b.name as "brandName",
+            b.slug as "brandSlug"
+          FROM brand_unique_pages p
+          JOIN brands b ON b.id = p.brand_id
+          WHERE LOWER(b.slug)=$1 AND LOWER(p.slug)=$2
+          LIMIT 1
+          `,
+          [brandSlug, pageSlug]
+        );
+      }
+
+      if (!pageQ.rows.length) {
+        return res.status(404).json({ ok: false, message: "Page not found" });
+      }
+
+      const page = pageQ.rows[0];
+
+      const versionQ = await pool.query(
+        `
+        SELECT id, page_id, version, content, status, created_at, created_by
+        FROM brand_unique_page_versions
+        WHERE page_id=$1
+        ORDER BY version DESC
+        LIMIT 1
+        `,
+        [page.id]
+      );
+
+      return res.json({
+        ok: true,
+        data: {
+          page,
+          content: versionQ.rows[0]?.content || { sections: [] },
+          latestVersion: versionQ.rows[0] || null,
+        },
+      });
+    })
+  );
+
   return router;
 }

@@ -14,145 +14,222 @@ const SECTION_LIBRARY = {
   HeroSection: {
     label: "Hero",
     defaults: {
-      badge: "Reliable Insurance Solutions",
-      headline: "Protect what matters most with trusted coverage",
-      subheading:
-        "From health and life to vehicle and property insurance, DropBrand makes coverage simple, transparent, and built around your future.",
-      image: IMG_1,
-      ctaLabel: "Get Free Quote",
+      badge: "Versicherungslösungen",
       ctaHref: "/contact",
+      ctaLabel: "Kostenloses Angebot",
+      headline: "Schützen Sie, was wirklich zählt",
+      subheading:
+        "Von Gesundheit und Leben bis Fahrzeug und Eigentum – DropBrand macht Versicherung einfach, transparent und passend.",
+      trustText: "Vertraut von mehr als 100 Unternehmen",
+      highlights: [
+        "Lebensversicherung",
+        "Schnelle Schadenhilfe",
+        "Transparente Policen",
+        "24/7 Support",
+      ],
     },
   },
+
   AboutSection: {
     label: "About",
     defaults: {
-      eyebrow: "About us",
-      headline: "Protecting lives, assets and futures with confidence",
+      eyebrow: "Über uns",
+      headline: "Wir schützen Leben, Werte und Zukunft mit Vertrauen",
       body:
-        "We provide reliable insurance solutions designed to safeguard individuals, families, and businesses with clear guidance, honest coverage, and dependable support.",
-      image1: IMG_2,
-      image2: IMG_3,
+        "Wir bieten zuverlässige Versicherungslösungen für Privatpersonen, Familien und Unternehmen – mit klarer Beratung, ehrlicher Absicherung und verlässlichem Service.",
       quote:
-        "Insurance is not just about policies. It is about protecting people, dreams, and the future they are building.",
-      stat1Value: "80+",
-      stat1Label: "Industry awards",
-      stat2Value: "1M+",
-      stat2Label: "Customer interactions",
+        "Versicherung bedeutet nicht nur Policen. Es geht darum, Menschen, Träume und Zukunft zu schützen.",
+      image1: IMG_1,
+      image2: IMG_2,
+      statValue: "80+",
+      statLabel: "Auszeichnungen",
+      buttonLabel: "Mehr über uns",
+      buttonHref: "/about",
     },
   },
+
   ServicesSection: {
     label: "Services",
     defaults: {
-      eyebrow: "Our services",
-      headline: "Insurance service that keeps you protected and confident",
-      ctaLabel: "View all services",
+      eyebrow: "Unsere Leistungen",
+      headline: "Versicherungsschutz, der Sicherheit und Vertrauen gibt",
+      buttonLabel: "Alle Leistungen ansehen",
+      buttonHref: "/services",
       items: [
-        { title: "Life Insurance", desc: "Secure your family’s future.", image: IMG_1 },
-        { title: "Health Insurance", desc: "Reliable healthcare support.", image: IMG_2 },
-        { title: "Vehicle Insurance", desc: "Drive with confidence.", image: IMG_3 },
+        {
+          title: "Lebensversicherung",
+          desc: "Sichern Sie die Zukunft Ihrer Familie mit flexiblen Versicherungslösungen.",
+          img: "https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=900",
+        },
+        {
+          title: "Krankenversicherung",
+          desc: "Erhalten Sie zuverlässige Unterstützung für medizinische Kosten und Versorgung.",
+          img: IMG_3,
+        },
+        {
+          title: "Fahrzeugversicherung",
+          desc: "Fahren Sie mit Sicherheit, wenn es darauf ankommt.",
+          img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=900",
+        },
       ],
     },
   },
+
   WhyChooseSection: {
     label: "Why Choose",
     defaults: {
-      eyebrow: "Why choose us",
-      headline: "Trusted insurance solution backed by experience",
+      eyebrow: "Warum wir",
+      headline: "Erfahrene Versicherungslösung mit persönlicher Beratung",
       body:
-        "We combine industry expertise, transparent policies, and dedicated support to deliver insurance solutions you can depend on.",
+        "Wir verbinden Fachwissen, transparente Policen und engagierten Support, damit Sie langfristig sicher entscheiden können.",
       image: IMG_1,
+      quote:
+        "Das Team hat jede Option verständlich erklärt und den Prozess einfach gemacht.",
+      author: "Ronald Richards",
       items: [
-        "Transparent pricing with no hidden fees",
-        "Experienced advisors from first consultation",
-        "Fast and hassle-free claims process",
-        "Flexible plans tailored to your needs",
+        "Transparente Preise ohne versteckte Gebühren",
+        "Erfahrene Berater vom ersten Gespräch an",
+        "Schnelle und einfache Schadenabwicklung",
+        "Flexible Tarife passend zu Ihrem Bedarf",
       ],
     },
   },
+
   VideoStorySection: {
     label: "Video Story",
     defaults: {
-      eyebrow: "Watch our story",
-      headline: "Discover the story behind our commitment to protecting",
+      eyebrow: "Unsere Geschichte",
+      headline: "Entdecken Sie die Geschichte hinter unserem Schutzversprechen",
       image: IMG_1,
+      marquee: [
+        "Lebensversicherung",
+        "Schnelle Schäden",
+        "Transparente Policen",
+        "24/7 Support",
+        "Verlässlicher Schutz",
+        "Krankenversicherung",
+      ],
     },
   },
+
   FeaturesSection: {
     label: "Features",
     defaults: {
-      eyebrow: "Core features",
-      headline: "Key features that set our service apart",
-      cardTitle: "Expert Advisor Support",
+      cardTitle: "Persönliche Expertenberatung",
       cardBody:
-        "Our experienced insurance advisors are available to help compare plans and manage coverage.",
-      stats1: "98%",
-      stats1Label: "Support satisfaction",
-      stats2: "500+",
-      stats2Label: "Claim resolutions",
-      items: [
-        "Transparent and easy to understand",
-        "Fast and smooth claims process",
-        "Secure and reliable service",
+        "Unsere erfahrenen Berater helfen Ihnen, Tarife zu vergleichen und den passenden Schutz zu wählen.",
+      cardItems: [
+        "Policenverwaltung",
+        "Schadenservice",
+        "Firmenversicherung",
+        "Flexible Absicherung",
       ],
+      eyebrow: "Kernvorteile",
+      headline: "Funktionen, die unseren Service besonders machen",
+      features: [
+        "Transparent und leicht verständlich",
+        "Schnelle und einfache Schadenabwicklung",
+        "Sicherer und verlässlicher Service",
+      ],
+      stat1: "98%",
+      stat1Label: "Support-Zufriedenheit",
+      stat2: "500+",
+      stat2Label: "Gelöste Schäden",
     },
   },
+
   PricingSection: {
     label: "Pricing",
     defaults: {
-      eyebrow: "Pricing plans",
-      headline: "Affordable coverage that fits",
-      subheading: "Easy-to-understand plans tailored to your needs and budget.",
+      eyebrow: "Tarife",
+      headline: "Bezahlbarer Schutz, der zu Ihnen passt",
+      subheading: "Klare Tarife, verständliche Leistungen und flexible Optionen.",
+      buttonLabel: "Starten",
       plans: [
-        { name: "Basic Plan", price: "$49.00", features: ["Fast-track claims", "Life coverage", "Email support"] },
-        { name: "Standard Plan", price: "$89.00", features: ["Priority claims", "Advisor support", "Vehicle add-on"] },
-        { name: "Premium Plan", price: "$149.00", features: ["Full protection", "24/7 support", "Business coverage"] },
+        {
+          name: "Basis",
+          price: "49 €",
+          features: ["Schnelle Bearbeitung", "Grundschutz", "E-Mail Support"],
+        },
+        {
+          name: "Standard",
+          price: "89 €",
+          hot: true,
+          features: ["Priorisierte Schäden", "Berater-Support", "Fahrzeug-Zusatz"],
+        },
+        {
+          name: "Premium",
+          price: "149 €",
+          features: ["Vollschutz", "24/7 Support", "Business-Schutz"],
+        },
       ],
     },
   },
+
   ContactSection: {
     label: "Contact",
     defaults: {
-      eyebrow: "Contact us today",
-      headline: "Have questions? Connect with us for support",
+      eyebrow: "Kontakt",
+      headline: "Fragen? Wir beraten Sie persönlich",
       subheading:
-        "Connect with our experts and experience seamless assistance every step of the way.",
+        "Unser Team hilft Ihnen, den passenden Versicherungsschutz zu finden.",
       phone: "+49 000 000 000",
+      formTitle: "Kontakt aufnehmen",
+      buttonLabel: "Nachricht senden",
     },
   },
+
   FAQSection: {
     label: "FAQ",
     defaults: {
       eyebrow: "FAQ",
-      headline: "Common questions about our coverage and services",
-      subheading:
-        "We have answered the most common questions to make insurance decisions easier.",
+      headline: "Häufige Fragen zu Schutz und Leistungen",
+      subheading: "Hier finden Sie schnelle Antworten auf die wichtigsten Fragen.",
       items: [
-        { q: "How do I choose the right insurance plan?", a: "Our advisors help compare options." },
-        { q: "What types of insurance plans do you offer?", a: "We offer life, health, vehicle and property insurance." },
+        {
+          q: "Wie wähle ich den richtigen Tarif?",
+          a: "Unsere Berater vergleichen Optionen und erklären die Leistungen verständlich.",
+        },
+        {
+          q: "Welche Versicherungen bieten Sie an?",
+          a: "Wir bieten unter anderem Lebens-, Kranken-, Fahrzeug- und Sachversicherungen.",
+        },
       ],
     },
   },
+
   TestimonialsSection: {
     label: "Testimonials",
     defaults: {
-      eyebrow: "Testimonials",
-      headline: "Building trust through real customers",
+      eyebrow: "Kundenstimmen",
+      headline: "Vertrauen durch echte Erfahrungen",
       image: IMG_1,
+      rating: "★★★★★",
       quote:
-        "The team took time to understand my needs and explained every option clearly.",
+        "Das Team hat meine Bedürfnisse verstanden und jede Option klar erklärt. Der gesamte Prozess war einfach und professionell.",
       name: "Robert Fox",
-      role: "Small Business Owner",
+      role: "Unternehmer",
     },
   },
+
   BlogSection: {
     label: "Blog",
     defaults: {
-      eyebrow: "Latest blogs",
-      headline: "Latest news, guides and updates",
+      eyebrow: "Aktuelle Beiträge",
+      headline: "Neuigkeiten, Ratgeber und Updates",
       posts: [
-        { title: "How to choose the right insurance plan", image: IMG_1 },
-        { title: "5 common insurance mistakes to avoid", image: IMG_2 },
-        { title: "Health insurance explained simply", image: IMG_3 },
+        {
+          title: "So wählen Sie den richtigen Versicherungsschutz",
+          image: IMG_1,
+        },
+        {
+          title: "5 häufige Fehler bei Versicherungen vermeiden",
+          image: IMG_2,
+        },
+        {
+          title: "Krankenversicherung einfach erklärt",
+          image: IMG_3,
+        },
       ],
     },
   },
@@ -207,88 +284,6 @@ function updateProp(sections, index, key, value) {
   );
 }
 
-function PreviewSection({ section }) {
-  const p = section?.props || {};
-
-  if (section.type === "HeroSection") {
-    return (
-      <section className="relative overflow-hidden rounded-[32px] bg-[#07361f] text-white">
-        <div className="grid gap-10 p-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <p className="inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-[#ffb347]">
-              {p.badge}
-            </p>
-            <h1 className="mt-6 text-5xl font-black leading-tight">{p.headline}</h1>
-            <p className="mt-5 text-white/70">{p.subheading}</p>
-            <button className="mt-7 rounded-full bg-[#ffb347] px-6 py-3 text-sm font-black text-[#07361f]">
-              {p.ctaLabel}
-            </button>
-          </div>
-          <img src={p.image} className="h-[420px] w-full rounded-[28px] object-cover" />
-        </div>
-      </section>
-    );
-  }
-
-  if (section.type === "AboutSection") {
-    return (
-      <section className="rounded-[32px] bg-white p-10 shadow-sm">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div className="grid grid-cols-2 gap-4">
-            <img src={p.image1} className="h-80 rounded-[28px] object-cover" />
-            <img src={p.image2} className="mt-12 h-80 rounded-[28px] object-cover" />
-          </div>
-          <div>
-            <p className="text-sm font-black text-emerald-700">{p.eyebrow}</p>
-            <h2 className="mt-3 text-4xl font-black">{p.headline}</h2>
-            <p className="mt-4 text-zinc-600">{p.body}</p>
-            <div className="mt-6 rounded-3xl bg-zinc-50 p-5 font-bold">{p.quote}</div>
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="rounded-3xl bg-zinc-50 p-5">
-                <div className="text-3xl font-black">{p.stat1Value}</div>
-                <p className="text-sm text-zinc-500">{p.stat1Label}</p>
-              </div>
-              <div className="rounded-3xl bg-zinc-50 p-5">
-                <div className="text-3xl font-black">{p.stat2Value}</div>
-                <p className="text-sm text-zinc-500">{p.stat2Label}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (section.type === "ServicesSection") {
-    return (
-      <section className="rounded-[32px] bg-white p-10 shadow-sm">
-        <p className="text-sm font-black text-emerald-700">{p.eyebrow}</p>
-        <h2 className="mt-3 text-4xl font-black">{p.headline}</h2>
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          {(p.items || []).map((it, i) => (
-            <div key={i} className="overflow-hidden rounded-3xl bg-zinc-50">
-              <img src={it.image} className="h-44 w-full object-cover" />
-              <div className="p-5">
-                <h3 className="font-black">{it.title}</h3>
-                <p className="mt-2 text-sm text-zinc-600">{it.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="rounded-[32px] bg-white p-10 shadow-sm">
-      <p className="text-sm font-black text-emerald-700">{p.eyebrow}</p>
-      <h2 className="mt-3 text-4xl font-black">{p.headline}</h2>
-      <p className="mt-4 text-zinc-600">{p.subheading || p.body || p.quote}</p>
-      {p.image ? <img src={p.image} className="mt-6 h-80 w-full rounded-3xl object-cover" /> : null}
-    </section>
-  );
-}
-
 function GenericEditor({ section, onChange }) {
   const p = section?.props || {};
 
@@ -300,7 +295,47 @@ function GenericEditor({ section, onChange }) {
 
   function removeArrayItem(key, idx) {
     const arr = Array.isArray(p[key]) ? [...p[key]] : [];
-    onChange(key, arr.filter((_, i) => i !== idx));
+    onChange(
+      key,
+      arr.filter((_, i) => i !== idx)
+    );
+  }
+
+  function addArrayItem(key, arr) {
+    const sample = arr[0];
+    const lower = key.toLowerCase();
+
+    if (typeof sample === "string") {
+      onChange(key, [...arr, "New item"]);
+      return;
+    }
+
+    if (lower.includes("plan")) {
+      onChange(key, [
+        ...arr,
+        {
+          name: "Neuer Tarif",
+          price: "99 €",
+          features: ["Leistung 1", "Leistung 2"],
+        },
+      ]);
+      return;
+    }
+
+    if (lower.includes("post")) {
+      onChange(key, [...arr, { title: "Neuer Beitrag", image: IMG_1 }]);
+      return;
+    }
+
+    if (lower.includes("item") && sample?.q !== undefined) {
+      onChange(key, [...arr, { q: "Neue Frage", a: "Neue Antwort" }]);
+      return;
+    }
+
+    onChange(key, [
+      ...arr,
+      { title: "Neuer Titel", desc: "Beschreibung", img: IMG_1 },
+    ]);
   }
 
   return (
@@ -309,7 +344,10 @@ function GenericEditor({ section, onChange }) {
         if (Array.isArray(value)) {
           return (
             <div key={key} className="space-y-3">
-              <div className="text-xs font-black uppercase text-zinc-500">{key}</div>
+              <div className="text-xs font-black uppercase text-zinc-500">
+                {key}
+              </div>
+
               {value.map((item, idx) => {
                 if (typeof item === "string") {
                   return (
@@ -323,7 +361,12 @@ function GenericEditor({ section, onChange }) {
                         }}
                         className="flex-1 rounded-xl border px-3 py-2 text-sm"
                       />
-                      <button onClick={() => removeArrayItem(key, idx)} className="text-red-600">
+
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem(key, idx)}
+                        className="text-red-600"
+                      >
                         <MIcon name="delete" />
                       </button>
                     </div>
@@ -331,16 +374,52 @@ function GenericEditor({ section, onChange }) {
                 }
 
                 return (
-                  <div key={idx} className="rounded-2xl border border-zinc-200 p-3 space-y-3">
-                    {Object.entries(item || {}).map(([field, fieldValue]) => (
-                      <TextInput
-                        key={field}
-                        label={field}
-                        value={fieldValue}
-                        onChange={(v) => updateArrayItem(key, idx, field, v)}
-                      />
-                    ))}
+                  <div
+                    key={idx}
+                    className="space-y-3 rounded-2xl border border-zinc-200 p-3"
+                  >
+                    {Object.entries(item || {}).map(([field, fieldValue]) => {
+                      if (Array.isArray(fieldValue)) {
+                        return (
+                          <div key={field} className="space-y-2">
+                            <label className="text-xs font-bold text-zinc-500">
+                              {field}
+                            </label>
+
+                            {fieldValue.map((x, subIdx) => (
+                              <input
+                                key={subIdx}
+                                value={x}
+                                onChange={(e) => {
+                                  const arr = Array.isArray(p[key])
+                                    ? [...p[key]]
+                                    : [];
+                                  const nextItem = { ...(arr[idx] || {}) };
+                                  const nextSub = [...fieldValue];
+                                  nextSub[subIdx] = e.target.value;
+                                  nextItem[field] = nextSub;
+                                  arr[idx] = nextItem;
+                                  onChange(key, arr);
+                                }}
+                                className="w-full rounded-xl border px-3 py-2 text-sm"
+                              />
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <TextInput
+                          key={field}
+                          label={field}
+                          value={fieldValue}
+                          onChange={(v) => updateArrayItem(key, idx, field, v)}
+                        />
+                      );
+                    })}
+
                     <button
+                      type="button"
                       onClick={() => removeArrayItem(key, idx)}
                       className="text-xs font-bold text-red-600"
                     >
@@ -349,14 +428,10 @@ function GenericEditor({ section, onChange }) {
                   </div>
                 );
               })}
+
               <button
-                onClick={() => {
-                  const arr = Array.isArray(value) ? [...value] : [];
-                  const sample = arr[0];
-                  if (typeof sample === "string") arr.push("New item");
-                  else arr.push({ title: "New title", desc: "Description", image: IMG_1 });
-                  onChange(key, arr);
-                }}
+                type="button"
+                onClick={() => addArrayItem(key, value)}
                 className="rounded-xl bg-violet-50 px-4 py-2 text-xs font-black text-violet-700"
               >
                 + Add {key}
@@ -365,11 +440,32 @@ function GenericEditor({ section, onChange }) {
           );
         }
 
-        if (String(key).toLowerCase().includes("body") || String(key).toLowerCase().includes("subheading") || String(key).toLowerCase().includes("quote")) {
-          return <TextArea key={key} label={key} value={value} onChange={(v) => onChange(key, v)} />;
+        const k = String(key).toLowerCase();
+
+        if (
+          k.includes("body") ||
+          k.includes("subheading") ||
+          k.includes("quote") ||
+          k.includes("description")
+        ) {
+          return (
+            <TextArea
+              key={key}
+              label={key}
+              value={value}
+              onChange={(v) => onChange(key, v)}
+            />
+          );
         }
 
-        return <TextInput key={key} label={key} value={value} onChange={(v) => onChange(key, v)} />;
+        return (
+          <TextInput
+            key={key}
+            label={key}
+            value={value}
+            onChange={(v) => onChange(key, v)}
+          />
+        );
       })}
     </div>
   );
@@ -384,6 +480,8 @@ export default function BrandUniquePageBuilder() {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewOnly, setPreviewOnly] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState(Date.now());
 
   const selected = sections[selectedIdx] || null;
 
@@ -395,24 +493,42 @@ export default function BrandUniquePageBuilder() {
     [sections]
   );
 
+  const brandSlug = page?.brandSlug || page?.slug || "dropbrand";
+
+  const previewBaseUrl =
+    page?.previewUrl ||
+    page?.brandPreviewUrl ||
+    import.meta.env.VITE_DROPBRAND_PREVIEW_URL ||
+    "http://localhost:5174";
+
+  const pageSlug = page?.slug || "home";
+
+  const previewUrl = `${previewBaseUrl}/admin-preview/${pageSlug}?pageId=${pageId}&preview=${previewVersion}`;
+
   useEffect(() => {
     let alive = true;
 
     async function load() {
       setLoading(true);
+
       try {
         const res = await apiFetch(`/admin/brand-unique-pages/${pageId}`);
         const json = await res.json().catch(() => null);
 
-        if (!res.ok || !json?.ok) throw new Error(json?.message || "Failed to load page");
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.message || "Failed to load page");
+        }
 
         const latest = json.data?.latestVersion?.content;
-        const nextSections = Array.isArray(latest?.sections) ? latest.sections : [];
+        const nextSections = Array.isArray(latest?.sections)
+          ? latest.sections
+          : [];
 
         if (alive) {
           setPage(json.data?.page);
           setSections(nextSections);
           setSelectedIdx(0);
+          setPreviewVersion(Date.now());
         }
       } catch (e) {
         alert(e?.message || "Failed to load builder");
@@ -422,13 +538,20 @@ export default function BrandUniquePageBuilder() {
     }
 
     load();
+
     return () => {
       alive = false;
     };
   }, [pageId]);
 
+  function selectSection(idx) {
+    setSelectedIdx(idx);
+  }
+
   function addSection(type) {
     const def = SECTION_LIBRARY[type];
+    if (!def) return;
+
     const next = [
       ...sections,
       {
@@ -437,6 +560,7 @@ export default function BrandUniquePageBuilder() {
         props: clone(def.defaults),
       },
     ];
+
     setSections(next);
     setSelectedIdx(next.length - 1);
   }
@@ -453,12 +577,19 @@ export default function BrandUniquePageBuilder() {
     setSelectedIdx(to);
   }
 
+  function toggleSectionVisibility(idx) {
+    setSections((prev) =>
+      prev.map((sec, i) => (i === idx ? { ...sec, hidden: !sec.hidden } : sec))
+    );
+  }
+
   function updateSelectedProp(key, value) {
     setSections((prev) => updateProp(prev, selectedIdx, key, value));
   }
 
-  async function save(status) {
+  async function save(status, refreshPreview = true) {
     setSaving(true);
+
     try {
       const res = await apiFetch(`/admin/brand-unique-pages/${pageId}/content`, {
         method: "PUT",
@@ -469,7 +600,14 @@ export default function BrandUniquePageBuilder() {
       });
 
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) throw new Error(json?.message || "Save failed");
+
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || "Save failed");
+      }
+
+      if (refreshPreview) {
+        setPreviewVersion(Date.now());
+      }
 
       alert(status === "PUBLISHED" ? "Published successfully" : "Draft saved");
     } catch (e) {
@@ -479,147 +617,252 @@ export default function BrandUniquePageBuilder() {
     }
   }
 
-  if (loading) return <div className="p-8 text-zinc-500">Loading builder...</div>;
+  async function refreshPreview() {
+    await save("DRAFT", true);
+  }
+
+  if (loading) {
+    return <div className="p-8 text-zinc-500">Loading builder...</div>;
+  }
 
   return (
-    <div className="h-[calc(100vh-40px)] max-w-[1900px] mx-auto grid grid-cols-[330px,1fr,390px] gap-4 p-4">
-      <aside className="rounded-3xl border border-zinc-200 bg-white overflow-hidden">
-        <div className="border-b border-zinc-200 p-5">
+    <div className="fixed inset-0 z-[9999] bg-[#f6f2fb] text-zinc-900">
+      <header className="h-16 border-b border-zinc-200 bg-white px-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(`/brand-unique-pages/${brandId}`)}
-            className="mb-3 text-xs font-bold text-violet-700"
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="h-10 px-4 rounded-xl bg-zinc-900 text-white text-sm font-black"
           >
-            ← Back to pages
+            ← Back to Admin Panel
           </button>
-          <div className="text-xs text-zinc-400">Brand Unique Page Builder</div>
-          <h1 className="text-lg font-black text-zinc-900">
-            {page?.brandName} / {page?.title || page?.slug}
-          </h1>
-        </div>
 
-        <div className="border-b border-zinc-200 p-4">
-          <div className="text-xs font-black text-zinc-500 mb-3">Add Section</div>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.keys(SECTION_LIBRARY).map((type) => (
-              <button
-                key={type}
-                onClick={() => addSection(type)}
-                className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-black hover:bg-violet-50 hover:text-violet-700"
-              >
-                + {SECTION_LIBRARY[type].label}
-              </button>
-            ))}
+          <button
+            type="button"
+            onClick={() => navigate(`/brand-unique-pages/${brandId}`)}
+            className="h-10 px-4 rounded-xl border border-zinc-200 bg-white text-sm font-black"
+          >
+            Back to Pages
+          </button>
+
+          <div>
+            <div className="text-xs text-zinc-400">
+              Brand Unique Page Builder
+            </div>
+            <h1 className="text-base font-black">
+              {page?.brandName || brandSlug} / {page?.title || pageSlug}
+            </h1>
           </div>
         </div>
 
-        <div className="h-[calc(100%-245px)] overflow-auto p-3 space-y-2">
-          {sections.map((s, idx) => {
-            const active = idx === selectedIdx;
-            return (
-              <div
-                key={s.id || idx}
-                onClick={() => setSelectedIdx(idx)}
-                className={[
-                  "rounded-2xl border p-3 cursor-pointer",
-                  active ? "border-violet-600 bg-violet-50" : "border-zinc-200 bg-white",
-                ].join(" ")}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <div className="text-sm font-black text-zinc-900">
-                      {idx + 1}. {SECTION_LIBRARY[s.type]?.label || s.type}
-                    </div>
-                    <div className="text-[11px] font-mono text-zinc-400">{s.type}</div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        moveSection(idx, idx - 1);
-                      }}
-                      className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white"
-                    >
-                      <MIcon name="keyboard_arrow_up" className="text-[18px]" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        moveSection(idx, idx + 1);
-                      }}
-                      className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white"
-                    >
-                      <MIcon name="keyboard_arrow_down" className="text-[18px]" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeSection(idx);
-                      }}
-                      className="grid h-8 w-8 place-items-center rounded-lg text-red-500 hover:bg-red-50"
-                    >
-                      <MIcon name="delete" className="text-[18px]" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {!sections.length ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">
-              No sections yet. Add sections above.
-            </div>
-          ) : null}
-        </div>
-      </aside>
-
-      <main className="overflow-auto rounded-3xl border border-zinc-200 bg-zinc-100 p-6">
-        <div className="mx-auto max-w-7xl space-y-6">
-          {sections.map((s) => (
-            <PreviewSection key={s.id} section={s} />
-          ))}
-          {!sections.length ? (
-            <div className="rounded-3xl bg-white p-20 text-center text-zinc-500">
-              Add sections to preview home page.
-            </div>
-          ) : null}
-        </div>
-      </main>
-
-      <aside className="rounded-3xl border border-zinc-200 bg-white overflow-hidden">
-        <div className="border-b border-zinc-200 p-5">
-          <div className="text-xs text-zinc-400">Edit Selected Section</div>
-          <h2 className="text-lg font-black">
-            {selected ? SECTION_LIBRARY[selected.type]?.label || selected.type : "None"}
-          </h2>
-        </div>
-
-        <div className="h-[calc(100%-155px)] overflow-auto p-5">
-          {selected ? (
-            <GenericEditor section={selected} onChange={updateSelectedProp} />
-          ) : (
-            <div className="text-sm text-zinc-500">Select a section to edit.</div>
-          )}
-        </div>
-
-        <div className="border-t border-zinc-200 p-4 flex justify-end gap-2">
+        <div className="flex items-center gap-2">
           <button
+            type="button"
+            onClick={() => setPreviewOnly((v) => !v)}
+            className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-sm font-black"
+          >
+            {previewOnly ? "Show Panels" : "Preview Only"}
+          </button>
+
+          <button
+            type="button"
+            disabled={saving}
+            onClick={refreshPreview}
+            className="h-10 px-5 rounded-xl bg-white border border-zinc-200 text-sm font-black disabled:opacity-50"
+          >
+            Refresh Preview
+          </button>
+
+          <button
+            type="button"
             disabled={saving}
             onClick={() => save("DRAFT")}
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-black text-white disabled:opacity-50"
+            className="h-10 px-5 rounded-xl bg-zinc-900 text-white text-sm font-black disabled:opacity-50"
           >
             Save Draft
           </button>
+
           <button
+            type="button"
             disabled={saving}
             onClick={() => save("PUBLISHED")}
-            className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white disabled:opacity-50"
+            className="h-10 px-5 rounded-xl bg-violet-600 text-white text-sm font-black disabled:opacity-50"
           >
             Publish
           </button>
         </div>
-      </aside>
+      </header>
+
+      {!previewOnly && (
+        <div className="h-20 border-b border-zinc-200 bg-white px-6 flex items-center gap-3 overflow-x-auto">
+          <span className="text-xs font-black uppercase text-zinc-400 shrink-0">
+            Add Section
+          </span>
+
+          {Object.keys(SECTION_LIBRARY).map((type) => (
+            <button
+              type="button"
+              key={type}
+              onClick={() => addSection(type)}
+              className="h-10 shrink-0 rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-xs font-black hover:bg-violet-50 hover:text-violet-700"
+            >
+              + {SECTION_LIBRARY[type].label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        className={
+          previewOnly
+            ? "h-[calc(100vh-64px)] grid grid-cols-1"
+            : "h-[calc(100vh-144px)] grid grid-cols-[320px_1fr_420px]"
+        }
+      >
+        {!previewOnly && (
+          <aside className="border-r border-zinc-200 bg-white overflow-auto p-4">
+            <div className="mb-4 text-xs font-black uppercase text-zinc-400">
+              Page Sections
+            </div>
+
+            <div className="space-y-2">
+              {sections.map((s, idx) => {
+                const active = idx === selectedIdx;
+
+                return (
+                  <div
+                    key={s.id || idx}
+                    onClick={() => selectSection(idx)}
+                    className={[
+                      "rounded-2xl border p-3 cursor-pointer transition",
+                      active
+                        ? "border-violet-600 bg-violet-50"
+                        : "border-zinc-200 bg-white hover:bg-zinc-50",
+                      s.hidden ? "opacity-60" : "",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-black">
+                          {idx + 1}. {SECTION_LIBRARY[s.type]?.label || s.type}
+                          {s.hidden ? (
+                            <span className="ml-2 text-xs text-red-500">
+                              Hidden
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="text-[11px] font-mono text-zinc-400">
+                          {s.type}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveSection(idx, idx - 1);
+                          }}
+                          className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white"
+                        >
+                          <MIcon
+                            name="keyboard_arrow_up"
+                            className="text-[18px]"
+                          />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveSection(idx, idx + 1);
+                          }}
+                          className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white"
+                        >
+                          <MIcon
+                            name="keyboard_arrow_down"
+                            className="text-[18px]"
+                          />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSectionVisibility(idx);
+                          }}
+                          className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white"
+                        >
+                          <MIcon
+                            name={s.hidden ? "visibility_off" : "visibility"}
+                            className="text-[18px]"
+                          />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeSection(idx);
+                          }}
+                          className="grid h-8 w-8 place-items-center rounded-lg text-red-500 hover:bg-red-50"
+                        >
+                          <MIcon name="delete" className="text-[18px]" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {!sections.length && (
+                <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">
+                  No sections yet.
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
+
+        <main className="overflow-hidden bg-zinc-100">
+          <iframe
+            key={previewUrl}
+            title="Brand Preview"
+            src={previewUrl}
+            className="h-full w-full border-0 bg-white"
+          />
+        </main>
+
+        {!previewOnly && (
+          <aside className="border-l border-zinc-200 bg-white overflow-hidden flex flex-col">
+            <div className="border-b border-zinc-200 p-5">
+              <div className="text-xs text-zinc-400">
+                Edit Selected Section
+              </div>
+
+              <h2 className="text-xl font-black">
+                {selected
+                  ? SECTION_LIBRARY[selected.type]?.label || selected.type
+                  : "None"}
+              </h2>
+            </div>
+
+            <div className="flex-1 overflow-auto p-5">
+              {selected ? (
+                <GenericEditor
+                  section={selected}
+                  onChange={updateSelectedProp}
+                />
+              ) : (
+                <div className="text-sm text-zinc-500">
+                  Select a section from the left side to edit content.
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }
