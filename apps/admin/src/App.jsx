@@ -24,6 +24,7 @@ import BrandUniquePageBuilder from "./pages/BrandUniquePageBuilder";
 import GenerateBrand from "./pages/GenerateBrand";
 import AISiteBuilder from "./pages/AISiteBuilder";
 import VisualPageBuilder from "./pages/VisualPageBuilder";
+import SupportChat from "./pages/SupportChat.jsx";
 
 export default function App() {
   return (
@@ -63,6 +64,8 @@ export default function App() {
               path="/brand-unique-pages/:brandId/pages/:pageId/builder"
               element={<BrandUniquePageBuilder />}
             />
+
+            <Route path="/support-chat" element={<SupportChat />} />
 
             {/* Generate Brand */}
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />

@@ -1,4 +1,3 @@
-// src/pages/AdminLogin.jsx
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../lib/auth";
@@ -19,6 +18,7 @@ function ShieldIcon() {
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("aamir@mahimediasolutions.com");
   const [password, setPassword] = useState("mahimediasolutions");
   const [remember, setRemember] = useState(false);
@@ -39,11 +39,9 @@ export default function AdminLogin() {
 
       console.log("Login success", res);
 
-      // ✅ safer navigation (lets React finish state/paint)
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
 
-        // ✅ fallback if router doesn’t move (rare but happens)
         setTimeout(() => {
           if (window.location.pathname === "/login") {
             window.location.assign("/dashboard");
@@ -58,6 +56,13 @@ export default function AdminLogin() {
     }
   }
 
+  async function quickLogin(nextEmail) {
+    const nextPassword = "mahimediasolutions";
+    setEmail(nextEmail);
+    setPassword(nextPassword);
+    setTimeout(() => doLogin(nextEmail, nextPassword), 0);
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     await doLogin(email, password);
@@ -65,7 +70,6 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-[#f5f1fb]">
-      {/* Background effects */}
       <div className="pointer-events-none absolute -top-44 -left-52 w-[520px] h-[520px] rounded-full bg-violet-300/50 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-56 -right-44 w-[620px] h-[620px] rounded-full bg-violet-400/40 blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40" />
@@ -76,46 +80,47 @@ export default function AdminLogin() {
         <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-gray-900">
           Admin Portal
         </h1>
+
         <p className="mt-2 text-sm text-gray-500">
           Insurance Holding Co. Management
         </p>
 
-        {/* ➤ QUICK LOGIN BUTTONS */}
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
-            onClick={() => {
-              const e = "aamir@mahimediasolutions.com";
-              const p = "mahimediasolutions";
-              setEmail(e);
-              setPassword(p);
-              setTimeout(() => doLogin(e, p), 0);
-            }}
+            type="button"
+            onClick={() => quickLogin("aamir@mahimediasolutions.com")}
             className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
           >
             Login Admin
           </button>
 
+          {/* <button
+            type="button"
+            onClick={() => quickLogin("admin2@mahimediasolutions.com")}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+          >
+            Login Admin 2
+          </button>
+
           <button
-            onClick={() => {
-              const e = "allianz3@yopmail.com";
-              const p = "mahimediasolutions";
-              setEmail(e);
-              setPassword(p);
-              setTimeout(() => doLogin(e, p), 0);
-            }}
+            type="button"
+            onClick={() => quickLogin("support@mahimediasolutions.com")}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-violet-600 text-white border border-violet-700 shadow-sm hover:bg-violet-700"
+          >
+            Login Support Chat
+          </button> */}
+
+          <button
+            type="button"
+            onClick={() => quickLogin("allianz3@yopmail.com")}
             className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
           >
             Login Allianz 3
           </button>
 
           <button
-            onClick={() => {
-              const e = "allianz4@yopmail.com";
-              const p = "mahimediasolutions";
-              setEmail(e);
-              setPassword(p);
-              setTimeout(() => doLogin(e, p), 0);
-            }}
+            type="button"
+            onClick={() => quickLogin("allianz4@yopmail.com")}
             className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
           >
             Login Allianz 4
@@ -129,6 +134,7 @@ export default function AdminLogin() {
                 <label className="block text-sm font-semibold text-gray-900">
                   Admin Email
                 </label>
+
                 <div className="mt-2">
                   <input
                     value={email}
@@ -145,6 +151,7 @@ export default function AdminLogin() {
                 <label className="block text-sm font-semibold text-gray-900">
                   Password
                 </label>
+
                 <div className="mt-2">
                   <input
                     value={password}
@@ -202,7 +209,9 @@ export default function AdminLogin() {
               >
                 <span className="inline-flex items-center justify-center gap-2">
                   {loading ? "Signing In..." : "Sign In"}
-                  <span aria-hidden className="text-base">→</span>
+                  <span aria-hidden className="text-base">
+                    →
+                  </span>
                 </span>
               </button>
 
@@ -236,4 +245,3 @@ export default function AdminLogin() {
     </div>
   );
 }
-  

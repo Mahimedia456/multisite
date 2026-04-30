@@ -24,6 +24,7 @@ import adminAiThemeRoutes from "./routes/adminAiTheme.js";
 import adminAiPagePlanRoutes from "./routes/adminAiPagePlan.js";
 import adminAiSectionCodeRoutes from "./routes/adminAiSectionCode.js";
 import brandUniquePagesRoutes from "./routes/brandUniquePages.js";
+import brandSupportChatRoutes from "./routes/brandSupportChat.js";
 
 dotenv.config();
 
@@ -350,6 +351,14 @@ app.use(
     wrap,
     isUuid,
     normalizeStatus,
+  })
+);
+app.use(
+  brandSupportChatRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+    isUuid,
   })
 );
 async function downloadToBuffer(url) {
@@ -826,7 +835,8 @@ app.post(
     });
 
     // ✅ permissions
-    let permissions = ["Overview", "Brands", "Main Website"];
+  let permissions = ["Overview", "Brands", "Main Website"];
+
 if (role === "admin") {
   permissions = [
     "Overview",
@@ -836,11 +846,19 @@ if (role === "admin") {
     "Main Website",
   ];
 
- if (lowerEmail === "admin2@mahimediasolutions.com") {
-  permissions.push("Brand Unique Pages");
-}
+  if (lowerEmail === "admin2@mahimediasolutions.com") {
+    permissions.push("Brand Unique Pages");
+  }
+
+  if (lowerEmail === "support@mahimediasolutions.com") {
+    permissions = ["Overview", "Brands", "Support Chat"];
+  }
 }
 
+// brand admins: allianz3/allianz4 etc.
+if (brandSlug) {
+  permissions = ["Overview", "Brands", "Support Chat"];
+}
     return res.json({
       ok: true,
       access_token,

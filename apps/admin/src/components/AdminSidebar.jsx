@@ -7,7 +7,9 @@ const NAV_ITEMS = [
   { to: "/brands", label: "Brands", icon: "layers" },
   { to: "/brand-inner-pages", label: "Brand Inner Pages", icon: "description" },
   { to: "/brand-unique-pages", label: "Brand Unique Pages", icon: "web" },
-  // { to: "/site", label: "Main Website", icon: "language" },
+
+  // NEW
+  { to: "/support-chat", label: "Support Chat", icon: "forum" },
 ];
 
 export default function AdminSidebar() {
