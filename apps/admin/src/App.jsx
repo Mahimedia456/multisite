@@ -25,7 +25,7 @@ import GenerateBrand from "./pages/GenerateBrand";
 import AISiteBuilder from "./pages/AISiteBuilder";
 import VisualPageBuilder from "./pages/VisualPageBuilder";
 import SupportChat from "./pages/SupportChat.jsx";
-
+import Notifications from "./pages/Notifications.jsx";
 export default function App() {
   return (
     <BrowserRouter>
@@ -66,6 +66,7 @@ export default function App() {
             />
 
             <Route path="/support-chat" element={<SupportChat />} />
+            <Route path="/notifications" element={<Notifications />} />
 
             {/* Generate Brand */}
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />

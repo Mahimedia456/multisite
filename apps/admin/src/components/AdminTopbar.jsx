@@ -1,10 +1,33 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import MIcon from "./MIcon";
+import { apiFetch } from "../lib/auth";
 
 export default function AdminTopbar() {
+  const navigate = useNavigate();
+  const [count, setCount] = useState(0);
+
+  async function loadCount() {
+    try {
+      const res = await apiFetch("/admin/support-chat/notifications/count");
+      const json = await res.json().catch(() => null);
+
+      if (res.ok && json?.ok) {
+        setCount(json.data?.count || 0);
+      }
+    } catch {}
+  }
+
+  useEffect(() => {
+    loadCount();
+
+    const timer = setInterval(loadCount, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 bg-[#f6f2fb]/80 backdrop-blur border-b border-[#efeaf6]">
       <div className="px-7 h-[76px] flex items-center justify-between gap-6">
-        {/* Left */}
         <div className="flex items-center gap-6 min-w-0">
           <h1 className="text-2xl font-extrabold text-gray-900 shrink-0">
             Overview
@@ -19,14 +42,28 @@ export default function AdminTopbar() {
           </div>
         </div>
 
-        {/* Right */}
         <div className="flex items-center gap-4 shrink-0">
           <div className="hidden lg:block text-sm font-semibold text-violet-700">
-            Wednesday, Jan 24, 2024
+            {new Date().toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </div>
 
-          <button className="w-10 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => navigate("/notifications")}
+            className="relative w-10 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm flex items-center justify-center"
+          >
             <MIcon name="notifications" className="text-[20px] text-gray-700" />
+
+            {count > 0 ? (
+              <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                {count > 99 ? "99+" : count}
+              </span>
+            ) : null}
           </button>
 
           <div className="w-10 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm flex items-center justify-center">

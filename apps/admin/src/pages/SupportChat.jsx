@@ -2,13 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import MIcon from "../components/MIcon";
 import { apiFetch, getCurrentUser } from "../lib/auth";
 
-function MessageBubble({ msg, isBrandAdmin }) {
-  const [showTranslation, setShowTranslation] = useState(true);
-
+function getVisibleMessageText(msg, isSupportAdmin) {
   const support = msg.senderType === "SUPPORT";
-  const mine = isBrandAdmin ? !support : support;
 
-  const visibleText = showTranslation ? msg.translatedText : msg.originalText;
+  if (isSupportAdmin) {
+    return support ? msg.originalText : msg.translatedText;
+  }
+
+  return support ? msg.translatedText : msg.originalText;
+}
+
+function MessageBubble({ msg, isSupportAdmin }) {
+  const support = msg.senderType === "SUPPORT";
+  const mine = isSupportAdmin ? support : !support;
+
+  const visibleText = getVisibleMessageText(msg, isSupportAdmin);
 
   return (
     <div className={mine ? "flex justify-end" : "flex justify-start"}>
@@ -18,45 +26,13 @@ function MessageBubble({ msg, isBrandAdmin }) {
           mine ? "bg-violet-600 text-white" : "bg-white text-zinc-900",
         ].join(" ")}
       >
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-xs font-black uppercase opacity-70">
-            {support ? "Support" : "Brand"}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowTranslation((v) => !v)}
-            className={[
-              "rounded-full px-3 py-1 text-[10px] font-black uppercase",
-              mine ? "bg-white/15 text-white" : "bg-zinc-100 text-zinc-600",
-            ].join(" ")}
-          >
-            {showTranslation ? "Show Original" : "Show Translation"}
-          </button>
+        <div className="text-xs font-black uppercase opacity-70">
+          {support ? "Support" : "Brand"}
         </div>
 
         <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
           {visibleText}
         </p>
-
-        <div
-          className={[
-            "mt-3 rounded-2xl p-3 text-xs leading-5",
-            mine ? "bg-white/15" : "bg-zinc-100",
-          ].join(" ")}
-        >
-          <div className="mb-1 font-black opacity-70">
-            {showTranslation ? "Translated text" : "Original text"}
-          </div>
-
-          <div className="opacity-80">
-            {showTranslation
-              ? `${msg.originalLanguage || "auto"} → ${
-                  msg.translatedLanguage || "auto"
-                }`
-              : `${msg.originalLanguage || "auto"}`}
-          </div>
-        </div>
 
         <div className="mt-2 text-[10px] opacity-60">
           {msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}
@@ -68,9 +44,11 @@ function MessageBubble({ msg, isBrandAdmin }) {
 
 export default function SupportChat() {
   const user = getCurrentUser();
+
   const isSupportAdmin =
     String(user?.email || "").toLowerCase() ===
     "support@mahimediasolutions.com";
+
   const isBrandAdmin = !isSupportAdmin;
 
   const [brands, setBrands] = useState([]);
@@ -118,7 +96,6 @@ export default function SupportChat() {
     });
 
     const json = await readJson(res);
-
     await loadThreads();
 
     const nextThread = {
@@ -135,6 +112,7 @@ export default function SupportChat() {
   async function selectThread(thread) {
     setSelectedThread(thread);
     await loadMessages(thread.id);
+    await loadThreads();
   }
 
   async function loadMessages(threadId) {
@@ -201,20 +179,6 @@ export default function SupportChat() {
     return () => clearInterval(timer);
   }, [selectedThread?.id]);
 
-  const filteredBrands = useMemo(() => {
-    const q = query.trim().toLowerCase();
-
-    if (!q) return brands;
-
-    return brands.filter((brand) => {
-      return (
-        String(brand.name || "").toLowerCase().includes(q) ||
-        String(brand.slug || "").toLowerCase().includes(q) ||
-        String(brand.route || "").toLowerCase().includes(q)
-      );
-    });
-  }, [brands, query]);
-
   const threadByBrandId = useMemo(() => {
     const map = new Map();
 
@@ -224,6 +188,30 @@ export default function SupportChat() {
 
     return map;
   }, [threads]);
+
+  const filteredBrands = useMemo(() => {
+    const q = query.trim().toLowerCase();
+
+    const list = !q
+      ? brands
+      : brands.filter((brand) => {
+          return (
+            String(brand.name || "").toLowerCase().includes(q) ||
+            String(brand.slug || "").toLowerCase().includes(q) ||
+            String(brand.route || "").toLowerCase().includes(q)
+          );
+        });
+
+    return [...list].sort((a, b) => {
+      const ta = threadByBrandId.get(a.id);
+      const tb = threadByBrandId.get(b.id);
+
+      const da = ta?.lastMessageAt || ta?.updatedAt || a.updatedAt || "";
+      const db = tb?.lastMessageAt || tb?.updatedAt || b.updatedAt || "";
+
+      return new Date(db).getTime() - new Date(da).getTime();
+    });
+  }, [brands, query, threadByBrandId]);
 
   if (loading) {
     return <div className="p-8 text-zinc-500">Loading support chat...</div>;
@@ -238,7 +226,7 @@ export default function SupportChat() {
           <p className="mt-1 text-sm text-zinc-500">
             {isSupportAdmin
               ? "All brand support threads."
-              : "Your brand support thread."}
+              : "Your support thread with admin."}
           </p>
 
           {isSupportAdmin ? (
@@ -256,7 +244,7 @@ export default function SupportChat() {
 
         <div className="h-[calc(100%-150px)] overflow-auto p-4">
           <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-400">
-            {isSupportAdmin ? "Brand Threads" : "My Support Thread"}
+            {isSupportAdmin ? "Brand Threads" : "Support Admin"}
           </div>
 
           <div className="space-y-2">
@@ -283,23 +271,33 @@ export default function SupportChat() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-sm font-black text-zinc-900">
-                        {brand.name}
+                        {isBrandAdmin ? "Support Admin" : brand.name}
                       </div>
 
                       <div className="mt-1 text-xs text-zinc-400">
-                        {brand.slug}
+                        {isBrandAdmin
+                          ? "support@mahimediasolutions.com"
+                          : brand.slug}
                       </div>
                     </div>
 
-                    <div
-                      className={[
-                        "rounded-full px-2 py-1 text-[10px] font-black uppercase",
-                        thread
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-zinc-100 text-zinc-500",
-                      ].join(" ")}
-                    >
-                      {thread ? "Open" : "New"}
+                    <div className="flex items-center gap-2">
+                      {thread?.unreadCount > 0 ? (
+                        <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                          {thread.unreadCount > 99 ? "99+" : thread.unreadCount}
+                        </span>
+                      ) : null}
+
+                      <span
+                        className={[
+                          "rounded-full px-2 py-1 text-[10px] font-black uppercase",
+                          thread
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-zinc-100 text-zinc-500",
+                        ].join(" ")}
+                      >
+                        {thread ? "Open" : "New"}
+                      </span>
                     </div>
                   </div>
 
@@ -324,14 +322,18 @@ export default function SupportChat() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-base font-black text-zinc-950">
-                {selectedThread?.brandName ||
-                  selectedThread?.brand_name ||
-                  selectedThread?.subject ||
-                  "Select a thread"}
+                {isBrandAdmin
+                  ? "Support Admin"
+                  : selectedThread?.brandName ||
+                    selectedThread?.brand_name ||
+                    selectedThread?.subject ||
+                    "Select a thread"}
               </div>
 
               <div className="mt-1 text-xs text-zinc-400">
-                Smart translation toggle: original / translated
+                {isSupportAdmin
+                  ? "Support sees brand messages in English."
+                  : "Brand sees every message in German."}
               </div>
             </div>
 
@@ -359,7 +361,7 @@ export default function SupportChat() {
                 <MessageBubble
                   key={msg.id}
                   msg={msg}
-                  isBrandAdmin={isBrandAdmin}
+                  isSupportAdmin={isSupportAdmin}
                 />
               ))}
             </div>
@@ -382,8 +384,8 @@ export default function SupportChat() {
               rows={2}
               placeholder={
                 isSupportAdmin
-                  ? "Type in English. Brand receives German translation..."
-                  : "Schreiben Sie auf Deutsch. Support receives English translation..."
+                  ? "Type in English. Brand will see German..."
+                  : "Schreiben Sie auf Deutsch. Support will see English..."
               }
               className="flex-1 resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-violet-300"
             />

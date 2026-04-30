@@ -154,23 +154,49 @@ export default function brandSupportChatRoutes({
           b.name as "brandName",
           b.slug as "brandSlug",
           b.route as "brandRoute",
-          lm.translated_text as "lastMessage",
-          lm.original_text as "lastOriginalMessage",
+
           lm.sender_type as "lastSenderType",
-          lm.created_at as "lastMessageAt"
+          lm.created_at as "lastMessageAt",
+
+          CASE
+            WHEN $${values.length + 1} = true AND lm.sender_type = 'BRAND'
+              THEN lm.translated_text
+            WHEN $${values.length + 1} = true AND lm.sender_type = 'SUPPORT'
+              THEN lm.original_text
+            WHEN $${values.length + 1} = false AND lm.sender_type = 'BRAND'
+              THEN lm.original_text
+            WHEN $${values.length + 1} = false AND lm.sender_type = 'SUPPORT'
+              THEN lm.translated_text
+            ELSE NULL
+          END as "lastMessage",
+
+          unread.unread_count as "unreadCount"
         FROM brand_support_threads t
         JOIN brands b ON b.id = t.brand_id
+
         LEFT JOIN LATERAL (
-          SELECT translated_text, original_text, sender_type, created_at
+          SELECT sender_type, original_text, translated_text, created_at
           FROM brand_support_messages
           WHERE thread_id = t.id
           ORDER BY created_at DESC
           LIMIT 1
         ) lm ON true
+
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int as unread_count
+          FROM brand_support_messages m
+          WHERE m.thread_id = t.id
+            AND (
+              ($${values.length + 1} = true AND m.sender_type='BRAND' AND m.read_by_support_at IS NULL)
+              OR
+              ($${values.length + 1} = false AND m.sender_type='SUPPORT' AND m.read_by_brand_at IS NULL)
+            )
+        ) unread ON true
+
         ${whereSql}
-        ORDER BY t.updated_at DESC
+        ORDER BY COALESCE(lm.created_at, t.updated_at) DESC
         `,
-        values
+        [...values, isSupportUser(req)]
       );
 
       return res.json({ ok: true, data: rows });
@@ -215,6 +241,30 @@ export default function brandSupportChatRoutes({
         }
       }
 
+      if (isSupportUser(req)) {
+        await pool.query(
+          `
+          UPDATE brand_support_messages
+          SET read_by_support_at = NOW()
+          WHERE thread_id=$1
+            AND sender_type='BRAND'
+            AND read_by_support_at IS NULL
+          `,
+          [threadId]
+        );
+      } else {
+        await pool.query(
+          `
+          UPDATE brand_support_messages
+          SET read_by_brand_at = NOW()
+          WHERE thread_id=$1
+            AND sender_type='SUPPORT'
+            AND read_by_brand_at IS NULL
+          `,
+          [threadId]
+        );
+      }
+
       const { rows } = await pool.query(
         `
         SELECT
@@ -227,6 +277,8 @@ export default function brandSupportChatRoutes({
           translated_language as "translatedLanguage",
           original_text as "originalText",
           translated_text as "translatedText",
+          read_by_support_at as "readBySupportAt",
+          read_by_brand_at as "readByBrandAt",
           created_at as "createdAt"
         FROM brand_support_messages
         WHERE thread_id=$1
@@ -272,6 +324,7 @@ export default function brandSupportChatRoutes({
       const thread = threadQ.rows[0];
 
       let senderType = "SUPPORT";
+      let sourceLanguage = "en";
       let targetLanguage = "de";
 
       if (!isSupportUser(req)) {
@@ -285,12 +338,13 @@ export default function brandSupportChatRoutes({
         }
 
         senderType = "BRAND";
+        sourceLanguage = "de";
         targetLanguage = "en";
       }
 
       const translated = await translateText({
         text,
-        from: "auto",
+        from: sourceLanguage,
         to: targetLanguage,
       });
 
@@ -304,9 +358,11 @@ export default function brandSupportChatRoutes({
           original_language,
           translated_language,
           original_text,
-          translated_text
+          translated_text,
+          read_by_support_at,
+          read_by_brand_at
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         RETURNING
           id,
           thread_id as "threadId",
@@ -317,6 +373,8 @@ export default function brandSupportChatRoutes({
           translated_language as "translatedLanguage",
           original_text as "originalText",
           translated_text as "translatedText",
+          read_by_support_at as "readBySupportAt",
+          read_by_brand_at as "readByBrandAt",
           created_at as "createdAt"
         `,
         [
@@ -328,6 +386,8 @@ export default function brandSupportChatRoutes({
           translated.translatedLanguage,
           translated.originalText,
           translated.translatedText,
+          senderType === "SUPPORT" ? new Date() : null,
+          senderType === "BRAND" ? new Date() : null,
         ]
       );
 
@@ -337,6 +397,95 @@ export default function brandSupportChatRoutes({
       );
 
       return res.json({ ok: true, data: messageQ.rows[0] });
+    })
+  );
+
+  router.get(
+    "/admin/support-chat/notifications/count",
+    authMiddleware,
+    wrap(async (req, res) => {
+      if (isSupportUser(req)) {
+        const q = await pool.query(`
+          SELECT COUNT(*)::int as count
+          FROM brand_support_messages
+          WHERE sender_type='BRAND'
+            AND read_by_support_at IS NULL
+        `);
+
+        return res.json({ ok: true, data: { count: q.rows[0]?.count || 0 } });
+      }
+
+      const brand = await getBrandForUser(req);
+
+      if (!brand) {
+        return res.status(403).json({ ok: false, message: "Forbidden" });
+      }
+
+      const q = await pool.query(
+        `
+        SELECT COUNT(*)::int as count
+        FROM brand_support_messages
+        WHERE brand_id=$1
+          AND sender_type='SUPPORT'
+          AND read_by_brand_at IS NULL
+        `,
+        [brand.id]
+      );
+
+      return res.json({ ok: true, data: { count: q.rows[0]?.count || 0 } });
+    })
+  );
+
+  router.get(
+    "/admin/support-chat/notifications",
+    authMiddleware,
+    wrap(async (req, res) => {
+      const values = [];
+      let whereSql = "";
+
+      if (isSupportUser(req)) {
+        whereSql = `
+          m.sender_type='BRAND'
+          AND m.read_by_support_at IS NULL
+        `;
+      } else {
+        const brand = await getBrandForUser(req);
+
+        if (!brand) {
+          return res.status(403).json({ ok: false, message: "Forbidden" });
+        }
+
+        values.push(brand.id);
+
+        whereSql = `
+          m.brand_id=$1
+          AND m.sender_type='SUPPORT'
+          AND m.read_by_brand_at IS NULL
+        `;
+      }
+
+      const q = await pool.query(
+        `
+        SELECT
+          m.id,
+          m.thread_id as "threadId",
+          m.brand_id as "brandId",
+          m.sender_type as "senderType",
+          m.original_text as "originalText",
+          m.translated_text as "translatedText",
+          m.created_at as "createdAt",
+          b.name as "brandName",
+          b.slug as "brandSlug"
+        FROM brand_support_messages m
+        JOIN brands b ON b.id = m.brand_id
+        WHERE ${whereSql}
+        ORDER BY m.created_at DESC
+        LIMIT 50
+        `,
+        values
+      );
+
+      return res.json({ ok: true, data: q.rows });
     })
   );
 
