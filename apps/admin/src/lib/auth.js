@@ -161,10 +161,11 @@ export async function apiFetch(path, options = {}) {
 
   const res = await fetch(url, { ...options, body, headers });
 
-  if (res.status === 401 || res.status === 403) {
-    logout();
-    throw new Error("Session expired. Please login again.");
-  }
+if (res.status === 401) {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
+  window.location.href = "/login";
+}
 
   return res;
 }

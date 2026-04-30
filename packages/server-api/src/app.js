@@ -836,7 +836,6 @@ app.post(
 
     // ✅ permissions
   let permissions = ["Overview", "Brands", "Main Website"];
-
 if (role === "admin") {
   permissions = [
     "Overview",
@@ -847,7 +846,10 @@ if (role === "admin") {
   ];
 
   if (lowerEmail === "admin2@mahimediasolutions.com") {
-    permissions.push("Brand Unique Pages");
+    permissions = [
+      ...permissions,
+      "Brand Unique Pages",
+    ];
   }
 
   if (lowerEmail === "support@mahimediasolutions.com") {

@@ -66,7 +66,7 @@ export default function AdminSidebar() {
 
       <div className="mt-auto px-4 pb-6 pt-6">
         <button
-          onClick={() => navigate("/site")}
+          onClick={() => navigate("/")}
           className="w-full h-11 rounded-2xl bg-violet-600 text-white font-bold shadow-lg shadow-violet-500/20 hover:brightness-105 transition inline-flex items-center justify-center gap-2"
         >
           <MIcon name="swap_horiz" className="text-[20px]" />

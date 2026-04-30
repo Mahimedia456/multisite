@@ -6,6 +6,9 @@ import { apiFetch } from "../lib/auth";
 export default function AdminTopbar() {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
+  const [lang, setLang] = useState(
+    localStorage.getItem("site_lang") || "de"
+  );
 
   async function loadCount() {
     try {
@@ -24,6 +27,19 @@ export default function AdminTopbar() {
     const timer = setInterval(loadCount, 10000);
     return () => clearInterval(timer);
   }, []);
+
+  function toggleLanguage() {
+  const select = document.querySelector(".goog-te-combo");
+  if (!select) return;
+
+  const next = lang === "de" ? "en" : "de";
+
+  select.value = next;
+  select.dispatchEvent(new Event("change"));
+
+  localStorage.setItem("site_lang", next);
+  setLang(next);
+}
 
   return (
     <header className="sticky top-0 z-40 bg-[#f6f2fb]/80 backdrop-blur border-b border-[#efeaf6]">
@@ -52,6 +68,22 @@ export default function AdminTopbar() {
             })}
           </div>
 
+          {/* ✅ LANGUAGE SWITCH BUTTON */}
+         <button
+  onClick={() => {
+    const currentUrl = window.location.href;
+    const url =
+      "https://translate.google.com/translate?sl=en&tl=de&u=" +
+      encodeURIComponent(currentUrl);
+
+    window.open(url, "_blank");
+  }}
+  className="px-3 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm text-sm font-semibold flex items-center gap-2"
+>
+  🇩🇪 DE
+</button>
+
+          {/* 🔔 NOTIFICATIONS */}
           <button
             type="button"
             onClick={() => navigate("/notifications")}
@@ -66,6 +98,7 @@ export default function AdminTopbar() {
             ) : null}
           </button>
 
+          {/* 👤 USER */}
           <div className="w-10 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm flex items-center justify-center">
             <MIcon name="person" className="text-[22px] text-gray-700" />
           </div>
