@@ -10,6 +10,7 @@ export default function AdminTopbar() {
 
   const [count, setCount] = useState(0);
   const [lang, setLang] = useState(localStorage.getItem("site_lang") || "de");
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   async function loadCount() {
     try {
@@ -39,6 +40,15 @@ export default function AdminTopbar() {
     setLang(next);
   }
 
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+
+    localStorage.setItem("theme", next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+
+    setTheme(next);
+  }
+
   return (
     <header className="sticky top-0 z-40 bg-[#f6f2fb]/80 backdrop-blur border-b border-[#efeaf6]">
       <div className="px-7 h-[76px] flex items-center justify-between gap-6">
@@ -65,6 +75,14 @@ export default function AdminTopbar() {
               year: "numeric",
             })}
           </div>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="px-3 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm text-sm font-semibold flex items-center gap-2"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
 
           <button
             type="button"

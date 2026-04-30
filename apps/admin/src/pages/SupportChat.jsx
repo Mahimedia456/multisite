@@ -26,7 +26,7 @@ function MessageBubble({ msg, isSupportAdmin }) {
         ].join(" ")}
       >
         <div className="text-xs font-black uppercase opacity-70">
-          {support ? "Support" : "Brand"}
+          {support ? "Support" : "Agentur"}
         </div>
 
         <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
@@ -50,7 +50,7 @@ export default function SupportChat() {
 
   const isBrandAdmin = !isSupportAdmin;
 
-  const [brands, setBrands] = useState([]);
+  const [agenturen, setAgenturen] = useState([]);
   const [threads, setThreads] = useState([]);
   const [selectedThread, setSelectedThread] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -71,10 +71,10 @@ export default function SupportChat() {
     return json;
   }
 
-  async function loadBrands() {
+  async function loadAgenturen() {
     const res = await apiFetch("/admin/support-chat/brands");
     const json = await readJson(res);
-    setBrands(json.data || []);
+    setAgenturen(json.data || []);
   }
 
   async function loadThreads() {
@@ -88,10 +88,10 @@ export default function SupportChat() {
     }
   }
 
-  async function createThread(brandId) {
+  async function createThread(agenturId) {
     const res = await apiFetch("/admin/support-chat/threads", {
       method: "POST",
-      body: { brandId },
+      body: { brandId: agenturId },
     });
 
     const json = await readJson(res);
@@ -153,7 +153,7 @@ export default function SupportChat() {
     setLoading(true);
 
     try {
-      await Promise.all([loadBrands(), loadThreads()]);
+      await Promise.all([loadAgenturen(), loadThreads()]);
     } catch (e) {
       alert(e?.message || "Failed to load support chat");
     } finally {
@@ -176,7 +176,7 @@ export default function SupportChat() {
     return () => clearInterval(timer);
   }, [selectedThread?.id]);
 
-  const threadByBrandId = useMemo(() => {
+  const threadByAgenturId = useMemo(() => {
     const map = new Map();
 
     for (const thread of threads) {
@@ -186,44 +186,44 @@ export default function SupportChat() {
     return map;
   }, [threads]);
 
-  const filteredBrands = useMemo(() => {
+  const filteredAgenturen = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     const list = !q
-      ? brands
-      : brands.filter((brand) => {
+      ? agenturen
+      : agenturen.filter((agentur) => {
           return (
-            String(brand.name || "").toLowerCase().includes(q) ||
-            String(brand.slug || "").toLowerCase().includes(q) ||
-            String(brand.route || "").toLowerCase().includes(q)
+            String(agentur.name || "").toLowerCase().includes(q) ||
+            String(agentur.slug || "").toLowerCase().includes(q) ||
+            String(agentur.route || "").toLowerCase().includes(q)
           );
         });
 
     return [...list].sort((a, b) => {
-      const ta = threadByBrandId.get(a.id);
-      const tb = threadByBrandId.get(b.id);
+      const ta = threadByAgenturId.get(a.id);
+      const tb = threadByAgenturId.get(b.id);
 
       const da = ta?.lastMessageAt || ta?.updatedAt || a.updatedAt || "";
       const db = tb?.lastMessageAt || tb?.updatedAt || b.updatedAt || "";
 
       return new Date(db).getTime() - new Date(da).getTime();
     });
-  }, [brands, query, threadByBrandId]);
+  }, [agenturen, query, threadByAgenturId]);
 
   if (loading) {
     return <div className="p-8 text-zinc-500">Loading support chat...</div>;
   }
 
   return (
-   <div className="h-[calc(100vh-112px)] overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-  <div className="grid h-full min-h-0 grid-cols-[360px_1fr]">
+    <div className="h-[calc(100vh-112px)] overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+      <div className="grid h-full min-h-0 grid-cols-[360px_1fr]">
         <aside className="flex min-h-0 flex-col border-r border-zinc-200 bg-zinc-50">
           <div className="shrink-0 border-b border-zinc-200 bg-white p-5">
             <h1 className="text-xl font-black text-zinc-950">Support Chat</h1>
 
             <p className="mt-1 text-sm text-zinc-500">
               {isSupportAdmin
-                ? "All brand support threads."
+                ? "All Agentur support threads."
                 : "Your support thread with admin."}
             </p>
 
@@ -233,7 +233,7 @@ export default function SupportChat() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search brands..."
+                  placeholder="Search Agentur..."
                   className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                 />
               </div>
@@ -242,22 +242,22 @@ export default function SupportChat() {
 
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-400">
-              {isSupportAdmin ? "Brand Threads" : "Support Admin"}
+              {isSupportAdmin ? "Agentur Threads" : "Support Admin"}
             </div>
 
             <div className="space-y-2 pb-4">
-              {filteredBrands.map((brand) => {
-                const thread = threadByBrandId.get(brand.id);
+              {filteredAgenturen.map((agentur) => {
+                const thread = threadByAgenturId.get(agentur.id);
                 const active =
-                  selectedThread?.brandId === brand.id ||
-                  selectedThread?.brand_id === brand.id;
+                  selectedThread?.brandId === agentur.id ||
+                  selectedThread?.brand_id === agentur.id;
 
                 return (
                   <button
-                    key={brand.id}
+                    key={agentur.id}
                     type="button"
                     onClick={() =>
-                      thread ? selectThread(thread) : createThread(brand.id)
+                      thread ? selectThread(thread) : createThread(agentur.id)
                     }
                     className={[
                       "w-full rounded-2xl border p-4 text-left transition",
@@ -269,13 +269,13 @@ export default function SupportChat() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-black text-zinc-900">
-                          {isBrandAdmin ? "Support Admin" : brand.name}
+                          {isBrandAdmin ? "Support Admin" : agentur.name}
                         </div>
 
                         <div className="mt-1 text-xs text-zinc-400">
                           {isBrandAdmin
                             ? "support@mahimediasolutions.com"
-                            : brand.slug}
+                            : agentur.slug}
                         </div>
                       </div>
 
@@ -332,8 +332,8 @@ export default function SupportChat() {
 
                 <div className="mt-1 text-xs text-zinc-400">
                   {isSupportAdmin
-                    ? "Support sees brand messages in English."
-                    : "Brand sees every message in German."}
+                    ? "Support sees Agentur messages in English."
+                    : "Agentur sees every message in German."}
                 </div>
               </div>
 
@@ -384,7 +384,7 @@ export default function SupportChat() {
                   rows={2}
                   placeholder={
                     isSupportAdmin
-                      ? "Type in English. Brand will see German..."
+                      ? "Type in English. Agentur will see German..."
                       : "Schreiben Sie auf Deutsch. Support will see English..."
                   }
                   className="min-h-[56px] flex-1 resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-violet-300"

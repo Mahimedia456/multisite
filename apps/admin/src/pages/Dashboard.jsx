@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import MIcon from "../components/MIcon";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, getSession, logout } from "../lib/auth";
@@ -18,7 +19,9 @@ function StatCard({
           <div className="mt-3 text-4xl font-extrabold text-gray-900">
             {value}
           </div>
-          <div className={`mt-2 text-sm font-semibold ${noteColor}`}>{note}</div>
+          <div className={`mt-2 text-sm font-semibold ${noteColor}`}>
+            {note}
+          </div>
         </div>
 
         <div className="w-10 h-10 rounded-2xl bg-violet-600 text-white flex items-center justify-center shadow-sm">
@@ -47,16 +50,19 @@ function ActivityItem({ icon, title, sub, time }) {
       <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
         <MIcon name={icon} className="text-[20px] text-violet-700" />
       </div>
+
       <div className="flex-1">
         <div className="text-sm font-bold text-gray-900">{title}</div>
         <div className="text-sm text-gray-700">{sub}</div>
-        <div className="text-xs text-violet-600 mt-1 font-semibold">{time}</div>
+        <div className="text-xs text-violet-600 mt-1 font-semibold">
+          {time}
+        </div>
       </div>
     </div>
   );
 }
 
-function TenantCard({ path, name, active, latency, icon }) {
+function TenantCard({ path, name, active, latency, icon, activeLabel, latencyLabel }) {
   return (
     <div className="rounded-3xl bg-white/80 border border-[#efeaf6] shadow-sm p-6">
       <div className="flex items-center justify-between">
@@ -75,11 +81,12 @@ function TenantCard({ path, name, active, latency, icon }) {
             <div className="mt-2 flex items-center gap-6 text-sm text-gray-600">
               <span className="inline-flex items-center gap-1.5">
                 <MIcon name="group" className="text-[18px] text-gray-500" />
-                {active} Active
+                {active} {activeLabel}
               </span>
+
               <span className="inline-flex items-center gap-1.5">
                 <MIcon name="schedule" className="text-[18px] text-gray-500" />
-                {latency} Latency
+                {latency} {latencyLabel}
               </span>
             </div>
           </div>
@@ -102,13 +109,10 @@ function TenantCard({ path, name, active, latency, icon }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const session = getSession();
+  const { t } = useTranslation();
 
   const email = String(session?.user?.email || session?.email || "").toLowerCase();
 
-  // ✅ Determine which tenants to show:
-  // - Admin: show both Allianz 3 + Allianz 4
-  // - Allianz3 user: show only Allianz 3
-  // - Allianz4 user: show only Allianz 4
   const visibleTenants = useMemo(() => {
     const all = [
       {
@@ -127,9 +131,15 @@ export default function Dashboard() {
       },
     ];
 
-    if (email.includes("allianz3")) return all.filter((t) => t.key === "allianz3");
-    if (email.includes("allianz4")) return all.filter((t) => t.key === "allianz4");
-    return all; // admin
+    if (email.includes("allianz3")) {
+      return all.filter((tenant) => tenant.key === "allianz3");
+    }
+
+    if (email.includes("allianz4")) {
+      return all.filter((tenant) => tenant.key === "allianz4");
+    }
+
+    return all;
   }, [email]);
 
   const [loading, setLoading] = useState(true);
@@ -153,15 +163,12 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        // ✅ Stats
         const sRes = await apiFetch("/admin/stats");
         const sJson = await sRes.json().catch(() => ({}));
-
-        // Your server returns: { ok:true, data:{ brands, sharedPages } }
         const sData = sJson?.data || sJson || {};
 
-        // ✅ Activity (optional)
         let aJson = [];
+
         try {
           const aRes = await apiFetch("/admin/activity");
           aJson = await aRes.json().catch(() => []);
@@ -172,8 +179,7 @@ export default function Dashboard() {
         if (!alive) return;
 
         setStats({
-          totalBrands:
-            Number(sData?.brands ?? sData?.totalBrands ?? 0) || 0,
+          totalBrands: Number(sData?.brands ?? sData?.totalBrands ?? 0) || 0,
           totalTemplates:
             Number(sData?.templates ?? sData?.totalTemplates ?? 0) || 0,
           totalInnerPages:
@@ -181,24 +187,30 @@ export default function Dashboard() {
           uptime: String(sData?.uptime ?? "99.9%"),
         });
 
-        setActivity(Array.isArray(aJson?.data) ? aJson.data : Array.isArray(aJson) ? aJson : []);
-      } catch (e) {
+        setActivity(
+          Array.isArray(aJson?.data)
+            ? aJson.data
+            : Array.isArray(aJson)
+              ? aJson
+              : []
+        );
+      } catch {
         if (!alive) return;
-        // keep UI working silently
       } finally {
         if (alive) setLoading(false);
       }
     }
 
     load();
+
     return () => {
       alive = false;
     };
   }, []);
 
-  // ✅ If brand-admin, tweak stat display to "1 brand" feeling
   const effectiveStats = useMemo(() => {
     const isBrandUser = email.includes("allianz3") || email.includes("allianz4");
+
     if (!isBrandUser) return stats;
 
     return {
@@ -207,22 +219,48 @@ export default function Dashboard() {
     };
   }, [stats, email]);
 
-  // ✅ Performance title text
   const perfTitle = useMemo(() => {
-    if (visibleTenants.length === 1) return `${visibleTenants[0].name} Performance`;
+    if (visibleTenants.length === 1) {
+      return `${visibleTenants[0].name} ${t("dashboardPerformance")}`;
+    }
+
     return "Allianz 3 vs Allianz 4";
-  }, [visibleTenants]);
+  }, [visibleTenants, t]);
+
+  const fallbackActivity = [
+    {
+      icon: "edit",
+      title: t("dashboardTemplateUpdated"),
+      sub: t("dashboardGlobalHeader"),
+      time: t("dashboardJustNow"),
+    },
+    {
+      icon: "add",
+      title: t("dashboardNewPageCreated"),
+      sub: t("dashboardPrivacyPolicy"),
+      time: t("dashboardTenMinsAgo"),
+    },
+    {
+      icon: "check_circle",
+      title: t("dashboardPublished"),
+      sub: t("dashboardHomePage"),
+      time: t("dashboardOneHourAgo"),
+    },
+  ];
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          Logged in as{" "}
+          {t("dashboardLoggedInAs")}{" "}
           <span className="font-bold text-gray-900">
             {session?.user?.email || session?.email || "Admin"}
           </span>
+
           {loading ? (
-            <span className="ml-2 text-xs text-gray-400">(loading…)</span>
+            <span className="ml-2 text-xs text-gray-400">
+              ({t("dashboardLoading")})
+            </span>
           ) : null}
         </div>
 
@@ -231,36 +269,38 @@ export default function Dashboard() {
           className="h-10 px-4 rounded-2xl bg-white/80 border border-[#efeaf6] shadow-sm text-sm font-bold text-red-600 hover:bg-red-50 transition inline-flex items-center gap-2"
         >
           <MIcon name="logout" className="text-[18px]" />
-          Logout
+          {t("logout")}
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
-          title="Total Brands"
+          title={t("dashboardTotalBrands")}
           value={String(effectiveStats.totalBrands)}
-          note="Across portfolio"
+          note={t("dashboardAcrossPortfolio")}
           noteColor="text-violet-700"
           icon="layers"
         />
+
         <StatCard
-          title="Templates"
+          title={t("dashboardTemplates")}
           value={String(effectiveStats.totalTemplates)}
-          note="Headers, footers, pages"
+          note={t("dashboardTemplatesNote")}
           icon="view_quilt"
         />
+
         <StatCard
-          title="Inner Pages"
+          title={t("dashboardInnerPages")}
           value={String(effectiveStats.totalInnerPages)}
-          note="Policies, FAQs, TOS…"
+          note={t("dashboardInnerPagesNote")}
           noteColor="text-violet-700"
           icon="description"
         />
+
         <StatCard
-          title="System Health"
+          title={t("dashboardSystemHealth")}
           value={effectiveStats.uptime}
-          note="Uptime across services"
+          note={t("dashboardUptimeNote")}
           noteColor="text-violet-700"
           icon="verified"
         />
@@ -269,7 +309,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <Card
-            title="Brand Performance"
+            title={t("dashboardBrandPerformance")}
             right={
               <div className="flex items-center gap-4 text-sm font-semibold text-gray-600">
                 <span className="inline-flex items-center gap-2">
@@ -290,57 +330,40 @@ export default function Dashboard() {
               {perfTitle}
             </div>
 
-            <div className="mt-6 h-[280px] rounded-3xl bg-gradient-to-b from-violet-50 to-transparent border border-[#f0edf7] flex items-center justify-center text-gray-400">
-              (Chart here — we’ll plug Recharts with API analytics)
+            <div className="mt-6 h-[280px] rounded-3xl bg-gradient-to-b from-violet-50 to-transparent border border-[#f0edf7] flex items-center justify-center text-gray-400 text-center px-4">
+              ({t("dashboardChartPlaceholder")})
             </div>
 
             <div className="mt-4 flex justify-between text-xs font-bold text-violet-700 px-2">
-              <span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>SEP</span><span>NOV</span>
+              <span>JAN</span>
+              <span>MÄR</span>
+              <span>MAI</span>
+              <span>JUL</span>
+              <span>SEP</span>
+              <span>NOV</span>
             </div>
           </Card>
         </div>
 
         <div>
-          <Card title="Recent Activity">
+          <Card title={t("dashboardRecentActivity")}>
             <div className="divide-y divide-[#f0edf7]">
-              {(activity.length
-                ? activity
-                : [
-                    {
-                      icon: "edit",
-                      title: "Template updated",
-                      sub: "Global Header",
-                      time: "Just now",
-                    },
-                    {
-                      icon: "add",
-                      title: "New page created",
-                      sub: "Privacy Policy",
-                      time: "10 mins ago",
-                    },
-                    {
-                      icon: "check_circle",
-                      title: "Published",
-                      sub: "Home Page",
-                      time: "1 hour ago",
-                    },
-                  ]
-              )
+              {(activity.length ? activity : fallbackActivity)
                 .slice(0, 6)
-                .map((it, idx) => (
+                .map((item, index) => (
                   <ActivityItem
-                    key={idx}
-                    icon={it.icon}
-                    title={it.title}
-                    sub={it.sub}
-                    time={it.time}
+                    key={index}
+                    icon={item.icon}
+                    title={item.title}
+                    sub={item.sub}
+                    time={item.time}
                   />
                 ))}
             </div>
 
             <button className="mt-6 w-full h-11 rounded-2xl bg-violet-100 text-violet-700 font-bold hover:bg-violet-200 transition inline-flex items-center justify-center gap-2">
               <MIcon name="list" className="text-[18px]" />
-              View All Activity
+              {t("dashboardViewAllActivity")}
             </button>
           </Card>
         </div>
@@ -348,18 +371,20 @@ export default function Dashboard() {
 
       <div className="space-y-4">
         <h2 className="text-xl font-extrabold text-gray-900">
-          Tenant Status Health
+          {t("dashboardTenantStatusHealth")}
         </h2>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {visibleTenants.map((t) => (
+          {visibleTenants.map((tenant) => (
             <TenantCard
-              key={t.key}
-              path={t.path}
-              name={t.name}
-              active={t.key === "allianz3" ? "12.4k" : "8.9k"}
-              latency={t.key === "allianz3" ? "42ms" : "38ms"}
-              icon={t.icon}
+              key={tenant.key}
+              path={tenant.path}
+              name={tenant.name}
+              active={tenant.key === "allianz3" ? "12.4k" : "8.9k"}
+              latency={tenant.key === "allianz3" ? "42ms" : "38ms"}
+              icon={tenant.icon}
+              activeLabel={t("dashboardActive")}
+              latencyLabel={t("dashboardLatency")}
             />
           ))}
         </div>
