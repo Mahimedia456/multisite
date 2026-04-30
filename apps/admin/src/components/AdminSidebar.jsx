@@ -1,24 +1,49 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import MIcon from "./MIcon";
 import { logout, getCurrentUser } from "../lib/auth";
 
 const NAV_ITEMS = [
-  { to: "/dashboard", label: "Overview", icon: "grid_view" },
-  { to: "/brands", label: "Brands", icon: "layers" },
-  { to: "/brand-inner-pages", label: "Brand Inner Pages", icon: "description" },
-  { to: "/brand-unique-pages", label: "Brand Unique Pages", icon: "web" },
-
-  // NEW
-  { to: "/support-chat", label: "Support Chat", icon: "forum" },
+  {
+    to: "/dashboard",
+    label: "Overview",
+    translationKey: "overview",
+    icon: "grid_view",
+  },
+  {
+    to: "/brands",
+    label: "Brands",
+    translationKey: "brands",
+    icon: "layers",
+  },
+  {
+    to: "/brand-inner-pages",
+    label: "Brand Inner Pages",
+    translationKey: "brandInnerPages",
+    icon: "description",
+  },
+  {
+    to: "/brand-unique-pages",
+    label: "Brand Unique Pages",
+    translationKey: "brandUniquePages",
+    icon: "web",
+  },
+  {
+    to: "/support-chat",
+    label: "Support Chat",
+    translationKey: "supportChat",
+    icon: "forum",
+  },
 ];
 
 export default function AdminSidebar() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const user = getCurrentUser();
 
- const nav = user?.permissions
-  ? NAV_ITEMS.filter((item) => user.permissions.includes(item.label))
-  : NAV_ITEMS;
+  const nav = user?.permissions
+    ? NAV_ITEMS.filter((item) => user.permissions.includes(item.label))
+    : NAV_ITEMS;
 
   function handleLogout() {
     logout();
@@ -35,10 +60,10 @@ export default function AdminSidebar() {
 
           <div>
             <div className="font-extrabold text-gray-900 leading-tight">
-              {user?.name || "Holding Co."}
+              {user?.name || t("holdingCo")}
             </div>
             <div className="text-xs text-violet-600 font-semibold">
-              {user?.slug || "Global Admin"}
+              {user?.slug || t("globalAdmin")}
             </div>
           </div>
         </div>
@@ -59,7 +84,7 @@ export default function AdminSidebar() {
             }
           >
             <MIcon name={item.icon} className="text-[20px]" />
-            {item.label}
+            {t(item.translationKey)}
           </NavLink>
         ))}
       </nav>
@@ -70,13 +95,13 @@ export default function AdminSidebar() {
           className="w-full h-11 rounded-2xl bg-violet-600 text-white font-bold shadow-lg shadow-violet-500/20 hover:brightness-105 transition inline-flex items-center justify-center gap-2"
         >
           <MIcon name="swap_horiz" className="text-[20px]" />
-          Need Help?
+          {t("needHelp")}
         </button>
 
         <div className="mt-4 space-y-2">
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-violet-50 transition">
             <MIcon name="help" className="text-[20px]" />
-            Help
+            {t("help")}
           </button>
 
           <button
@@ -84,7 +109,7 @@ export default function AdminSidebar() {
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-red-600 hover:bg-red-50 transition"
           >
             <MIcon name="logout" className="text-[20px]" />
-            Logout
+            {t("logout")}
           </button>
         </div>
       </div>

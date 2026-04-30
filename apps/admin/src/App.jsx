@@ -67,6 +67,7 @@ export default function App() {
 
             <Route path="/support-chat" element={<SupportChat />} />
             <Route path="/notifications" element={<Notifications />} />
+            
 
             {/* Generate Brand */}
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />
