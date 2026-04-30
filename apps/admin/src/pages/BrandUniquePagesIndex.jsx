@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import MIcon from "../components/MIcon";
 
 export default function BrandUniquePagesIndex() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [brands, setBrands] = useState([]);
   const [query, setQuery] = useState("");
@@ -18,7 +20,7 @@ export default function BrandUniquePagesIndex() {
       const res = await apiGet("/api/brands");
       setBrands(Array.isArray(res?.data) ? res.data : []);
     } catch (e) {
-      alert(e?.message || "Failed to load brands");
+      alert(e?.message || t("uniquePagesFailedLoadBrands"));
     } finally {
       setLoading(false);
     }
@@ -26,6 +28,7 @@ export default function BrandUniquePagesIndex() {
 
   useEffect(() => {
     loadBrands();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredBrands = useMemo(() => {
@@ -48,50 +51,72 @@ export default function BrandUniquePagesIndex() {
   }, [brands, query, status]);
 
   const activeCount = brands.filter(
-    (b) => String(b.status || "").toLowerCase() === "active"
+    (brand) => String(brand.status || "").toLowerCase() === "active"
   ).length;
 
   const inactiveCount = Math.max(0, brands.length - activeCount);
 
+  const activeRate = brands.length
+    ? Math.round((activeCount / brands.length) * 100)
+    : 0;
+
+  const showingFrom = filteredBrands.length ? 1 : 0;
+  const showingTo = filteredBrands.length;
+
   if (loading) {
-    return <div className="p-8 text-zinc-500">Loading brands...</div>;
+    return (
+      <div className="p-8 text-zinc-500">
+        {t("uniquePagesLoadingBrands")}
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex items-start justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-black text-zinc-950">Brand Portfolio</h1>
+          <h1 className="text-2xl font-black text-zinc-950">
+            {t("uniquePagesPortfolioTitle")}
+          </h1>
+
           <p className="mt-1 text-sm text-zinc-500">
-            Managing {activeCount} active and {inactiveCount} inactive sub-brands.
+            {t("uniquePagesPortfolioDesc", {
+              active: activeCount,
+              inactive: inactiveCount,
+            })}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-[330px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4">
             <MIcon name="search" className="text-[20px] text-zinc-400" />
+
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Filter by name, route or status..."
+              placeholder={t("uniquePagesSearchPlaceholder")}
               className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
             />
           </div>
 
           <div className="flex rounded-xl border border-zinc-200 bg-white p-1">
-            {["all", "active", "inactive"].map((x) => (
+            {[
+              { value: "all", label: t("uniquePagesAll") },
+              { value: "active", label: t("uniquePagesActive") },
+              { value: "inactive", label: t("uniquePagesInactive") },
+            ].map((item) => (
               <button
-                key={x}
+                key={item.value}
                 type="button"
-                onClick={() => setStatus(x)}
+                onClick={() => setStatus(item.value)}
                 className={[
-                  "h-8 rounded-lg px-4 text-xs font-bold capitalize",
-                  status === x
+                  "h-8 rounded-lg px-4 text-xs font-bold",
+                  status === item.value
                     ? "bg-zinc-100 text-zinc-950"
                     : "text-zinc-400 hover:text-zinc-700",
                 ].join(" ")}
               >
-                {x}
+                {item.label}
               </button>
             ))}
           </div>
@@ -104,13 +129,21 @@ export default function BrandUniquePagesIndex() {
             <div className="grid h-14 w-14 place-items-center rounded-full bg-violet-100 text-violet-600">
               <MIcon name="groups" />
             </div>
+
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                Total Brands
+                {t("uniquePagesTotalBrands")}
               </p>
-              <h2 className="text-2xl font-black text-zinc-950">{brands.length}</h2>
+
+              <h2 className="text-2xl font-black text-zinc-950">
+                {brands.length}
+              </h2>
+
               <p className="text-xs font-black text-zinc-500">
-                {activeCount} ACTIVE • {inactiveCount} INACTIVE
+                {t("uniquePagesActiveInactiveHint", {
+                  active: activeCount,
+                  inactive: inactiveCount,
+                })}
               </p>
             </div>
           </div>
@@ -121,14 +154,19 @@ export default function BrandUniquePagesIndex() {
             <div className="grid h-14 w-14 place-items-center rounded-full bg-blue-50 text-blue-500">
               <MIcon name="check_circle" />
             </div>
+
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                Active Rate
+                {t("uniquePagesActiveRate")}
               </p>
+
               <h2 className="text-2xl font-black text-zinc-950">
-                {brands.length ? Math.round((activeCount / brands.length) * 100) : 0}.0%
+                {activeRate}.0%
               </h2>
-              <p className="text-xs font-black text-blue-600">PORTFOLIO HEALTH</p>
+
+              <p className="text-xs font-black text-blue-600">
+                {t("uniquePagesPortfolioHealth")}
+              </p>
             </div>
           </div>
         </div>
@@ -138,12 +176,19 @@ export default function BrandUniquePagesIndex() {
             <div className="grid h-14 w-14 place-items-center rounded-full bg-amber-50 text-amber-500">
               <MIcon name="history" />
             </div>
+
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                Sync Status
+                {t("uniquePagesSyncStatus")}
               </p>
-              <h2 className="text-2xl font-black text-zinc-950">Up to date</h2>
-              <p className="text-xs font-black text-amber-600">LAST FETCH OK</p>
+
+              <h2 className="text-2xl font-black text-zinc-950">
+                {t("uniquePagesUpToDate")}
+              </h2>
+
+              <p className="text-xs font-black text-amber-600">
+                {t("uniquePagesLastFetchOk")}
+              </p>
             </div>
           </div>
         </div>
@@ -154,32 +199,41 @@ export default function BrandUniquePagesIndex() {
           <thead>
             <tr className="border-b border-zinc-200 bg-white text-left">
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Brand Name
+                {t("uniquePagesBrandName")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Route
+                {t("uniquePagesRoute")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Status
+                {t("uniquePagesStatus")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Templates
+                {t("uniquePagesTemplates")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Last Updated
+                {t("uniquePagesLastUpdated")}
               </th>
+
               <th className="px-6 py-5 text-right text-xs font-black uppercase tracking-widest text-zinc-400">
-                Actions
+                {t("uniquePagesActions")}
               </th>
             </tr>
           </thead>
 
           <tbody>
             {filteredBrands.map((brand) => {
-              const isActive = String(brand.status || "").toLowerCase() === "active";
+              const isActive =
+                String(brand.status || "").toLowerCase() === "active";
 
               return (
-                <tr key={brand.id} className="border-b border-zinc-100 last:border-0">
+                <tr
+                  key={brand.id}
+                  className="border-b border-zinc-100 last:border-0"
+                >
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-4">
                       <div className="grid h-10 w-10 place-items-center rounded-lg bg-zinc-100 text-zinc-500">
@@ -189,12 +243,17 @@ export default function BrandUniquePagesIndex() {
                       <div>
                         <button
                           type="button"
-                          onClick={() => navigate(`/brand-unique-pages/${brand.id}`)}
+                          onClick={() =>
+                            navigate(`/brand-unique-pages/${brand.id}`)
+                          }
                           className="text-left text-sm font-black text-zinc-950 hover:text-violet-600"
                         >
                           {brand.name}
                         </button>
-                        <p className="mt-1 text-xs text-zinc-400">{brand.slug}</p>
+
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {brand.slug}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -212,7 +271,10 @@ export default function BrandUniquePagesIndex() {
                           : "bg-zinc-100 text-zinc-500",
                       ].join(" ")}
                     >
-                      • {brand.status || "active"}
+                      •{" "}
+                      {isActive
+                        ? t("uniquePagesActive")
+                        : t("uniquePagesInactive")}
                     </span>
                   </td>
 
@@ -222,7 +284,9 @@ export default function BrandUniquePagesIndex() {
 
                   <td className="px-6 py-5 text-sm text-zinc-500">
                     {brand.updated_at || brand.updatedAt
-                      ? new Date(brand.updated_at || brand.updatedAt).toLocaleString()
+                      ? new Date(
+                          brand.updated_at || brand.updatedAt
+                        ).toLocaleString()
                       : "-"}
                   </td>
 
@@ -230,27 +294,33 @@ export default function BrandUniquePagesIndex() {
                     <div className="flex justify-end gap-3 text-zinc-400">
                       <button
                         type="button"
-                        onClick={() => navigate(`/brand-unique-pages/${brand.id}`)}
+                        onClick={() =>
+                          navigate(`/brand-unique-pages/${brand.id}`)
+                        }
                         className="hover:text-violet-600"
-                        title="Manage unique pages"
+                        title={t("uniquePagesManage")}
                       >
                         <MIcon name="settings" />
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => navigate(`/brand-unique-pages/${brand.id}`)}
+                        onClick={() =>
+                          navigate(`/brand-unique-pages/${brand.id}`)
+                        }
                         className="hover:text-violet-600"
-                        title="Open pages"
+                        title={t("uniquePagesOpen")}
                       >
                         <MIcon name="edit" />
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => navigate(`/brand-unique-pages/${brand.id}`)}
+                        onClick={() =>
+                          navigate(`/brand-unique-pages/${brand.id}`)
+                        }
                         className="hover:text-violet-600"
-                        title="Duplicate"
+                        title={t("uniquePagesDuplicate")}
                       >
                         <MIcon name="content_copy" />
                       </button>
@@ -260,39 +330,51 @@ export default function BrandUniquePagesIndex() {
               );
             })}
 
-            {!filteredBrands.length && (
+            {!filteredBrands.length ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-sm text-zinc-500">
-                  No brands found.
+                <td
+                  colSpan={6}
+                  className="px-6 py-12 text-center text-sm text-zinc-500"
+                >
+                  {t("uniquePagesNoBrands")}
                 </td>
               </tr>
-            )}
+            ) : null}
           </tbody>
         </table>
 
         <div className="flex items-center justify-between border-t border-zinc-100 px-6 py-5 text-sm text-zinc-500">
           <span>
-            Showing {filteredBrands.length ? 1 : 0}-{filteredBrands.length} of{" "}
-            {brands.length} brands
+            {t("uniquePagesShowing", {
+              from: showingFrom,
+              to: showingTo,
+              total: brands.length,
+            })}
           </span>
 
           <div className="flex items-center gap-2">
             <button className="grid h-8 w-8 place-items-center rounded-lg text-zinc-300">
               <MIcon name="chevron_left" />
             </button>
+
             <button className="grid h-8 w-8 place-items-center rounded-lg bg-violet-600 text-sm font-black text-white">
               1
             </button>
+
             <button className="grid h-8 w-8 place-items-center rounded-lg text-sm font-bold text-zinc-500">
               2
             </button>
+
             <button className="grid h-8 w-8 place-items-center rounded-lg text-sm font-bold text-zinc-500">
               3
             </button>
+
             <span className="px-2">...</span>
+
             <button className="grid h-8 w-8 place-items-center rounded-lg text-sm font-bold text-zinc-500">
               6
             </button>
+
             <button className="grid h-8 w-8 place-items-center rounded-lg text-zinc-400">
               <MIcon name="chevron_right" />
             </button>

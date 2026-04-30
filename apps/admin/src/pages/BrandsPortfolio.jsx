@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
 
-function StatusPill({ status }) {
+function StatusPill({ status, t }) {
   const active = status === "active";
+
   return (
     <span
       className={[
@@ -20,7 +22,7 @@ function StatusPill({ status }) {
           active ? "bg-green-600" : "bg-zinc-400",
         ].join(" ")}
       />
-      {active ? "Active" : "Inactive"}
+      {active ? t("brandsPortfolioActive") : t("brandsPortfolioInactive")}
     </span>
   );
 }
@@ -36,11 +38,14 @@ function KPI({ icon, iconWrap, title, value, hint, hintColor }) {
       >
         <MIcon name={icon} className="text-[22px]" />
       </div>
+
       <div>
         <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
           {title}
         </p>
+
         <p className="text-xl font-bold text-zinc-900">{value}</p>
+
         <p
           className={[
             "text-[10px] font-bold uppercase mt-0.5",
@@ -56,22 +61,24 @@ function KPI({ icon, iconWrap, title, value, hint, hintColor }) {
 
 function formatUpdated(updatedAt) {
   if (!updatedAt) return "-";
+
   const d = new Date(updatedAt);
   if (Number.isNaN(d.getTime())) return String(updatedAt);
+
   return d.toLocaleString();
 }
 
 export default function BrandsPortfolio() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all"); // all | active | inactive
+  const [status, setStatus] = useState("all");
 
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ✅ Fetch brands from API (server reads from tb_brands table)
   useEffect(() => {
     const controller = new AbortController();
 
@@ -81,10 +88,13 @@ export default function BrandsPortfolio() {
         setErrorMsg("");
 
         const params = new URLSearchParams();
-        if (query.trim()) params.set("q", query.trim());
+
+        if (query.trim()) {
+          params.set("q", query.trim());
+        }
+
         params.set("status", status);
 
-        // ✅ Use apiFetch so token/proxy works
         const res = await apiFetch(`/api/brands?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -92,28 +102,27 @@ export default function BrandsPortfolio() {
         const json = await res.json().catch(() => null);
 
         if (!res.ok || !json?.ok) {
-          throw new Error(json?.message || "Failed to fetch brands");
+          throw new Error(json?.message || t("brandsPortfolioFetchFailed"));
         }
 
-        // ✅ Normalize response to match UI fields (safe defaults)
-       const normalized = (json.data || []).map((b) => ({
-  id: b.id,
-  name: b.name,
-  slug: b.slug,
-  route: b.route || `/${b.slug}`,
-  status: b.status || "inactive",
-  templates: Number.isFinite(b.templates) ? b.templates : 0,
-  updatedAt: b.updatedAt || b.updated_at || b.updated,
-  icon: b.icon || "business",
-  iconBg: b.iconBg || b.icon_bg || "bg-zinc-100",
-  iconColor: b.iconColor || b.icon_color || "text-zinc-500",
-}));
+        const normalized = (json.data || []).map((brand) => ({
+          id: brand.id,
+          name: brand.name,
+          slug: brand.slug,
+          route: brand.route || `/${brand.slug}`,
+          status: brand.status || "inactive",
+          templates: Number.isFinite(brand.templates) ? brand.templates : 0,
+          updatedAt: brand.updatedAt || brand.updated_at || brand.updated,
+          icon: brand.icon || "business",
+          iconBg: brand.iconBg || brand.icon_bg || "bg-zinc-100",
+          iconColor: brand.iconColor || brand.icon_color || "text-zinc-500",
+        }));
 
         setBrands(normalized);
       } catch (e) {
         if (e?.name !== "AbortError") {
           console.error(e);
-          setErrorMsg(e?.message || "Something went wrong");
+          setErrorMsg(e?.message || t("brandsPortfolioSomethingWrong"));
           setBrands([]);
         }
       } finally {
@@ -121,51 +130,54 @@ export default function BrandsPortfolio() {
       }
     }
 
-    // small debounce for smoother typing
-    const t = setTimeout(loadBrands, 250);
+    const timer = setTimeout(loadBrands, 250);
+
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       controller.abort();
     };
-  }, [query, status]);
+  }, [query, status, t]);
 
-const filtered = useMemo(() => {
-  let email = "";
+  const filtered = useMemo(() => {
+    let email = "";
 
-  for (const key of Object.keys(localStorage)) {
-    try {
-      const value = localStorage.getItem(key);
-      const parsed = JSON.parse(value || "{}");
+    for (const key of Object.keys(localStorage)) {
+      try {
+        const value = localStorage.getItem(key);
+        const parsed = JSON.parse(value || "{}");
 
-      if (parsed?.email) {
-        email = String(parsed.email).toLowerCase();
-        break;
-      }
+        if (parsed?.email) {
+          email = String(parsed.email).toLowerCase();
+          break;
+        }
 
-      if (parsed?.user?.email) {
-        email = String(parsed.user.email).toLowerCase();
-        break;
-      }
-    } catch {}
-  }
+        if (parsed?.user?.email) {
+          email = String(parsed.user.email).toLowerCase();
+          break;
+        }
+      } catch {}
+    }
 
-  const allowSlugs =
-    email === "admin2@mahimediasolutions.com"
-      ? new Set(["kundler3", "allianz4", "dropbrand"])
-      : new Set(["kundler3", "allianz4"]);
+    const allowSlugs =
+      email === "admin2@mahimediasolutions.com"
+        ? new Set(["kundler3", "allianz4", "dropbrand"])
+        : new Set(["kundler3", "allianz4"]);
 
-  return (brands || []).filter((b) => {
-    const slug = String(b?.slug || "").trim().toLowerCase();
-    const route = String(b?.route || "").trim().toLowerCase().replace("/", "");
+    return (brands || []).filter((brand) => {
+      const slug = String(brand?.slug || "").trim().toLowerCase();
+      const route = String(brand?.route || "")
+        .trim()
+        .toLowerCase()
+        .replace("/", "");
 
-    return allowSlugs.has(slug) || allowSlugs.has(route);
-  });
-}, [brands]);
+      return allowSlugs.has(slug) || allowSlugs.has(route);
+    });
+  }, [brands]);
 
-  // ✅ KPI values from real data
   const totalCount = filtered.length;
-  const activeCount = filtered.filter((b) => b.status === "active").length;
+  const activeCount = filtered.filter((brand) => brand.status === "active").length;
   const inactiveCount = totalCount - activeCount;
+
   const activeRate = totalCount
     ? ((activeCount / totalCount) * 100).toFixed(1)
     : "0.0";
@@ -175,12 +187,14 @@ const filtered = useMemo(() => {
 
   return (
     <div className="max-w-[1400px] mx-auto">
-      {/* Heading row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-xl font-bold text-zinc-900">Brand Portfolio</h2>
+          <h2 className="text-xl font-bold text-zinc-900">
+            {t("brandsPortfolioTitle")}
+          </h2>
+
           <p className="text-zinc-500 text-sm">
-            Managing {totalCount} active and inactive sub-brands.
+            {t("brandsPortfolioDesc", { total: totalCount })}
           </p>
         </div>
 
@@ -190,11 +204,12 @@ const filtered = useMemo(() => {
               name="search"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-[20px]"
             />
+
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full bg-white border border-zinc-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all"
-              placeholder="Filter by name, route or status..."
+              placeholder={t("brandsPortfolioSearchPlaceholder")}
               type="text"
             />
           </div>
@@ -209,8 +224,9 @@ const filtered = useMemo(() => {
                   : "text-zinc-400 hover:text-zinc-600",
               ].join(" ")}
             >
-              All
+              {t("brandsPortfolioAll")}
             </button>
+
             <button
               onClick={() => setStatus("active")}
               className={[
@@ -220,8 +236,9 @@ const filtered = useMemo(() => {
                   : "text-zinc-400 hover:text-zinc-600",
               ].join(" ")}
             >
-              Active
+              {t("brandsPortfolioActive")}
             </button>
+
             <button
               onClick={() => setStatus("inactive")}
               className={[
@@ -231,69 +248,84 @@ const filtered = useMemo(() => {
                   : "text-zinc-400 hover:text-zinc-600",
               ].join(" ")}
             >
-              Inactive
+              {t("brandsPortfolioInactive")}
             </button>
           </div>
         </div>
       </div>
 
-      {/* KPI ROW */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <KPI
           icon="groups"
           iconWrap="bg-primary/10 text-primary"
-          title="Total Brands"
+          title={t("brandsPortfolioTotalBrands")}
           value={String(totalCount)}
-          hint={`${activeCount} active • ${inactiveCount} inactive`}
+          hint={t("brandsPortfolioActiveInactiveHint", {
+            active: activeCount,
+            inactive: inactiveCount,
+          })}
           hintColor="text-zinc-600"
         />
+
         <KPI
           icon="check_circle"
           iconWrap="bg-blue-50 text-blue-500"
-          title="Active Rate"
+          title={t("brandsPortfolioActiveRate")}
           value={`${activeRate}%`}
-          hint="Portfolio Health"
+          hint={t("brandsPortfolioHealth")}
           hintColor="text-blue-600"
         />
+
         <KPI
           icon="history"
           iconWrap="bg-amber-50 text-amber-500"
-          title="Sync Status"
-          value={loading ? "Syncing..." : "Up to date"}
-          hint={errorMsg ? "API error" : "Last fetch OK"}
+          title={t("brandsPortfolioSyncStatus")}
+          value={
+            loading
+              ? t("brandsPortfolioSyncing")
+              : t("brandsPortfolioUpToDate")
+          }
+          hint={
+            errorMsg
+              ? t("brandsPortfolioApiError")
+              : t("brandsPortfolioLastFetchOk")
+          }
           hintColor={errorMsg ? "text-red-600" : "text-amber-600"}
         />
       </div>
 
-      {/* Error */}
-      {errorMsg && (
+      {errorMsg ? (
         <div className="mb-4 bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 rounded-lg">
           {errorMsg}
         </div>
-      )}
+      ) : null}
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-zinc-50/50 border-b border-zinc-200">
               <th className="px-6 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Brand Name
+                {t("brandsPortfolioBrandName")}
               </th>
+
               <th className="px-6 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Route
+                {t("brandsPortfolioRoute")}
               </th>
+
               <th className="px-6 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Status
+                {t("brandsPortfolioStatus")}
               </th>
+
               <th className="px-6 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Templates
+                {t("brandsPortfolioTemplates")}
               </th>
+
               <th className="px-6 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Last Updated
+                {t("brandsPortfolioLastUpdated")}
               </th>
+
               <th className="px-6 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-wider text-right">
-                Actions
+                {t("brandsPortfolioActions")}
               </th>
             </tr>
           </thead>
@@ -302,64 +334,65 @@ const filtered = useMemo(() => {
             {loading ? (
               <tr>
                 <td className="px-6 py-6 text-sm text-zinc-500" colSpan={6}>
-                  Loading brands...
+                  {t("brandsPortfolioLoadingBrands")}
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
                 <td className="px-6 py-6 text-sm text-zinc-500" colSpan={6}>
-                  No brands found.
+                  {t("brandsPortfolioNoBrands")}
                 </td>
               </tr>
             ) : (
-              filtered.map((b) => (
+              filtered.map((brand) => (
                 <tr
-                  key={b.id}
+                  key={brand.id}
                   className="hover:bg-primary/5 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/brands/${b.id}`)}
+                  onClick={() => navigate(`/brands/${brand.id}`)}
                 >
                   <td className="px-6 py-3">
                     <div className="flex items-center gap-3">
                       <div
                         className={[
                           "w-8 h-8 rounded flex items-center justify-center",
-                          b.iconBg,
+                          brand.iconBg,
                         ].join(" ")}
                       >
                         <MIcon
-                          name={b.icon}
-                          className={["text-[18px]", b.iconColor].join(" ")}
+                          name={brand.icon}
+                          className={["text-[18px]", brand.iconColor].join(" ")}
                         />
                       </div>
+
                       <span className="text-sm font-semibold text-zinc-900">
-                        {b.name}
+                        {brand.name}
                       </span>
                     </div>
                   </td>
 
                   <td className="px-6 py-3">
                     <span className="text-sm font-mono text-zinc-500">
-                      {b.route}
+                      {brand.route}
                     </span>
                   </td>
 
                   <td className="px-6 py-3">
-                    <StatusPill status={b.status} />
+                    <StatusPill status={brand.status} t={t} />
                   </td>
 
                   <td className="px-6 py-3 text-sm text-zinc-600 font-medium">
-                    {b.templates}
+                    {brand.templates}
                   </td>
 
                   <td className="px-6 py-3 text-sm text-zinc-500">
-                    {formatUpdated(b.updatedAt)}
+                    {formatUpdated(brand.updatedAt)}
                   </td>
 
                   <td className="px-6 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
-                        title="Manage"
+                        title={t("brandsPortfolioManage")}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MIcon name="settings" className="text-[18px]" />
@@ -367,7 +400,7 @@ const filtered = useMemo(() => {
 
                       <button
                         className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
-                        title="Edit"
+                        title={t("brandsPortfolioEdit")}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MIcon name="edit" className="text-[18px]" />
@@ -375,7 +408,7 @@ const filtered = useMemo(() => {
 
                       <button
                         className="p-1.5 text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-md transition-all"
-                        title="Duplicate"
+                        title={t("brandsPortfolioDuplicate")}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MIcon name="content_copy" className="text-[18px]" />
@@ -388,16 +421,13 @@ const filtered = useMemo(() => {
           </tbody>
         </table>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
           <span className="text-sm text-zinc-500">
-            Showing{" "}
-            <span className="font-semibold text-zinc-900">
-              {showingFrom}-{showingTo}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-zinc-900">{totalCount}</span>{" "}
-            brands
+            {t("brandsPortfolioShowing", {
+              from: showingFrom,
+              to: showingTo,
+              total: totalCount,
+            })}
           </span>
 
           <div className="flex items-center gap-1">
@@ -411,9 +441,11 @@ const filtered = useMemo(() => {
             <button className="w-8 h-8 flex items-center justify-center bg-primary text-white text-xs font-bold rounded">
               1
             </button>
+
             <button className="w-8 h-8 flex items-center justify-center text-zinc-600 hover:bg-zinc-200 text-xs font-semibold rounded">
               2
             </button>
+
             <button className="w-8 h-8 flex items-center justify-center text-zinc-600 hover:bg-zinc-200 text-xs font-semibold rounded">
               3
             </button>

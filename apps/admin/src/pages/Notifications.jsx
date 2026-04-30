@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,12 +19,12 @@ export default function Notifications() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load notifications");
+        throw new Error(json?.message || t("notificationsFailedLoad"));
       }
 
       setItems(json.data || []);
     } catch (e) {
-      alert(e.message || "Failed to load notifications");
+      alert(e.message || t("notificationsFailedLoad"));
     } finally {
       setLoading(false);
     }
@@ -29,18 +32,22 @@ export default function Notifications() {
 
   useEffect(() => {
     loadNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-zinc-500">Loading notifications...</div>;
+    return <div className="p-8 text-zinc-500">{t("notificationsLoading")}</div>;
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-zinc-950">Notifications</h1>
+        <h1 className="text-3xl font-black text-zinc-950">
+          {t("notificationsTitle")}
+        </h1>
+
         <p className="mt-1 text-sm text-zinc-500">
-          Unread support chat messages.
+          {t("notificationsDesc")}
         </p>
       </div>
 
@@ -75,7 +82,7 @@ export default function Notifications() {
                 </div>
 
                 <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600">
-                  Unread
+                  {t("notificationsUnread")}
                 </span>
               </button>
             ))}
@@ -83,7 +90,9 @@ export default function Notifications() {
         ) : (
           <div className="p-12 text-center text-zinc-400">
             <MIcon name="notifications_off" className="text-[44px]" />
-            <p className="mt-3 text-sm font-bold">No unread notifications.</p>
+            <p className="mt-3 text-sm font-bold">
+              {t("notificationsNoUnread")}
+            </p>
           </div>
         )}
       </div>

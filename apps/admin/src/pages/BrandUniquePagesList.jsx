@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../lib/auth";
 import MIcon from "../components/MIcon";
@@ -23,7 +24,8 @@ function getDefaultContent(slug) {
           type: "AboutIntroSection",
           props: {
             eyebrow: "Unsere Mission",
-            headline: "Versicherung einfach, menschlich und verständlich machen",
+            headline:
+              "Versicherung einfach, menschlich und verständlich machen",
             body:
               "Wir helfen Menschen, Familien und Unternehmen dabei, die richtige Absicherung zu finden. Unser Ziel ist es, komplexe Versicherungen klar zu erklären und passende Lösungen bereitzustellen.",
             image:
@@ -39,15 +41,18 @@ function getDefaultContent(slug) {
             items: [
               {
                 title: "Transparenz",
-                desc: "Klare Tarife und verständliche Beratung ohne versteckte Bedingungen.",
+                desc:
+                  "Klare Tarife und verständliche Beratung ohne versteckte Bedingungen.",
               },
               {
                 title: "Vertrauen",
-                desc: "Langfristige Unterstützung für Kunden, Familien und Unternehmen.",
+                desc:
+                  "Langfristige Unterstützung für Kunden, Familien und Unternehmen.",
               },
               {
                 title: "Schnelligkeit",
-                desc: "Effiziente Prozesse bei Beratung, Policen und Schadenfällen.",
+                desc:
+                  "Effiziente Prozesse bei Beratung, Policen und Schadenfällen.",
               },
             ],
           },
@@ -129,6 +134,7 @@ function getDefaultContent(slug) {
 export default function BrandUniquePagesList() {
   const { brandId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [brand, setBrand] = useState(null);
   const [pages, setPages] = useState([]);
@@ -150,17 +156,20 @@ export default function BrandUniquePagesList() {
     setLoading(true);
 
     try {
-      const res = await apiFetch(`/admin/brand-unique-pages/brands/${brandId}/pages`);
+      const res = await apiFetch(
+        `/admin/brand-unique-pages/brands/${brandId}/pages`
+      );
+
       const json = await readJsonResponse(res);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load pages");
+        throw new Error(json?.message || t("uniquePageListFailedLoad"));
       }
 
       setBrand(json.data.brand);
       setPages(json.data.pages || []);
     } catch (e) {
-      alert(e.message || "Failed to load pages");
+      alert(e.message || t("uniquePageListFailedLoad"));
     } finally {
       setLoading(false);
     }
@@ -170,25 +179,28 @@ export default function BrandUniquePagesList() {
     setCreating(slug);
 
     try {
-      const res = await apiFetch(`/admin/brand-unique-pages/brands/${brandId}/pages`, {
-        method: "POST",
-        body: {
-          slug,
-          title,
-          status: "PUBLISHED",
-          content: getDefaultContent(slug),
-        },
-      });
+      const res = await apiFetch(
+        `/admin/brand-unique-pages/brands/${brandId}/pages`,
+        {
+          method: "POST",
+          body: {
+            slug,
+            title,
+            status: "PUBLISHED",
+            content: getDefaultContent(slug),
+          },
+        }
+      );
 
       const json = await readJsonResponse(res);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to create page");
+        throw new Error(json?.message || t("uniquePageListFailedCreate"));
       }
 
       await loadPages();
     } catch (e) {
-      alert(e.message || "Failed to create page");
+      alert(e.message || t("uniquePageListFailedCreate"));
     } finally {
       setCreating("");
     }
@@ -196,6 +208,7 @@ export default function BrandUniquePagesList() {
 
   useEffect(() => {
     loadPages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId]);
 
   const filteredPages = useMemo(() => {
@@ -216,7 +229,11 @@ export default function BrandUniquePagesList() {
     pages.some((page) => String(page.slug || "").toLowerCase() === slug);
 
   if (loading) {
-    return <div className="p-8 text-zinc-500">Loading pages...</div>;
+    return (
+      <div className="p-8 text-zinc-500">
+        {t("uniquePageListLoading")}
+      </div>
+    );
   }
 
   return (
@@ -227,15 +244,16 @@ export default function BrandUniquePagesList() {
           onClick={() => navigate("/brand-unique-pages")}
           className="text-sm font-bold text-zinc-400 hover:text-violet-600"
         >
-          All Brands ›
+          {t("uniquePageListAllBrands")} ›
         </button>
 
         <h1 className="mt-2 text-3xl font-black text-zinc-950">
-          {brand?.name || "Brand"} Pages
+          {brand?.name || t("uniquePageListBrandFallback")}{" "}
+          {t("uniquePageListPages")}
         </h1>
 
         <p className="mt-1 text-sm text-zinc-500">
-          Brand-specific pages that render only for this brand.
+          {t("uniquePageListDescription")}
         </p>
       </div>
 
@@ -243,43 +261,44 @@ export default function BrandUniquePagesList() {
         <button
           type="button"
           disabled={pageExists("home") || creating === "home"}
-          onClick={() => createPage("home", "Home")}
+          onClick={() => createPage("home", t("uniquePageListHome"))}
           className="h-10 rounded-xl bg-violet-600 px-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          + Home
+          + {t("uniquePageListHome")}
         </button>
 
         <button
           type="button"
           disabled={pageExists("about") || creating === "about"}
-          onClick={() => createPage("about", "About")}
+          onClick={() => createPage("about", t("uniquePageListAbout"))}
           className="h-10 rounded-xl bg-zinc-900 px-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          + About
+          + {t("uniquePageListAbout")}
         </button>
 
         <button
           type="button"
           disabled={pageExists("contact") || creating === "contact"}
-          onClick={() => createPage("contact", "Contact")}
+          onClick={() => createPage("contact", t("uniquePageListContact"))}
           className="h-10 rounded-xl bg-zinc-900 px-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          + Contact
+          + {t("uniquePageListContact")}
         </button>
       </div>
 
       <div className="overflow-hidden rounded-[1.75rem] border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-6">
           <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
-            All Pages
+            {t("uniquePageListAllPages")}
           </h2>
 
           <div className="flex h-10 w-[330px] items-center gap-2 rounded-2xl bg-zinc-100 px-4">
             <MIcon name="search" className="text-[20px] text-zinc-400" />
+
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search pages..."
+              placeholder={t("uniquePageListSearchPlaceholder")}
               className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
             />
           </div>
@@ -289,19 +308,23 @@ export default function BrandUniquePagesList() {
           <thead>
             <tr className="border-b border-zinc-100 text-left">
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Page Name
+                {t("uniquePageListPageName")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Status
+                {t("uniquePageListStatus")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Latest Version
+                {t("uniquePageListLatestVersion")}
               </th>
+
               <th className="px-6 py-5 text-xs font-black uppercase tracking-widest text-zinc-400">
-                Last Modified
+                {t("uniquePageListLastModified")}
               </th>
+
               <th className="px-6 py-5 text-right text-xs font-black uppercase tracking-widest text-zinc-400">
-                Actions
+                {t("uniquePageListActions")}
               </th>
             </tr>
           </thead>
@@ -312,7 +335,10 @@ export default function BrandUniquePagesList() {
               const isPublished = status === "PUBLISHED";
 
               return (
-                <tr key={page.id} className="border-b border-zinc-100 last:border-0">
+                <tr
+                  key={page.id}
+                  className="border-b border-zinc-100 last:border-0"
+                >
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-4">
                       <div className="grid h-11 w-11 place-items-center rounded-xl bg-zinc-100 text-zinc-500">
@@ -333,7 +359,7 @@ export default function BrandUniquePagesList() {
                         </button>
 
                         <p className="mt-1 text-xs text-zinc-400">
-                          slug: {page.slug}
+                          {t("uniquePageListSlug")}: {page.slug}
                         </p>
                       </div>
                     </div>
@@ -372,7 +398,7 @@ export default function BrandUniquePagesList() {
                           )
                         }
                         className="hover:text-violet-600"
-                        title="Open builder"
+                        title={t("uniquePageListOpenBuilder")}
                       >
                         <MIcon name="settings" />
                       </button>
@@ -385,7 +411,7 @@ export default function BrandUniquePagesList() {
                           )
                         }
                         className="hover:text-violet-600"
-                        title="Edit"
+                        title={t("uniquePageListEdit")}
                       >
                         <MIcon name="edit" />
                       </button>
@@ -395,18 +421,21 @@ export default function BrandUniquePagesList() {
               );
             })}
 
-            {!filteredPages.length && (
+            {!filteredPages.length ? (
               <tr>
-                <td colSpan={5} className="px-6 py-14 text-center text-sm text-zinc-500">
-                  No pages found. Create Home, About or Contact page first.
+                <td
+                  colSpan={5}
+                  className="px-6 py-14 text-center text-sm text-zinc-500"
+                >
+                  {t("uniquePageListNoPages")}
                 </td>
               </tr>
-            )}
+            ) : null}
           </tbody>
         </table>
 
         <div className="border-t border-zinc-100 px-6 py-5 text-center text-sm text-zinc-400">
-          Showing {filteredPages.length} pages
+          {t("uniquePageListShowing", { count: filteredPages.length })}
         </div>
       </div>
     </div>

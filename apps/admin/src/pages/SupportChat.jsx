@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import MIcon from "../components/MIcon";
 import { apiFetch, getCurrentUser } from "../lib/auth";
 
@@ -12,7 +13,7 @@ function getVisibleMessageText(msg, isSupportAdmin) {
   return support ? msg.translatedText : msg.originalText;
 }
 
-function MessageBubble({ msg, isSupportAdmin }) {
+function MessageBubble({ msg, isSupportAdmin, t }) {
   const support = msg.senderType === "SUPPORT";
   const mine = isSupportAdmin ? support : !support;
   const visibleText = getVisibleMessageText(msg, isSupportAdmin);
@@ -26,7 +27,7 @@ function MessageBubble({ msg, isSupportAdmin }) {
         ].join(" ")}
       >
         <div className="text-xs font-black uppercase opacity-70">
-          {support ? "Support" : "Agentur"}
+          {support ? t("supportChatSupport") : t("supportChatAgentur")}
         </div>
 
         <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
@@ -42,6 +43,7 @@ function MessageBubble({ msg, isSupportAdmin }) {
 }
 
 export default function SupportChat() {
+  const { t } = useTranslation();
   const user = getCurrentUser();
 
   const isSupportAdmin =
@@ -65,7 +67,7 @@ export default function SupportChat() {
     const json = await res.json().catch(() => null);
 
     if (!res.ok || !json?.ok) {
-      throw new Error(json?.message || "Request failed");
+      throw new Error(json?.message || t("supportChatRequestFailed"));
     }
 
     return json;
@@ -125,6 +127,7 @@ export default function SupportChat() {
 
   async function sendMessage() {
     const clean = text.trim();
+
     if (!clean || !selectedThread?.id) return;
 
     setSending(true);
@@ -143,7 +146,7 @@ export default function SupportChat() {
       await loadMessages(selectedThread.id);
       await loadThreads();
     } catch (e) {
-      alert(e?.message || "Failed to send message");
+      alert(e?.message || t("supportChatFailedSend"));
     } finally {
       setSending(false);
     }
@@ -155,7 +158,7 @@ export default function SupportChat() {
     try {
       await Promise.all([loadAgenturen(), loadThreads()]);
     } catch (e) {
-      alert(e?.message || "Failed to load support chat");
+      alert(e?.message || t("supportChatFailedLoad"));
     } finally {
       setLoading(false);
     }
@@ -163,6 +166,7 @@ export default function SupportChat() {
 
   useEffect(() => {
     boot();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -174,6 +178,7 @@ export default function SupportChat() {
     }, 5000);
 
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedThread?.id]);
 
   const threadByAgenturId = useMemo(() => {
@@ -211,7 +216,7 @@ export default function SupportChat() {
   }, [agenturen, query, threadByAgenturId]);
 
   if (loading) {
-    return <div className="p-8 text-zinc-500">Loading support chat...</div>;
+    return <div className="p-8 text-zinc-500">{t("supportChatLoading")}</div>;
   }
 
   return (
@@ -219,21 +224,24 @@ export default function SupportChat() {
       <div className="grid h-full min-h-0 grid-cols-[360px_1fr]">
         <aside className="flex min-h-0 flex-col border-r border-zinc-200 bg-zinc-50">
           <div className="shrink-0 border-b border-zinc-200 bg-white p-5">
-            <h1 className="text-xl font-black text-zinc-950">Support Chat</h1>
+            <h1 className="text-xl font-black text-zinc-950">
+              {t("supportChatTitle")}
+            </h1>
 
             <p className="mt-1 text-sm text-zinc-500">
               {isSupportAdmin
-                ? "All Agentur support threads."
-                : "Your support thread with admin."}
+                ? t("supportChatAllThreads")
+                : t("supportChatBrandThread")}
             </p>
 
             {isSupportAdmin ? (
               <div className="mt-4 flex h-11 items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4">
                 <MIcon name="search" className="text-[20px] text-zinc-400" />
+
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search Agentur..."
+                  placeholder={t("supportChatSearchPlaceholder")}
                   className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                 />
               </div>
@@ -242,7 +250,9 @@ export default function SupportChat() {
 
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-400">
-              {isSupportAdmin ? "Agentur Threads" : "Support Admin"}
+              {isSupportAdmin
+                ? t("supportChatAgenturThreads")
+                : t("supportChatSupportAdmin")}
             </div>
 
             <div className="space-y-2 pb-4">
@@ -269,7 +279,9 @@ export default function SupportChat() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-black text-zinc-900">
-                          {isBrandAdmin ? "Support Admin" : agentur.name}
+                          {isBrandAdmin
+                            ? t("supportChatSupportAdmin")
+                            : agentur.name}
                         </div>
 
                         <div className="mt-1 text-xs text-zinc-400">
@@ -296,7 +308,7 @@ export default function SupportChat() {
                               : "bg-zinc-100 text-zinc-500",
                           ].join(" ")}
                         >
-                          {thread ? "Open" : "New"}
+                          {thread ? t("supportChatOpen") : t("supportChatNew")}
                         </span>
                       </div>
                     </div>
@@ -307,7 +319,7 @@ export default function SupportChat() {
                       </div>
                     ) : (
                       <div className="mt-3 text-xs text-zinc-400">
-                        No messages yet
+                        {t("supportChatNoMessagesYet")}
                       </div>
                     )}
                   </button>
@@ -323,23 +335,23 @@ export default function SupportChat() {
               <div>
                 <div className="text-base font-black text-zinc-950">
                   {isBrandAdmin
-                    ? "Support Admin"
+                    ? t("supportChatSupportAdmin")
                     : selectedThread?.brandName ||
                       selectedThread?.brand_name ||
                       selectedThread?.subject ||
-                      "Select a thread"}
+                      t("supportChatSelectThread")}
                 </div>
 
                 <div className="mt-1 text-xs text-zinc-400">
                   {isSupportAdmin
-                    ? "Support sees Agentur messages in English."
-                    : "Agentur sees every message in German."}
+                    ? t("supportChatSupportSeesEnglish")
+                    : t("supportChatAgenturSeesGerman")}
                 </div>
               </div>
 
               {selectedThread ? (
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase text-emerald-700">
-                  {selectedThread.status || "OPEN"}
+                  {selectedThread.status || t("supportChatOpen")}
                 </span>
               ) : null}
             </div>
@@ -351,7 +363,7 @@ export default function SupportChat() {
                 <div>
                   <MIcon name="forum" className="text-[52px]" />
                   <p className="mt-3 text-sm font-bold">
-                    Select a thread to open chat.
+                    {t("supportChatSelectThreadOpen")}
                   </p>
                 </div>
               </div>
@@ -362,6 +374,7 @@ export default function SupportChat() {
                     key={msg.id}
                     msg={msg}
                     isSupportAdmin={isSupportAdmin}
+                    t={t}
                   />
                 ))}
               </div>
@@ -369,7 +382,9 @@ export default function SupportChat() {
               <div className="grid h-full place-items-center text-center text-zinc-400">
                 <div>
                   <MIcon name="chat_bubble" className="text-[42px]" />
-                  <p className="mt-3 text-sm font-bold">No messages yet.</p>
+                  <p className="mt-3 text-sm font-bold">
+                    {t("supportChatNoMessagesYet")}
+                  </p>
                 </div>
               </div>
             )}
@@ -384,8 +399,8 @@ export default function SupportChat() {
                   rows={2}
                   placeholder={
                     isSupportAdmin
-                      ? "Type in English. Agentur will see German..."
-                      : "Schreiben Sie auf Deutsch. Support will see English..."
+                      ? t("supportChatTypeEnglish")
+                      : t("supportChatTypeGerman")
                   }
                   className="min-h-[56px] flex-1 resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-violet-300"
                 />
@@ -396,12 +411,12 @@ export default function SupportChat() {
                   onClick={sendMessage}
                   className="min-w-[100px] rounded-2xl bg-violet-600 px-6 text-sm font-black text-white disabled:opacity-40"
                 >
-                  {sending ? "Sending..." : "Reply"}
+                  {sending ? t("supportChatSending") : t("supportChatReply")}
                 </button>
               </div>
             ) : (
               <div className="rounded-2xl bg-zinc-50 px-4 py-4 text-sm text-zinc-400">
-                Select a thread to reply.
+                {t("supportChatSelectReply")}
               </div>
             )}
           </div>

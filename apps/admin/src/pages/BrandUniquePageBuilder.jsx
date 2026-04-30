@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
@@ -12,7 +13,7 @@ const IMG_3 =
 
 const SECTION_LIBRARY = {
   HeroSection: {
-    label: "Hero",
+    labelKey: "uniqueBuilderHero",
     defaults: {
       badge: "Versicherungslösungen",
       ctaHref: "/contact",
@@ -31,7 +32,7 @@ const SECTION_LIBRARY = {
   },
 
   AboutSection: {
-    label: "About",
+    labelKey: "uniqueBuilderAbout",
     defaults: {
       eyebrow: "Über uns",
       headline: "Wir schützen Leben, Werte und Zukunft mit Vertrauen",
@@ -49,7 +50,7 @@ const SECTION_LIBRARY = {
   },
 
   ServicesSection: {
-    label: "Services",
+    labelKey: "uniqueBuilderServices",
     defaults: {
       eyebrow: "Unsere Leistungen",
       headline: "Versicherungsschutz, der Sicherheit und Vertrauen gibt",
@@ -76,7 +77,7 @@ const SECTION_LIBRARY = {
   },
 
   WhyChooseSection: {
-    label: "Why Choose",
+    labelKey: "uniqueBuilderWhyChoose",
     defaults: {
       eyebrow: "Warum wir",
       headline: "Erfahrene Versicherungslösung mit persönlicher Beratung",
@@ -96,7 +97,7 @@ const SECTION_LIBRARY = {
   },
 
   VideoStorySection: {
-    label: "Video Story",
+    labelKey: "uniqueBuilderVideoStory",
     defaults: {
       eyebrow: "Unsere Geschichte",
       headline: "Entdecken Sie die Geschichte hinter unserem Schutzversprechen",
@@ -113,7 +114,7 @@ const SECTION_LIBRARY = {
   },
 
   FeaturesSection: {
-    label: "Features",
+    labelKey: "uniqueBuilderFeatures",
     defaults: {
       cardTitle: "Persönliche Expertenberatung",
       cardBody:
@@ -139,7 +140,7 @@ const SECTION_LIBRARY = {
   },
 
   PricingSection: {
-    label: "Pricing",
+    labelKey: "uniqueBuilderPricing",
     defaults: {
       eyebrow: "Tarife",
       headline: "Bezahlbarer Schutz, der zu Ihnen passt",
@@ -167,7 +168,7 @@ const SECTION_LIBRARY = {
   },
 
   ContactSection: {
-    label: "Contact",
+    labelKey: "uniqueBuilderContact",
     defaults: {
       eyebrow: "Kontakt",
       headline: "Fragen? Wir beraten Sie persönlich",
@@ -180,7 +181,7 @@ const SECTION_LIBRARY = {
   },
 
   FAQSection: {
-    label: "FAQ",
+    labelKey: "uniqueBuilderFAQ",
     defaults: {
       eyebrow: "FAQ",
       headline: "Häufige Fragen zu Schutz und Leistungen",
@@ -199,7 +200,7 @@ const SECTION_LIBRARY = {
   },
 
   TestimonialsSection: {
-    label: "Testimonials",
+    labelKey: "uniqueBuilderTestimonials",
     defaults: {
       eyebrow: "Kundenstimmen",
       headline: "Vertrauen durch echte Erfahrungen",
@@ -213,7 +214,7 @@ const SECTION_LIBRARY = {
   },
 
   BlogSection: {
-    label: "Blog",
+    labelKey: "uniqueBuilderBlog",
     defaults: {
       eyebrow: "Aktuelle Beiträge",
       headline: "Neuigkeiten, Ratgeber und Updates",
@@ -235,19 +236,27 @@ const SECTION_LIBRARY = {
   },
 };
 
+function getSectionLabel(type, t) {
+  const def = SECTION_LIBRARY[type];
+  if (!def) return type;
+  return def.labelKey ? t(def.labelKey) : def.label || type;
+}
+
 function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function clone(v) {
-  return JSON.parse(JSON.stringify(v));
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function move(arr, from, to) {
   if (to < 0 || to >= arr.length) return arr;
+
   const next = [...arr];
   const item = next.splice(from, 1)[0];
   next.splice(to, 0, item);
+
   return next;
 }
 
@@ -255,6 +264,7 @@ function TextInput({ label, value, onChange }) {
   return (
     <div>
       <label className="text-xs font-bold text-zinc-500">{label}</label>
+
       <input
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
@@ -268,6 +278,7 @@ function TextArea({ label, value, onChange }) {
   return (
     <div>
       <label className="text-xs font-bold text-zinc-500">{label}</label>
+
       <textarea
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
@@ -279,22 +290,24 @@ function TextArea({ label, value, onChange }) {
 }
 
 function updateProp(sections, index, key, value) {
-  return sections.map((s, i) =>
-    i === index ? { ...s, props: { ...(s.props || {}), [key]: value } } : s
+  return sections.map((section, i) =>
+    i === index
+      ? { ...section, props: { ...(section.props || {}), [key]: value } }
+      : section
   );
 }
 
-function GenericEditor({ section, onChange }) {
-  const p = section?.props || {};
+function GenericEditor({ section, onChange, t }) {
+  const props = section?.props || {};
 
   function updateArrayItem(key, idx, field, value) {
-    const arr = Array.isArray(p[key]) ? [...p[key]] : [];
+    const arr = Array.isArray(props[key]) ? [...props[key]] : [];
     arr[idx] = { ...(arr[idx] || {}), [field]: value };
     onChange(key, arr);
   }
 
   function removeArrayItem(key, idx) {
-    const arr = Array.isArray(p[key]) ? [...p[key]] : [];
+    const arr = Array.isArray(props[key]) ? [...props[key]] : [];
     onChange(
       key,
       arr.filter((_, i) => i !== idx)
@@ -306,7 +319,7 @@ function GenericEditor({ section, onChange }) {
     const lower = key.toLowerCase();
 
     if (typeof sample === "string") {
-      onChange(key, [...arr, "New item"]);
+      onChange(key, [...arr, t("uniqueBuilderNewItem")]);
       return;
     }
 
@@ -314,33 +327,46 @@ function GenericEditor({ section, onChange }) {
       onChange(key, [
         ...arr,
         {
-          name: "Neuer Tarif",
-          price: "99 €",
-          features: ["Leistung 1", "Leistung 2"],
+          name: t("uniqueBuilderNewPlan"),
+          price: t("uniqueBuilderPlanPrice"),
+          features: [t("uniqueBuilderFeatureOne"), t("uniqueBuilderFeatureTwo")],
         },
       ]);
       return;
     }
 
     if (lower.includes("post")) {
-      onChange(key, [...arr, { title: "Neuer Beitrag", image: IMG_1 }]);
+      onChange(key, [
+        ...arr,
+        { title: t("uniqueBuilderNewPost"), image: IMG_1 },
+      ]);
       return;
     }
 
     if (lower.includes("item") && sample?.q !== undefined) {
-      onChange(key, [...arr, { q: "Neue Frage", a: "Neue Antwort" }]);
+      onChange(key, [
+        ...arr,
+        {
+          q: t("uniqueBuilderNewQuestion"),
+          a: t("uniqueBuilderNewAnswer"),
+        },
+      ]);
       return;
     }
 
     onChange(key, [
       ...arr,
-      { title: "Neuer Titel", desc: "Beschreibung", img: IMG_1 },
+      {
+        title: t("uniqueBuilderNewTitle"),
+        desc: t("uniqueBuilderDescription"),
+        img: IMG_1,
+      },
     ]);
   }
 
   return (
     <div className="space-y-4">
-      {Object.entries(p).map(([key, value]) => {
+      {Object.entries(props).map(([key, value]) => {
         if (Array.isArray(value)) {
           return (
             <div key={key} className="space-y-3">
@@ -366,6 +392,7 @@ function GenericEditor({ section, onChange }) {
                         type="button"
                         onClick={() => removeArrayItem(key, idx)}
                         className="text-red-600"
+                        title={t("uniqueBuilderRemoveItem")}
                       >
                         <MIcon name="delete" />
                       </button>
@@ -391,14 +418,16 @@ function GenericEditor({ section, onChange }) {
                                 key={subIdx}
                                 value={x}
                                 onChange={(e) => {
-                                  const arr = Array.isArray(p[key])
-                                    ? [...p[key]]
+                                  const arr = Array.isArray(props[key])
+                                    ? [...props[key]]
                                     : [];
                                   const nextItem = { ...(arr[idx] || {}) };
                                   const nextSub = [...fieldValue];
+
                                   nextSub[subIdx] = e.target.value;
                                   nextItem[field] = nextSub;
                                   arr[idx] = nextItem;
+
                                   onChange(key, arr);
                                 }}
                                 className="w-full rounded-xl border px-3 py-2 text-sm"
@@ -423,7 +452,7 @@ function GenericEditor({ section, onChange }) {
                       onClick={() => removeArrayItem(key, idx)}
                       className="text-xs font-bold text-red-600"
                     >
-                      Remove item
+                      {t("uniqueBuilderRemoveItem")}
                     </button>
                   </div>
                 );
@@ -434,19 +463,19 @@ function GenericEditor({ section, onChange }) {
                 onClick={() => addArrayItem(key, value)}
                 className="rounded-xl bg-violet-50 px-4 py-2 text-xs font-black text-violet-700"
               >
-                + Add {key}
+                + {t("uniqueBuilderAdd")} {key}
               </button>
             </div>
           );
         }
 
-        const k = String(key).toLowerCase();
+        const lowerKey = String(key).toLowerCase();
 
         if (
-          k.includes("body") ||
-          k.includes("subheading") ||
-          k.includes("quote") ||
-          k.includes("description")
+          lowerKey.includes("body") ||
+          lowerKey.includes("subheading") ||
+          lowerKey.includes("quote") ||
+          lowerKey.includes("description")
         ) {
           return (
             <TextArea
@@ -474,6 +503,7 @@ function GenericEditor({ section, onChange }) {
 export default function BrandUniquePageBuilder() {
   const { brandId, pageId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [page, setPage] = useState(null);
   const [sections, setSections] = useState([]);
@@ -516,7 +546,7 @@ export default function BrandUniquePageBuilder() {
         const json = await res.json().catch(() => null);
 
         if (!res.ok || !json?.ok) {
-          throw new Error(json?.message || "Failed to load page");
+          throw new Error(json?.message || t("uniqueBuilderFailedLoadPage"));
         }
 
         const latest = json.data?.latestVersion?.content;
@@ -531,7 +561,7 @@ export default function BrandUniquePageBuilder() {
           setPreviewVersion(Date.now());
         }
       } catch (e) {
-        alert(e?.message || "Failed to load builder");
+        alert(e?.message || t("uniqueBuilderFailedLoadBuilder"));
       } finally {
         if (alive) setLoading(false);
       }
@@ -542,7 +572,7 @@ export default function BrandUniquePageBuilder() {
     return () => {
       alive = false;
     };
-  }, [pageId]);
+  }, [pageId, t]);
 
   function selectSection(idx) {
     setSelectedIdx(idx);
@@ -550,6 +580,7 @@ export default function BrandUniquePageBuilder() {
 
   function addSection(type) {
     const def = SECTION_LIBRARY[type];
+
     if (!def) return;
 
     const next = [
@@ -567,19 +598,23 @@ export default function BrandUniquePageBuilder() {
 
   function removeSection(idx) {
     const next = sections.filter((_, i) => i !== idx);
+
     setSections(next);
     setSelectedIdx(Math.max(0, Math.min(idx, next.length - 1)));
   }
 
   function moveSection(from, to) {
     const next = move(sections, from, to);
+
     setSections(next);
     setSelectedIdx(to);
   }
 
   function toggleSectionVisibility(idx) {
     setSections((prev) =>
-      prev.map((sec, i) => (i === idx ? { ...sec, hidden: !sec.hidden } : sec))
+      prev.map((section, i) =>
+        i === idx ? { ...section, hidden: !section.hidden } : section
+      )
     );
   }
 
@@ -602,16 +637,20 @@ export default function BrandUniquePageBuilder() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Save failed");
+        throw new Error(json?.message || t("uniqueBuilderSaveFailed"));
       }
 
       if (refreshPreview) {
         setPreviewVersion(Date.now());
       }
 
-      alert(status === "PUBLISHED" ? "Published successfully" : "Draft saved");
+      alert(
+        status === "PUBLISHED"
+          ? t("uniqueBuilderPublishedSuccess")
+          : t("uniqueBuilderDraftSaved")
+      );
     } catch (e) {
-      alert(e?.message || "Save failed");
+      alert(e?.message || t("uniqueBuilderSaveFailed"));
     } finally {
       setSaving(false);
     }
@@ -622,7 +661,7 @@ export default function BrandUniquePageBuilder() {
   }
 
   if (loading) {
-    return <div className="p-8 text-zinc-500">Loading builder...</div>;
+    return <div className="p-8 text-zinc-500">{t("uniqueBuilderLoading")}</div>;
   }
 
   return (
@@ -634,7 +673,7 @@ export default function BrandUniquePageBuilder() {
             onClick={() => navigate("/dashboard")}
             className="h-10 px-4 rounded-xl bg-zinc-900 text-white text-sm font-black"
           >
-            ← Back to Admin Panel
+            {t("uniqueBuilderBackAdmin")}
           </button>
 
           <button
@@ -642,13 +681,14 @@ export default function BrandUniquePageBuilder() {
             onClick={() => navigate(`/brand-unique-pages/${brandId}`)}
             className="h-10 px-4 rounded-xl border border-zinc-200 bg-white text-sm font-black"
           >
-            Back to Pages
+            {t("uniqueBuilderBackPages")}
           </button>
 
           <div>
             <div className="text-xs text-zinc-400">
-              Brand Unique Page Builder
+              {t("uniqueBuilderTitle")}
             </div>
+
             <h1 className="text-base font-black">
               {page?.brandName || brandSlug} / {page?.title || pageSlug}
             </h1>
@@ -661,7 +701,9 @@ export default function BrandUniquePageBuilder() {
             onClick={() => setPreviewOnly((v) => !v)}
             className="h-10 px-5 rounded-xl border border-zinc-200 bg-white text-sm font-black"
           >
-            {previewOnly ? "Show Panels" : "Preview Only"}
+            {previewOnly
+              ? t("uniqueBuilderShowPanels")
+              : t("uniqueBuilderPreviewOnly")}
           </button>
 
           <button
@@ -670,7 +712,7 @@ export default function BrandUniquePageBuilder() {
             onClick={refreshPreview}
             className="h-10 px-5 rounded-xl bg-white border border-zinc-200 text-sm font-black disabled:opacity-50"
           >
-            Refresh Preview
+            {t("uniqueBuilderRefreshPreview")}
           </button>
 
           <button
@@ -679,7 +721,7 @@ export default function BrandUniquePageBuilder() {
             onClick={() => save("DRAFT")}
             className="h-10 px-5 rounded-xl bg-zinc-900 text-white text-sm font-black disabled:opacity-50"
           >
-            Save Draft
+            {saving ? t("uniqueBuilderSaving") : t("uniqueBuilderSaveDraft")}
           </button>
 
           <button
@@ -688,15 +730,15 @@ export default function BrandUniquePageBuilder() {
             onClick={() => save("PUBLISHED")}
             className="h-10 px-5 rounded-xl bg-violet-600 text-white text-sm font-black disabled:opacity-50"
           >
-            Publish
+            {saving ? t("uniqueBuilderSaving") : t("uniqueBuilderPublish")}
           </button>
         </div>
       </header>
 
-      {!previewOnly && (
+      {!previewOnly ? (
         <div className="h-20 border-b border-zinc-200 bg-white px-6 flex items-center gap-3 overflow-x-auto">
           <span className="text-xs font-black uppercase text-zinc-400 shrink-0">
-            Add Section
+            {t("uniqueBuilderAddSection")}
           </span>
 
           {Object.keys(SECTION_LIBRARY).map((type) => (
@@ -706,11 +748,11 @@ export default function BrandUniquePageBuilder() {
               onClick={() => addSection(type)}
               className="h-10 shrink-0 rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-xs font-black hover:bg-violet-50 hover:text-violet-700"
             >
-              + {SECTION_LIBRARY[type].label}
+              + {getSectionLabel(type, t)}
             </button>
           ))}
         </div>
-      )}
+      ) : null}
 
       <div
         className={
@@ -719,41 +761,41 @@ export default function BrandUniquePageBuilder() {
             : "h-[calc(100vh-144px)] grid grid-cols-[320px_1fr_420px]"
         }
       >
-        {!previewOnly && (
+        {!previewOnly ? (
           <aside className="border-r border-zinc-200 bg-white overflow-auto p-4">
             <div className="mb-4 text-xs font-black uppercase text-zinc-400">
-              Page Sections
+              {t("uniqueBuilderPageSections")}
             </div>
 
             <div className="space-y-2">
-              {sections.map((s, idx) => {
+              {sections.map((section, idx) => {
                 const active = idx === selectedIdx;
 
                 return (
                   <div
-                    key={s.id || idx}
+                    key={section.id || idx}
                     onClick={() => selectSection(idx)}
                     className={[
                       "rounded-2xl border p-3 cursor-pointer transition",
                       active
                         ? "border-violet-600 bg-violet-50"
                         : "border-zinc-200 bg-white hover:bg-zinc-50",
-                      s.hidden ? "opacity-60" : "",
+                      section.hidden ? "opacity-60" : "",
                     ].join(" ")}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <div className="text-sm font-black">
-                          {idx + 1}. {SECTION_LIBRARY[s.type]?.label || s.type}
-                          {s.hidden ? (
+                          {idx + 1}. {getSectionLabel(section.type, t)}
+                          {section.hidden ? (
                             <span className="ml-2 text-xs text-red-500">
-                              Hidden
+                              {t("uniqueBuilderHidden")}
                             </span>
                           ) : null}
                         </div>
 
                         <div className="text-[11px] font-mono text-zinc-400">
-                          {s.type}
+                          {section.type}
                         </div>
                       </div>
 
@@ -795,7 +837,9 @@ export default function BrandUniquePageBuilder() {
                           className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white"
                         >
                           <MIcon
-                            name={s.hidden ? "visibility_off" : "visibility"}
+                            name={
+                              section.hidden ? "visibility_off" : "visibility"
+                            }
                             className="text-[18px]"
                           />
                         </button>
@@ -816,14 +860,14 @@ export default function BrandUniquePageBuilder() {
                 );
               })}
 
-              {!sections.length && (
+              {!sections.length ? (
                 <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">
-                  No sections yet.
+                  {t("uniqueBuilderNoSections")}
                 </div>
-              )}
+              ) : null}
             </div>
           </aside>
-        )}
+        ) : null}
 
         <main className="overflow-hidden bg-zinc-100">
           <iframe
@@ -834,34 +878,33 @@ export default function BrandUniquePageBuilder() {
           />
         </main>
 
-        {!previewOnly && (
+        {!previewOnly ? (
           <aside className="border-l border-zinc-200 bg-white overflow-hidden flex flex-col">
             <div className="border-b border-zinc-200 p-5">
               <div className="text-xs text-zinc-400">
-                Edit Selected Section
+                {t("uniqueBuilderEditSelected")}
               </div>
 
               <h2 className="text-xl font-black">
-                {selected
-                  ? SECTION_LIBRARY[selected.type]?.label || selected.type
-                  : "None"}
+                {selected ? getSectionLabel(selected.type, t) : t("uniqueBuilderNone")}
               </h2>
             </div>
 
             <div className="flex-1 overflow-auto p-5">
               {selected ? (
                 <GenericEditor
+                  t={t}
                   section={selected}
                   onChange={updateSelectedProp}
                 />
               ) : (
                 <div className="text-sm text-zinc-500">
-                  Select a section from the left side to edit content.
+                  {t("uniqueBuilderSelectSection")}
                 </div>
               )}
             </div>
           </aside>
-        )}
+        ) : null}
       </div>
     </div>
   );
