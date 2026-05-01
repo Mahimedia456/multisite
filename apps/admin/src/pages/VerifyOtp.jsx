@@ -12,13 +12,16 @@ export default function VerifyOtp() {
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const canSubmit = useMemo(() => otp.trim().length >= 4, [otp]);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -43,59 +46,92 @@ export default function VerifyOtp() {
     }
   }
 
+  async function handleResend() {
+    setError("");
+    setSuccess("");
+    setResending(true);
+
+    try {
+      const res = await apiFetch("/admin/resend-otp", {
+        method: "POST",
+        body: { email },
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || t("authResendFailed"));
+      }
+
+      setSuccess(t("authOtpResent"));
+
+      if (json?.devOtp) {
+        console.log("DEV OTP:", json.devOtp);
+      }
+    } catch (e) {
+      setError(e?.message || t("authResendFailed"));
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-6 bg-[#f5f1fb] dark:bg-slate-950">
-      <div className="pointer-events-none absolute -top-44 -left-52 w-[520px] h-[520px] rounded-full bg-violet-300/50 dark:bg-violet-900/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-56 -right-44 w-[620px] h-[620px] rounded-full bg-violet-400/40 dark:bg-violet-800/30 blur-3xl" />
+    <div className="w-full max-w-md rounded-3xl bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 p-7 shadow-2xl">
+      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+        {t("authVerifyOtpTitle")}
+      </h1>
 
-      <div className="relative z-10 w-full max-w-md rounded-3xl bg-white/80 dark:bg-slate-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 p-7 shadow-2xl">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-          {t("authVerifyOtpTitle")}
-        </h1>
+      <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
+        {t("authVerifyOtpDesc")}{" "}
+        <span className="font-semibold text-gray-900 dark:text-white">
+          {email}
+        </span>
+      </p>
 
-        <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
-          {t("authVerifyOtpDesc")}{" "}
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {email}
-          </span>
-        </p>
+      <form onSubmit={onSubmit} className="mt-7 space-y-5">
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+            {t("authOtpCode")}
+          </label>
 
-        <form onSubmit={onSubmit} className="mt-7 space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-              {t("authOtpCode")}
-            </label>
+          <input
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="123456"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            className="mt-2 w-full h-12 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white/70 dark:bg-slate-950 px-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-[#007ab3]/20"
+          />
+        </div>
 
-            <input
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="123456"
-              className="mt-2 w-full h-12 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white/70 dark:bg-slate-950 px-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-800"
-            />
+        {success ? (
+          <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {success}
           </div>
+        ) : null}
 
-          {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          ) : null}
+        {error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
 
-          <button
-            disabled={!canSubmit || loading}
-            className="w-full h-12 rounded-2xl bg-gradient-to-b from-violet-600 to-violet-700 text-white font-bold disabled:opacity-60"
-          >
-            {loading ? t("authVerifying") : t("authVerifyOtp")}
-          </button>
+        <button
+          disabled={!canSubmit || loading}
+          className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#007ab3] to-[#005f8c] text-white font-bold disabled:opacity-60 hover:brightness-105 transition"
+        >
+          {loading ? t("authVerifying") : t("authVerifyOtp")}
+        </button>
 
-          <button
-            type="button"
-            onClick={() => navigate("/forgot-password")}
-            className="w-full text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white"
-          >
-            {t("authResendOtp")}
-          </button>
-        </form>
-      </div>
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resending}
+          className="w-full text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-[#007ab3] transition disabled:opacity-60"
+        >
+          {resending ? t("authResendingOtp") : t("authResendOtp")}
+        </button>
+      </form>
     </div>
   );
 }

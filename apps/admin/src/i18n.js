@@ -533,6 +533,69 @@ authResetPassword: "Passwort zurücksetzen",
 authResetting: "Wird zurückgesetzt...",
 
 loginToPanel: "Zum Panel anmelden",
+authResendOtp: "Code erneut senden",
+authResendingOtp: "Wird gesendet...",
+authOtpResent: "Code wurde erneut gesendet",
+authResendFailed: "Code konnte nicht erneut gesendet werden",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         },
       },
@@ -1054,11 +1117,92 @@ authPasswordsDoNotMatch: "Passwords do not match",
 authResetPassword: "Reset Password",
 authResetting: "Resetting...",
 
-
+authResendOtp: "Resend OTP",
+authResendingOtp: "Resending...",
+authOtpResent: "OTP sent again successfully",
+authResendFailed: "Failed to resend OTP",
 
 
 
 loginToPanel: "Login to Panel",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         },
       },
     },
