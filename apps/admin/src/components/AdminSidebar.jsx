@@ -40,14 +40,14 @@ export default function AdminSidebar({ collapsed = false, setCollapsed }) {
       
       {/* Top Row: Logo + Collapse */}
       <div className="flex items-center justify-between">
-        <img
-          src={logo}
-          alt="Allianz"
-          className={[
-            "object-contain transition-all drop-shadow-[0_8px_25px_rgba(0,122,179,0.22)]",
-            collapsed ? "h-9 w-9" : "h-12 w-auto max-w-[160px]",
-          ].join(" ")}
-        />
+     <img
+  src={logo}
+  alt="Allianz"
+  className={[
+    "object-contain transition-all dark:brightness-0 dark:invert",
+    collapsed ? "h-9 w-9" : "h-12 w-auto max-w-[160px]",
+  ].join(" ")}
+/>
 
         <button
           type="button"
