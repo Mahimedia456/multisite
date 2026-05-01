@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { loginApi } from "../lib/auth";
+import logo from "../assets/logo.svg";
 
 function ShieldIcon() {
   return (
-    <div className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur flex items-center justify-center shadow-sm border border-black/5">
+    <div className="w-14 h-14 rounded-2xl bg-white/80 dark:bg-slate-950 backdrop-blur flex items-center justify-center shadow-sm border border-black/5 dark:border-white/10">
       <svg viewBox="0 0 24 24" className="w-7 h-7">
         <path
           fill="currentColor"
-          className="text-violet-700"
+          className="text-violet-700 dark:text-violet-300"
           d="M12 2l7 4v6c0 5-3 9-7 10C8 21 5 17 5 12V6l7-4zm0 6a3 3 0 00-3 3c0 1.2.7 2.3 1.8 2.8V16a1.2 1.2 0 102.4 0v-2.2A3.2 3.2 0 0015 11a3 3 0 00-3-3z"
         />
       </svg>
@@ -18,6 +20,7 @@ function ShieldIcon() {
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("aamir@mahimediasolutions.com");
   const [password, setPassword] = useState("mahimediasolutions");
@@ -25,32 +28,17 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const canSubmit = useMemo(
-    () => email.trim() && password.trim(),
-    [email, password]
-  );
+  const canSubmit = useMemo(() => email.trim() && password.trim(), [email, password]);
 
   async function doLogin(nextEmail, nextPassword) {
     setError("");
     setLoading(true);
 
     try {
-      const res = await loginApi(nextEmail, nextPassword, remember);
-
-      console.log("Login success", res);
-
-      setTimeout(() => {
-        navigate("/dashboard", { replace: true });
-
-        setTimeout(() => {
-          if (window.location.pathname === "/login") {
-            window.location.assign("/dashboard");
-          }
-        }, 50);
-      }, 0);
+      await loginApi(nextEmail, nextPassword, remember);
+      navigate("/dashboard", { replace: true });
     } catch (err) {
-      console.error("Login error:", err);
-      setError(err?.message || "Login failed");
+      setError(err?.message || t("authLoginFailed"));
     } finally {
       setLoading(false);
     }
@@ -69,108 +57,81 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden bg-[#f5f1fb]">
-      <div className="pointer-events-none absolute -top-44 -left-52 w-[520px] h-[520px] rounded-full bg-violet-300/50 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-56 -right-44 w-[620px] h-[620px] rounded-full bg-violet-400/40 blur-3xl" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40" />
+    <div className="min-h-screen w-full relative overflow-hidden bg-[#f5f1fb] dark:bg-slate-950">
+      <div className="pointer-events-none absolute -top-44 -left-52 w-[520px] h-[520px] rounded-full bg-violet-300/50 dark:bg-violet-900/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-56 -right-44 w-[620px] h-[620px] rounded-full bg-violet-400/40 dark:bg-violet-800/30 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 dark:from-slate-950/70 dark:via-slate-950/40 dark:to-slate-950/80" />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-12">
-        <ShieldIcon />
-
-        <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-gray-900">
-          Admin Portal
-        </h1>
-
-        <p className="mt-2 text-sm text-gray-500">
-          Insurance Holding Co. Management
-        </p>
+<h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-wide">
+  {t("loginToPanel")}
+</h1>
+       
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
             type="button"
             onClick={() => quickLogin("aamir@mahimediasolutions.com")}
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 dark:bg-slate-900 dark:text-white border border-black/5 dark:border-white/10 shadow-sm hover:bg-white dark:hover:bg-slate-800"
           >
-            Login Admin
+            {t("authLoginAdmin")}
           </button>
-
-          {/* <button
-            type="button"
-            onClick={() => quickLogin("admin2@mahimediasolutions.com")}
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
-          >
-            Login Admin 2
-          </button>
-
-          <button
-            type="button"
-            onClick={() => quickLogin("support@mahimediasolutions.com")}
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-violet-600 text-white border border-violet-700 shadow-sm hover:bg-violet-700"
-          >
-            Login Support Chat
-          </button> */}
 
           <button
             type="button"
             onClick={() => quickLogin("allianz3@yopmail.com")}
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 dark:bg-slate-900 dark:text-white border border-black/5 dark:border-white/10 shadow-sm hover:bg-white dark:hover:bg-slate-800"
           >
-            Login Allianz 3
+            {t("authLoginAllianz3")}
           </button>
 
           <button
             type="button"
             onClick={() => quickLogin("allianz4@yopmail.com")}
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 border border-black/5 shadow-sm hover:bg-white"
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/70 dark:bg-slate-900 dark:text-white border border-black/5 dark:border-white/10 shadow-sm hover:bg-white dark:hover:bg-slate-800"
           >
-            Login Allianz 4
+            {t("authLoginAllianz4")}
           </button>
         </div>
 
         <div className="mt-10 w-full max-w-md">
-          <div className="rounded-3xl bg-white/80 backdrop-blur-xl shadow-2xl shadow-black/10 border border-black/5 p-7">
+          <div className="rounded-3xl bg-white/80 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl shadow-black/10 border border-black/5 dark:border-white/10 p-7">
             <form onSubmit={onSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-900">
-                  Admin Email
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                  {t("authAdminEmail")}
                 </label>
-
-                <div className="mt-2">
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@company.com"
-                    type="email"
-                    autoComplete="email"
-                    className="w-full h-12 rounded-2xl border border-gray-200 bg-white/70 px-4 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-violet-200 focus:border-violet-300"
-                  />
-                </div>
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  type="email"
+                  autoComplete="email"
+                  className="mt-2 w-full h-12 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white/70 dark:bg-slate-950 px-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-300"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900">
-                  Password
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                  {t("authPassword")}
                 </label>
-
-                <div className="mt-2">
-                  <input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    type="password"
-                    autoComplete="current-password"
-                    className="w-full h-12 rounded-2xl border border-gray-200 bg-white/70 px-4 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-violet-200 focus:border-violet-300"
-                  />
-                </div>
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  type="password"
+                  autoComplete="current-password"
+                  className="mt-2 w-full h-12 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white/70 dark:bg-slate-950 px-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-300"
+                />
               </div>
 
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Remember this device
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {t("authRememberDevice")}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    Stay signed in for 30 days
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    {t("authStaySignedIn")}
                   </p>
                 </div>
 
@@ -179,10 +140,8 @@ export default function AdminLogin() {
                   onClick={() => setRemember((v) => !v)}
                   className={[
                     "relative inline-flex h-7 w-12 items-center rounded-full transition-colors",
-                    remember ? "bg-violet-600" : "bg-gray-200",
+                    remember ? "bg-violet-600" : "bg-gray-200 dark:bg-slate-700",
                   ].join(" ")}
-                  aria-pressed={remember}
-                  aria-label="Remember this device"
                 >
                   <span
                     className={[
@@ -207,38 +166,38 @@ export default function AdminLogin() {
                   !canSubmit || loading ? "opacity-60 cursor-not-allowed" : "",
                 ].join(" ")}
               >
-                <span className="inline-flex items-center justify-center gap-2">
-                  {loading ? "Signing In..." : "Sign In"}
-                  <span aria-hidden className="text-base">
-                    →
-                  </span>
-                </span>
+                {loading ? t("authSigningIn") : t("authSignIn")} →
               </button>
 
-              <div className="pt-1 flex items-center justify-end text-sm">
+              <div className="pt-1 flex items-center justify-between text-sm">
                 <button
                   type="button"
-                  className="text-gray-500 hover:text-gray-700 font-semibold"
-                  onClick={() => alert("Hook this to request-access flow later.")}
+                  className="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white font-semibold"
+                  onClick={() => navigate("/forgot-password")}
                 >
-                  Request Access
+                  {t("authForgotPassword")}
+                </button>
+
+                <button
+                  type="button"
+                  className="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white font-semibold"
+                  onClick={() => alert(t("authRequestAccessLater"))}
+                >
+                  {t("authRequestAccess")}
                 </button>
               </div>
             </form>
           </div>
 
           <div className="mt-8 flex items-center justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/60 backdrop-blur border border-black/5 px-4 py-2 text-xs text-gray-600 shadow-sm">
-              <span className="material-symbols-outlined text-[16px] text-gray-500">
-                lock
-              </span>
-              Protected by 256-bit encryption
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/60 dark:bg-slate-900 backdrop-blur border border-black/5 dark:border-white/10 px-4 py-2 text-xs text-gray-600 dark:text-slate-300 shadow-sm">
+              <span className="material-symbols-outlined text-[16px]">lock</span>
+              {t("authEncrypted")}
             </div>
           </div>
 
-          <p className="mt-4 text-center text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
-            Notice: Two-factor authentication (2FA) will be required upon
-            successful credential entry for all admin sessions.
+          <p className="mt-4 text-center text-xs text-gray-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            {t("authTwoFactorNotice")}
           </p>
         </div>
       </div>

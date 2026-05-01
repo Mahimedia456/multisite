@@ -4,29 +4,28 @@ import MIcon from "../components/MIcon";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, getSession, logout } from "../lib/auth";
 
-const PRIMARY = "#007ab3";
-const PRIMARY_DARK = "#005f8c";
-
-function StatCard({ title, value, note, icon = "bar_chart" }) {
+function StatCard({
+  title,
+  value,
+  note,
+  noteColor = "text-green-600",
+  icon = "bar_chart",
+}) {
   return (
-    <div className="group rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl hover:shadow-[#007ab3]/10 transition-all p-6 overflow-hidden relative">
-      <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-[#007ab3]/10 group-hover:bg-[#007ab3]/15 transition" />
-
-      <div className="relative flex items-start justify-between gap-4">
+    <div className="rounded-3xl bg-white/80 border border-[#efeaf6] shadow-sm p-6">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-extrabold text-[#007ab3]">{title}</div>
-
-          <div className="mt-3 text-4xl font-black text-gray-950 dark:text-white tracking-tight">
+          <div className="text-sm font-semibold text-violet-700">{title}</div>
+          <div className="mt-3 text-4xl font-extrabold text-gray-900">
             {value}
           </div>
-
-          <div className="mt-2 text-sm font-bold text-[#007ab3]">
+          <div className={`mt-2 text-sm font-semibold ${noteColor}`}>
             {note}
           </div>
         </div>
 
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#007ab3] to-[#005f8c] text-white flex items-center justify-center shadow-lg shadow-[#007ab3]/20">
-          <MIcon name={icon} className="text-[22px]" />
+        <div className="w-10 h-10 rounded-2xl bg-violet-600 text-white flex items-center justify-center shadow-sm">
+          <MIcon name={icon} className="text-[20px]" />
         </div>
       </div>
     </div>
@@ -35,14 +34,11 @@ function StatCard({ title, value, note, icon = "bar_chart" }) {
 
 function Card({ title, right, children }) {
   return (
-    <div className="rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm p-6">
+    <div className="rounded-3xl bg-white/80 border border-[#efeaf6] shadow-sm p-6">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xl font-black text-gray-950 dark:text-white">
-          {title}
-        </h2>
+        <h2 className="text-xl font-extrabold text-gray-900">{title}</h2>
         {right}
       </div>
-
       <div className="mt-5">{children}</div>
     </div>
   );
@@ -50,19 +46,15 @@ function Card({ title, right, children }) {
 
 function ActivityItem({ icon, title, sub, time }) {
   return (
-    <div className="flex items-start gap-4 py-4 border-b border-slate-200 dark:border-white/10 last:border-b-0">
-      <div className="w-11 h-11 rounded-2xl bg-[#007ab3]/10 flex items-center justify-center shrink-0">
-        <MIcon name={icon} className="text-[20px] text-[#007ab3]" />
+    <div className="flex items-start gap-4 py-4 border-b border-[#f0edf7] last:border-b-0">
+      <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+        <MIcon name={icon} className="text-[20px] text-violet-700" />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-extrabold text-gray-950 dark:text-white truncate">
-          {title}
-        </div>
-        <div className="text-sm text-gray-700 dark:text-slate-300 truncate">
-          {sub}
-        </div>
-        <div className="text-xs text-[#007ab3] mt-1 font-bold">
+      <div className="flex-1">
+        <div className="text-sm font-bold text-gray-900">{title}</div>
+        <div className="text-sm text-gray-700">{sub}</div>
+        <div className="text-xs text-violet-600 mt-1 font-semibold">
           {time}
         </div>
       </div>
@@ -71,26 +63,22 @@ function ActivityItem({ icon, title, sub, time }) {
 }
 
 function TenantCard({ path, name, active, latency, icon, activeLabel, latencyLabel }) {
-  const bars = [8, 14, 10, 18, 12, 16, 9];
-
   return (
-    <div className="rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl hover:shadow-[#007ab3]/10 transition-all p-6">
-      <div className="flex items-center justify-between gap-5">
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="w-14 h-14 rounded-3xl bg-[#007ab3]/10 flex items-center justify-center shrink-0">
-            <MIcon name={icon} className="text-[26px] text-[#007ab3]" />
+    <div className="rounded-3xl bg-white/80 border border-[#efeaf6] shadow-sm p-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-3xl bg-violet-100 flex items-center justify-center">
+            <MIcon name={icon} className="text-[26px] text-violet-700" />
           </div>
 
-          <div className="min-w-0">
-            <div className="text-lg font-black text-gray-950 dark:text-white truncate">
+          <div>
+            <div className="text-lg font-extrabold text-gray-900">
               {path}{" "}
-              <span className="text-gray-500 dark:text-slate-400 font-bold">
-                ({name})
-              </span>
+              <span className="text-gray-500 font-bold">({name})</span>
               <span className="ml-2 inline-block w-2.5 h-2.5 rounded-full bg-green-500 align-middle" />
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-slate-300">
+            <div className="mt-2 flex items-center gap-6 text-sm text-gray-600">
               <span className="inline-flex items-center gap-1.5">
                 <MIcon name="group" className="text-[18px] text-gray-500" />
                 {active} {activeLabel}
@@ -104,51 +92,15 @@ function TenantCard({ path, name, active, latency, icon, activeLabel, latencyLab
           </div>
         </div>
 
-        <div className="hidden md:flex items-end gap-1 h-12 shrink-0">
-          {bars.map((h, i) => (
+        <div className="hidden md:flex items-end gap-1 h-10">
+          {[8, 14, 10, 18, 12, 16, 9].map((h, i) => (
             <div
               key={i}
-              className="w-2 rounded-full bg-gradient-to-t from-[#007ab3] to-[#7dd3fc]"
+              className="w-2 rounded bg-violet-300"
               style={{ height: `${h * 2}px` }}
             />
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ChartPreview({ label }) {
-  const bars = [42, 58, 45, 72, 51, 64, 82, 68, 76, 91, 73, 84];
-
-  return (
-    <div className="mt-6 h-[280px] rounded-[28px] bg-gradient-to-b from-[#007ab3]/8 to-transparent border border-slate-200 dark:border-white/10 p-6 flex flex-col justify-between">
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-[#007ab3]">{label}</div>
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          Live preview
-        </div>
-      </div>
-
-      <div className="flex items-end gap-3 h-40">
-        {bars.map((h, i) => (
-          <div key={i} className="flex-1 flex items-end">
-            <div
-              className="w-full rounded-t-2xl bg-gradient-to-t from-[#007ab3] to-[#7dd3fc] shadow-sm"
-              style={{ height: `${h}%` }}
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-between text-xs font-black text-[#007ab3]">
-        <span>JAN</span>
-        <span>MÄR</span>
-        <span>MAI</span>
-        <span>JUL</span>
-        <span>SEP</span>
-        <span>NOV</span>
       </div>
     </div>
   );
@@ -163,12 +115,29 @@ export default function Dashboard() {
 
   const visibleTenants = useMemo(() => {
     const all = [
-      { key: "allianz3", name: "Allianz 3", path: "/kundler3", slug: "kundler3", icon: "shield" },
-      { key: "allianz4", name: "Allianz 4", path: "/allianz4", slug: "allianz4", icon: "shield" },
+      {
+        key: "allianz3",
+        name: "Allianz 3",
+        path: "/kundler3",
+        slug: "kundler3",
+        icon: "shield",
+      },
+      {
+        key: "allianz4",
+        name: "Allianz 4",
+        path: "/allianz4",
+        slug: "allianz4",
+        icon: "shield",
+      },
     ];
 
-    if (email.includes("allianz3")) return all.filter((tenant) => tenant.key === "allianz3");
-    if (email.includes("allianz4")) return all.filter((tenant) => tenant.key === "allianz4");
+    if (email.includes("allianz3")) {
+      return all.filter((tenant) => tenant.key === "allianz3");
+    }
+
+    if (email.includes("allianz4")) {
+      return all.filter((tenant) => tenant.key === "allianz4");
+    }
 
     return all;
   }, [email]);
@@ -211,8 +180,10 @@ export default function Dashboard() {
 
         setStats({
           totalBrands: Number(sData?.brands ?? sData?.totalBrands ?? 0) || 0,
-          totalTemplates: Number(sData?.templates ?? sData?.totalTemplates ?? 0) || 0,
-          totalInnerPages: Number(sData?.sharedPages ?? sData?.totalInnerPages ?? 0) || 0,
+          totalTemplates:
+            Number(sData?.templates ?? sData?.totalTemplates ?? 0) || 0,
+          totalInnerPages:
+            Number(sData?.sharedPages ?? sData?.totalInnerPages ?? 0) || 0,
           uptime: String(sData?.uptime ?? "99.9%"),
         });
 
@@ -279,29 +250,23 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="text-xs font-black uppercase tracking-[0.2em] text-[#007ab3]">
-            Allianz Panel
-          </div>
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {t("dashboardLoggedInAs")}{" "}
+          <span className="font-bold text-gray-900">
+            {session?.user?.email || session?.email || "Admin"}
+          </span>
 
-          <div className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-            {t("dashboardLoggedInAs")}{" "}
-            <span className="font-black text-gray-950 dark:text-white">
-              {session?.user?.email || session?.email || "Admin"}
+          {loading ? (
+            <span className="ml-2 text-xs text-gray-400">
+              ({t("dashboardLoading")})
             </span>
-
-            {loading ? (
-              <span className="ml-2 text-xs text-gray-400">
-                ({t("dashboardLoading")})
-              </span>
-            ) : null}
-          </div>
+          ) : null}
         </div>
 
         <button
           onClick={onLogout}
-          className="h-11 px-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 shadow-sm text-sm font-black text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition inline-flex items-center gap-2"
+          className="h-10 px-4 rounded-2xl bg-white/80 border border-[#efeaf6] shadow-sm text-sm font-bold text-red-600 hover:bg-red-50 transition inline-flex items-center gap-2"
         >
           <MIcon name="logout" className="text-[18px]" />
           {t("logout")}
@@ -313,6 +278,7 @@ export default function Dashboard() {
           title={t("dashboardTotalBrands")}
           value={String(effectiveStats.totalBrands)}
           note={t("dashboardAcrossPortfolio")}
+          noteColor="text-violet-700"
           icon="layers"
         />
 
@@ -327,6 +293,7 @@ export default function Dashboard() {
           title={t("dashboardInnerPages")}
           value={String(effectiveStats.totalInnerPages)}
           note={t("dashboardInnerPagesNote")}
+          noteColor="text-violet-700"
           icon="description"
         />
 
@@ -334,6 +301,7 @@ export default function Dashboard() {
           title={t("dashboardSystemHealth")}
           value={effectiveStats.uptime}
           note={t("dashboardUptimeNote")}
+          noteColor="text-violet-700"
           icon="verified"
         />
       </div>
@@ -343,28 +311,43 @@ export default function Dashboard() {
           <Card
             title={t("dashboardBrandPerformance")}
             right={
-              <div className="flex items-center gap-4 text-sm font-bold text-gray-600 dark:text-slate-300">
+              <div className="flex items-center gap-4 text-sm font-semibold text-gray-600">
                 <span className="inline-flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#007ab3]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-violet-700" />
                   {visibleTenants[0]?.name || "Allianz 3"}
                 </span>
 
                 {visibleTenants.length > 1 ? (
                   <span className="inline-flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sky-300" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-violet-300" />
                     {visibleTenants[1]?.name || "Allianz 4"}
                   </span>
                 ) : null}
               </div>
             }
           >
-            <ChartPreview label={perfTitle} />
+            <div className="text-sm text-violet-700 font-semibold">
+              {perfTitle}
+            </div>
+
+            <div className="mt-6 h-[280px] rounded-3xl bg-gradient-to-b from-violet-50 to-transparent border border-[#f0edf7] flex items-center justify-center text-gray-400 text-center px-4">
+              ({t("dashboardChartPlaceholder")})
+            </div>
+
+            <div className="mt-4 flex justify-between text-xs font-bold text-violet-700 px-2">
+              <span>JAN</span>
+              <span>MÄR</span>
+              <span>MAI</span>
+              <span>JUL</span>
+              <span>SEP</span>
+              <span>NOV</span>
+            </div>
           </Card>
         </div>
 
         <div>
           <Card title={t("dashboardRecentActivity")}>
-            <div>
+            <div className="divide-y divide-[#f0edf7]">
               {(activity.length ? activity : fallbackActivity)
                 .slice(0, 6)
                 .map((item, index) => (
@@ -378,7 +361,7 @@ export default function Dashboard() {
                 ))}
             </div>
 
-            <button className="mt-6 w-full h-11 rounded-2xl bg-[#007ab3]/10 text-[#007ab3] font-black hover:bg-[#007ab3]/15 transition inline-flex items-center justify-center gap-2">
+            <button className="mt-6 w-full h-11 rounded-2xl bg-violet-100 text-violet-700 font-bold hover:bg-violet-200 transition inline-flex items-center justify-center gap-2">
               <MIcon name="list" className="text-[18px]" />
               {t("dashboardViewAllActivity")}
             </button>
@@ -387,7 +370,7 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-black text-gray-950 dark:text-white">
+        <h2 className="text-xl font-extrabold text-gray-900">
           {t("dashboardTenantStatusHealth")}
         </h2>
 

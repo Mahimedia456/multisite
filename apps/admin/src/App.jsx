@@ -26,13 +26,24 @@ import AISiteBuilder from "./pages/AISiteBuilder";
 import VisualPageBuilder from "./pages/VisualPageBuilder";
 import SupportChat from "./pages/SupportChat.jsx";
 import Notifications from "./pages/Notifications.jsx";
+
+
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOtp from "./pages/VerifyOtp";
+import ResetPassword from "./pages/ResetPassword";
+import AuthLayout from "./layouts/AuthLayout.jsx";
+
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
-        <Route path="/login" element={<AdminLogin />} />
-
+       <Route element={<AuthLayout />}>
+  <Route path="/login" element={<AdminLogin />} />
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/verify-otp" element={<VerifyOtp />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
+</Route>
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>

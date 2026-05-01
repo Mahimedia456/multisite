@@ -25,6 +25,7 @@ import adminAiPagePlanRoutes from "./routes/adminAiPagePlan.js";
 import adminAiSectionCodeRoutes from "./routes/adminAiSectionCode.js";
 import brandUniquePagesRoutes from "./routes/brandUniquePages.js";
 import brandSupportChatRoutes from "./routes/brandSupportChat.js";
+import passwordResetRoutes from "./routes/passwordReset.js";
 
 dotenv.config();
 
@@ -353,6 +354,8 @@ app.use(
     normalizeStatus,
   })
 );
+passwordResetRoutes({ pool, wrap })(app);
+
 app.use(
   brandSupportChatRoutes({
     pool,

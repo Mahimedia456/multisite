@@ -1,0 +1,215 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✅ OPTION 2: FORCE bg-primary buttons to look like your violet gradient globally */
+@layer utilities {
+  .bg-primary {
+    @apply bg-gradient-to-r from-violet-600 to-violet-700;
+  }
+
+  .select.h-10.rounded-xl.border.border-zinc-200.bg-zinc-50.px-3.text-sm.outline-none {
+    display: none !important;
+  }
+
+  .hover\:bg-primary\/90:hover {
+    @apply brightness-110;
+  }
+
+  .shadow-primary\/20 {
+    @apply shadow-violet-500/15;
+  }
+}
+
+/* =========================
+   ✅ GLOBAL DARK MODE FIX
+   Works without touching every page
+========================= */
+
+html.dark,
+html.dark body,
+html.dark #root {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+}
+
+/* Main text fallback */
+html.dark * {
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+/* Strong Tailwind text overrides */
+html.dark .text-black,
+html.dark .text-gray-950,
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-zinc-950,
+html.dark .text-zinc-900,
+html.dark .text-zinc-800,
+html.dark .text-slate-950,
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-zinc-700,
+html.dark .text-zinc-600,
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400,
+html.dark .text-zinc-500,
+html.dark .text-zinc-400,
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-violet-700,
+html.dark .text-violet-600,
+html.dark .text-purple-700,
+html.dark .text-purple-600 {
+  color: #c4b5fd !important;
+}
+
+html.dark .text-red-600,
+html.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+html.dark .text-green-600,
+html.dark .text-green-700 {
+  color: #86efac !important;
+}
+
+/* Background overrides */
+html.dark .bg-\[\#f7f4fb\],
+html.dark .bg-\[\#f6f2fb\]\/80,
+html.dark .bg-white,
+html.dark .bg-white\/70,
+html.dark .bg-white\/80,
+html.dark .bg-zinc-50,
+html.dark .bg-gray-50,
+html.dark .bg-slate-50 {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-violet-50,
+html.dark .bg-violet-100,
+html.dark .bg-purple-50,
+html.dark .bg-purple-100 {
+  background-color: rgba(91, 33, 182, 0.2) !important;
+}
+
+html.dark .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.22) !important;
+}
+
+html.dark .bg-green-50 {
+  background-color: rgba(20, 83, 45, 0.22) !important;
+}
+
+/* Borders */
+html.dark .border,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-zinc-100,
+html.dark .border-zinc-200,
+html.dark .border-zinc-300,
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300,
+html.dark .border-\[\#efeaf6\],
+html.dark .border-\[\#f0edf7\] {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+/* Inputs */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #020617 !important;
+  color: #f8fafc !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Tables */
+html.dark table,
+html.dark thead,
+html.dark tbody,
+html.dark tr,
+html.dark th,
+html.dark td {
+  color: #e5e7eb !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html.dark thead,
+html.dark th {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+/* Dividers */
+html.dark .divide-\[\#f0edf7\] > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+/* Shadows */
+html.dark .shadow-sm,
+html.dark .shadow,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl {
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42) !important;
+}
+
+/* Hover states */
+html.dark .hover\:bg-violet-50:hover {
+  background-color: rgba(91, 33, 182, 0.25) !important;
+}
+
+html.dark .hover\:bg-violet-100:hover,
+html.dark .hover\:bg-violet-200:hover {
+  background-color: rgba(109, 40, 217, 0.35) !important;
+}
+
+html.dark .hover\:bg-red-50:hover {
+  background-color: rgba(127, 29, 29, 0.25) !important;
+}
+
+/* Icons / material symbols inherit */
+html.dark .material-symbols-outlined {
+  color: inherit !important;
+}
+
+/* Scrollbar */
+html.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

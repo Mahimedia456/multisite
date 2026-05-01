@@ -24,9 +24,12 @@ export default function AdminTopbar() {
   }
 
   useEffect(() => {
-    loadCount();
+    document.documentElement.lang = lang;
+    document.documentElement.classList.toggle("dark", theme === "dark");
 
+    loadCount();
     const timer = setInterval(loadCount, 10000);
+
     return () => clearInterval(timer);
   }, []);
 
@@ -50,24 +53,29 @@ export default function AdminTopbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-[#f6f2fb]/80 backdrop-blur border-b border-[#efeaf6]">
-      <div className="px-7 h-[76px] flex items-center justify-between gap-6">
+    <header className="sticky top-0 z-40 bg-[#f7f4fb]/90 dark:bg-slate-950/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
+      <div className="px-6 md:px-8 h-[76px] flex items-center justify-between gap-6">
         <div className="flex items-center gap-6 min-w-0">
-          <h1 className="text-2xl font-extrabold text-gray-900 shrink-0">
-            {t("overview")}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white shrink-0 leading-tight">
+              {t("overview")}
+            </h1>
+            <p className="hidden sm:block text-xs font-semibold text-[#007ab3]">
+              Allianz Admin Dashboard
+            </p>
+          </div>
 
-          <div className="hidden md:flex items-center gap-3 bg-white/80 border border-[#efeaf6] rounded-full px-4 h-11 w-[360px] max-w-full shadow-sm">
-            <MIcon name="search" className="text-gray-400 text-[20px]" />
+          <div className="hidden md:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-full px-4 h-11 w-[360px] max-w-full shadow-sm">
+            <MIcon name="search" className="text-slate-400 text-[20px]" />
             <input
-              className="bg-transparent outline-none text-sm w-full placeholder:text-gray-400"
+              className="bg-transparent outline-none text-sm w-full text-gray-900 dark:text-white placeholder:text-slate-400"
               placeholder={t("globalSearch")}
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="hidden lg:block text-sm font-semibold text-violet-700">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden lg:block text-sm font-bold text-[#007ab3]">
             {new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-US", {
               weekday: "long",
               month: "short",
@@ -79,15 +87,19 @@ export default function AdminTopbar() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="px-3 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm text-sm font-semibold flex items-center gap-2"
+            className="h-10 min-w-10 px-3 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm text-sm font-bold text-gray-800 dark:text-white flex items-center justify-center hover:bg-[#007ab3]/10 hover:text-[#007ab3] transition"
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
-            {theme === "dark" ? "☀️" : "🌙"}
+            <MIcon
+  name={theme === "dark" ? "light_mode" : "dark_mode"}
+  className="text-[20px]"
+/>
           </button>
 
           <button
             type="button"
             onClick={toggleLanguage}
-            className="px-3 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm text-sm font-semibold flex items-center gap-2"
+            className="h-10 px-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm text-sm font-bold text-gray-800 dark:text-white flex items-center gap-2 hover:bg-[#007ab3]/10 hover:text-[#007ab3] transition"
           >
             {lang === "de" ? "🇬🇧 EN" : "🇩🇪 DE"}
           </button>
@@ -95,10 +107,10 @@ export default function AdminTopbar() {
           <button
             type="button"
             onClick={() => navigate("/notifications")}
-            className="relative w-10 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm flex items-center justify-center"
+            className="relative w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-center hover:bg-[#007ab3]/10 transition"
             title={t("notifications")}
           >
-            <MIcon name="notifications" className="text-[20px] text-gray-700" />
+            <MIcon name="notifications" className="text-[20px] text-gray-700 dark:text-slate-300" />
 
             {count > 0 ? (
               <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
@@ -107,8 +119,8 @@ export default function AdminTopbar() {
             ) : null}
           </button>
 
-          <div className="w-10 h-10 rounded-full bg-white/80 border border-[#efeaf6] shadow-sm flex items-center justify-center">
-            <MIcon name="person" className="text-[22px] text-gray-700" />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-b from-[#007ab3] to-[#005f8c] shadow-lg shadow-[#007ab3]/20 flex items-center justify-center text-white">
+            <MIcon name="person" className="text-[22px]" />
           </div>
         </div>
       </div>
