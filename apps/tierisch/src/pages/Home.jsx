@@ -13,12 +13,14 @@ import LeistungTabsSection from "./home/LeistungTabsSection";
 import FAQSection from "./home/FAQSection";
 import AngebotSection from "./home/AngebotSection";
 import Footer from "../components/Footer";
-import BlogSection from "../components/BlogSection.jsx";
+
+import { BrandBlogSection } from "@multisite/ui-inner-shared";
 
 export default function Home() {
   return (
     <main className="w-full bg-[#F6F8FB] text-slate-900">
       <Header brandSlug="allianz4" />
+
       <HeroSection />
       <StepsSection />
       <VideoSection />
@@ -30,7 +32,9 @@ export default function Home() {
       <LeistungTabsSection />
       <FAQSection />
       <AngebotSection />
-      <BlogSection />
+
+      <BrandBlogSection brandSlug="allianz4" limit={3} />
+
       <Footer brandSlug="allianz4" />
       <div className="h-10" />
     </main>

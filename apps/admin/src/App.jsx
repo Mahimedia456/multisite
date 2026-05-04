@@ -37,6 +37,7 @@ import AuthLayout from "./layouts/AuthLayout.jsx";
 import BlogsIndex from "./pages/BlogsIndex.jsx";
 import BlogForm from "./pages/BlogForm.jsx";
 import BlogSettings from "./pages/BlogSettings.jsx";
+import BlogCategories from "./pages/BlogCategories.jsx";
 
 export default function App() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/blogs" element={<BlogsIndex />} />
 <Route path="/blogs/create" element={<BlogForm />} />
 <Route path="/blogs/:blogId/edit" element={<BlogForm />} />
+<Route path="/blog-categories" element={<BlogCategories />} />
 <Route path="/blog-settings" element={<BlogSettings />} />
 
             {/* Inner Pages */}
