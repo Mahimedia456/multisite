@@ -13,6 +13,7 @@ import LeistungTabsSection from "./home/LeistungTabsSection";
 import FAQSection from "./home/FAQSection";
 import AngebotSection from "./home/AngebotSection";
 import Footer from "../components/Footer";
+import BlogSection from "../components/BlogSection.jsx";
 
 export default function Home() {
   return (
@@ -29,6 +30,7 @@ export default function Home() {
       <LeistungTabsSection />
       <FAQSection />
       <AngebotSection />
+      <BlogSection />
       <Footer brandSlug="allianz4" />
       <div className="h-10" />
     </main>

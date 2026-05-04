@@ -44,9 +44,13 @@ export default function BlogsIndex() {
 
   const [rows, setRows] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [brandId, setBrandId] = useState("all");
+  const [categoryId, setCategoryId] = useState("all");
+
   const [loading, setLoading] = useState(true);
 
   async function loadBlogs() {
@@ -58,6 +62,7 @@ export default function BlogsIndex() {
       if (q.trim()) params.set("q", q.trim());
       if (status !== "all") params.set("status", status);
       if (brandId !== "all") params.set("brandId", brandId);
+      if (categoryId !== "all") params.set("categoryId", categoryId);
 
       const res = await apiFetch(`/admin/blogs?${params.toString()}`);
       const json = await res.json().catch(() => null);
@@ -80,11 +85,36 @@ export default function BlogsIndex() {
       const res = await apiFetch("/api/brands");
       const json = await res.json().catch(() => null);
 
-      if (res.ok && json?.ok) {
-        setBrands(Array.isArray(json.data) ? json.data : []);
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || "Failed to load brands");
       }
-    } catch {
+
+      setBrands(Array.isArray(json.data) ? json.data : []);
+    } catch (e) {
+      console.error("[BlogsIndex loadBrands]", e);
       setBrands([]);
+    }
+  }
+
+  async function loadCategories(nextBrandId = brandId) {
+    try {
+      const params = new URLSearchParams();
+
+      if (nextBrandId !== "all") {
+        params.set("brandId", nextBrandId);
+      }
+
+      const res = await apiFetch(`/admin/blog-categories?${params.toString()}`);
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || "Failed to load categories");
+      }
+
+      setCategories(Array.isArray(json.data) ? json.data : []);
+    } catch (e) {
+      console.error("[BlogsIndex loadCategories]", e);
+      setCategories([]);
     }
   }
 
@@ -146,17 +176,27 @@ export default function BlogsIndex() {
 
   useEffect(() => {
     loadBrands();
+    loadCategories("all");
   }, []);
+
+  useEffect(() => {
+    loadCategories(brandId);
+    setCategoryId("all");
+  }, [brandId]);
 
   useEffect(() => {
     const timer = setTimeout(loadBlogs, 250);
     return () => clearTimeout(timer);
-  }, [q, status, brandId]);
+  }, [q, status, brandId, categoryId]);
 
   const stats = useMemo(() => {
-    const published = rows.filter((x) => x.status === "published" && !x.is_hidden).length;
+    const published = rows.filter(
+      (x) => x.status === "published" && !x.is_hidden
+    ).length;
     const drafts = rows.filter((x) => x.status === "draft").length;
-    const hidden = rows.filter((x) => x.is_hidden || x.status === "hidden").length;
+    const hidden = rows.filter(
+      (x) => x.is_hidden || x.status === "hidden"
+    ).length;
 
     return { total: rows.length, published, drafts, hidden };
   }, [rows]);
@@ -174,18 +214,28 @@ export default function BlogsIndex() {
           </h1>
 
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            WordPress-style blog management with SEO, publish, hide and brand visibility.
+            Blog management with categories, SEO, publish, hide and brand visibility.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate("/blogs/create")}
-          className="h-12 rounded-2xl bg-gradient-to-r from-[#007ab3] to-[#005f8c] px-5 text-sm font-black text-white shadow-lg shadow-[#007ab3]/20 hover:brightness-105 transition inline-flex items-center justify-center gap-2"
-        >
-          <MIcon name="add" className="text-[20px]" />
-          Add Blog
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => navigate("/blog-categories")}
+            className="h-12 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+          >
+            Categories
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/blogs/create")}
+            className="h-12 rounded-2xl bg-gradient-to-r from-[#007ab3] to-[#005f8c] px-5 text-sm font-black text-white shadow-lg shadow-[#007ab3]/20 hover:brightness-105 transition inline-flex items-center justify-center gap-2"
+          >
+            <MIcon name="add" className="text-[20px]" />
+            Add Blog
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-4">
@@ -217,7 +267,7 @@ export default function BlogsIndex() {
         ))}
       </div>
 
-      <div className="rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm p-5 grid grid-cols-1 xl:grid-cols-[1fr,220px,260px] gap-4">
+      <div className="rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm p-5 grid grid-cols-1 xl:grid-cols-[1fr,200px,240px,240px] gap-4">
         <div className="relative">
           <MIcon
             name="search"
@@ -254,11 +304,24 @@ export default function BlogsIndex() {
             </option>
           ))}
         </select>
+
+        <select
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="h-12 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl px-4 text-sm font-bold text-gray-950 dark:text-white outline-none"
+        >
+          <option value="all">All Categories</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:bg-slate-900 dark:border-white/10">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px]">
+          <table className="w-full min-w-[1200px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-left dark:bg-slate-950/60 dark:border-white/10">
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
@@ -266,6 +329,9 @@ export default function BlogsIndex() {
                 </th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                   Brand
+                </th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  Category
                 </th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                   Status
@@ -282,19 +348,28 @@ export default function BlogsIndex() {
             <tbody className="divide-y divide-slate-100 dark:divide-white/10">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-14 text-center text-sm text-slate-500">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-14 text-center text-sm text-slate-500"
+                  >
                     Loading blogs...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-14 text-center text-sm text-slate-500">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-14 text-center text-sm text-slate-500"
+                  >
                     No blogs found.
                   </td>
                 </tr>
               ) : (
                 rows.map((blog) => (
-                  <tr key={blog.id} className="hover:bg-[#007ab3]/5 transition-colors">
+                  <tr
+                    key={blog.id}
+                    className="hover:bg-[#007ab3]/5 transition-colors"
+                  >
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
                         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#007ab3]/10 text-[#007ab3] shrink-0">
@@ -319,6 +394,10 @@ export default function BlogsIndex() {
 
                     <td className="px-6 py-5 text-sm font-bold text-slate-600 dark:text-slate-300">
                       {blog.brand_name || blog.brand_slug || "—"}
+                    </td>
+
+                    <td className="px-6 py-5 text-sm font-bold text-slate-600 dark:text-slate-300">
+                      {blog.category_name || "—"}
                     </td>
 
                     <td className="px-6 py-5">

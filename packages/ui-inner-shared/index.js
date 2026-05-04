@@ -4,11 +4,26 @@ export { default as SiteFooter } from "./src/ui/SiteFooter.jsx";
 export { default as TeamPage } from "./src/pages/TeamPage.jsx";
 export { default as CareerPage } from "./src/pages/CareerPage.jsx";
 
-export { default as Reveal } from "./src/components/Reveal.jsx";          // ✅
-export { default as AutoReveal } from "./src/components/AutoReveal.jsx";  // ✅
+export { default as Reveal } from "./src/components/Reveal.jsx";
+export { default as AutoReveal } from "./src/components/AutoReveal.jsx";
 
 export { default as EAautoVersicherungPage } from "./src/pages/EAautoVersicherungPage.jsx";
 export { default as KfzVersicherungPage } from "./src/pages/KfzVersicherungPage.jsx";
+
+// ✅ Blog shared UI
+export { default as BlogSection } from "./src/blog/BlogSection.jsx";
+export { default as BlogsPage } from "./src/blog/BlogsPage.jsx";
+export { default as BlogDetailPage } from "./src/blog/BlogDetailPage.jsx";
+
+export { default as BrandBlogSection } from "./src/blog/BrandBlogSection.jsx";
+export { default as BrandBlogsPage } from "./src/blog/BrandBlogsPage.jsx";
+export { default as BrandBlogDetailPage } from "./src/blog/BrandBlogDetailPage.jsx";
+
+export {
+  useSharedBrandBlogs,
+  useSharedBrandBlogCategories,
+  useSharedBrandBlogDetail,
+} from "./src/blog/BrandBlogProvider.jsx";
 
 // about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";

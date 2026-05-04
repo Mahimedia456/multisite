@@ -13,7 +13,7 @@ const NAV_ITEMS = [
    // ✅ NEW BLOG MODULE
   { to: "/blogs", label: "Blogs", translationKey: "blogs", icon: "article" },
   { to: "/blog-settings", label: "Blog Settings", translationKey: "blogSettings", icon: "admin_panel_settings" },
-
+{ to: "/blog-categories", label: "Blog Categories", translationKey: "blogCategories", icon: "category" },
 ];
 
 export default function AdminSidebar({ collapsed = false, setCollapsed }) {

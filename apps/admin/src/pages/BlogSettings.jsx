@@ -34,25 +34,24 @@ export default function BlogSettings() {
       const res = await apiFetch("/admin/blog-module-permissions");
       const json = await res.json().catch(() => null);
 
+      console.log("[BlogSettings loadRows]", {
+        status: res.status,
+        ok: res.ok,
+        json,
+      });
+
       if (!res.ok || !json?.ok) {
         throw new Error(json?.message || "Failed to load blog settings");
       }
 
       setRows(Array.isArray(json.data) ? json.data : []);
     } catch (e) {
+      console.error("[BlogSettings loadRows error]", e);
       alert(e.message || "Failed to load blog settings");
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }
-
-  function updateLocal(brandId, key, value) {
-    setRows((prev) =>
-      prev.map((row) =>
-        row.brand_id === brandId ? { ...row, [key]: value } : row
-      )
-    );
   }
 
   async function saveRow(row) {
@@ -75,10 +74,18 @@ export default function BlogSettings() {
 
       const json = await res.json().catch(() => null);
 
+      console.log("[BlogSettings saveRow]", {
+        brandId: row.brand_id,
+        status: res.status,
+        ok: res.ok,
+        json,
+      });
+
       if (!res.ok || !json?.ok) {
         throw new Error(json?.message || "Failed to save settings");
       }
     } catch (e) {
+      console.error("[BlogSettings saveRow error]", e);
       alert(e.message || "Failed to save settings");
       loadRows();
     } finally {
@@ -95,7 +102,10 @@ export default function BlogSettings() {
       next.can_delete = false;
     }
 
-    if (["can_create", "can_edit", "can_delete"].includes(key) && value === true) {
+    if (
+      ["can_create", "can_edit", "can_delete"].includes(key) &&
+      value === true
+    ) {
       next.can_view = true;
     }
 
@@ -124,7 +134,7 @@ export default function BlogSettings() {
             </h1>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Control which brand can view, create, edit, or delete blog posts.
+              Control which brand can view, create, edit, or delete blogs and blog categories.
             </p>
           </div>
 
@@ -186,7 +196,7 @@ export default function BlogSettings() {
                     colSpan={6}
                     className="px-6 py-14 text-center text-sm text-slate-500"
                   >
-                    No brands found.
+                    No brands found. Check /admin/blog-module-permissions API.
                   </td>
                 </tr>
               ) : (
@@ -213,41 +223,19 @@ export default function BlogSettings() {
                       </div>
                     </td>
 
-                    <td className="px-6 py-5 text-center">
-                      <Toggle
-                        checked={Boolean(row.can_view)}
-                        onChange={(value) =>
-                          toggleAndSave(row, "can_view", value)
-                        }
-                      />
-                    </td>
-
-                    <td className="px-6 py-5 text-center">
-                      <Toggle
-                        checked={Boolean(row.can_create)}
-                        onChange={(value) =>
-                          toggleAndSave(row, "can_create", value)
-                        }
-                      />
-                    </td>
-
-                    <td className="px-6 py-5 text-center">
-                      <Toggle
-                        checked={Boolean(row.can_edit)}
-                        onChange={(value) =>
-                          toggleAndSave(row, "can_edit", value)
-                        }
-                      />
-                    </td>
-
-                    <td className="px-6 py-5 text-center">
-                      <Toggle
-                        checked={Boolean(row.can_delete)}
-                        onChange={(value) =>
-                          toggleAndSave(row, "can_delete", value)
-                        }
-                      />
-                    </td>
+                    {[
+                      ["can_view", "View"],
+                      ["can_create", "Create"],
+                      ["can_edit", "Edit"],
+                      ["can_delete", "Delete"],
+                    ].map(([key]) => (
+                      <td key={key} className="px-6 py-5 text-center">
+                        <Toggle
+                          checked={Boolean(row[key])}
+                          onChange={(value) => toggleAndSave(row, key, value)}
+                        />
+                      </td>
+                    ))}
 
                     <td className="px-6 py-5 text-right">
                       {savingId === row.brand_id ? (

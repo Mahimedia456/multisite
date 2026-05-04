@@ -55,11 +55,14 @@ export default function BlogForm() {
   const isEdit = Boolean(blogId);
 
   const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     brandId: "",
+    categoryId: "",
     title: "",
     slug: "",
     excerpt: "",
@@ -91,16 +94,43 @@ export default function BlogForm() {
       const res = await apiFetch("/api/brands");
       const json = await res.json().catch(() => null);
 
-      if (res.ok && json?.ok) {
-        const list = Array.isArray(json.data) ? json.data : [];
-        setBrands(list);
-
-        if (!isEdit && list.length && !form.brandId) {
-          setForm((prev) => ({ ...prev, brandId: list[0].id }));
-        }
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || "Failed to load brands");
       }
-    } catch {
+
+      const list = Array.isArray(json.data) ? json.data : [];
+      setBrands(list);
+
+      if (!isEdit && list.length && !form.brandId) {
+        setForm((prev) => ({ ...prev, brandId: list[0].id }));
+      }
+    } catch (e) {
+      console.error("[BlogForm loadBrands]", e);
       setBrands([]);
+    }
+  }
+
+  async function loadCategories(brandId) {
+    try {
+      if (!brandId) {
+        setCategories([]);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set("brandId", brandId);
+
+      const res = await apiFetch(`/admin/blog-categories?${params.toString()}`);
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || "Failed to load categories");
+      }
+
+      setCategories(Array.isArray(json.data) ? json.data : []);
+    } catch (e) {
+      console.error("[BlogForm loadCategories]", e);
+      setCategories([]);
     }
   }
 
@@ -125,6 +155,7 @@ export default function BlogForm() {
 
       setForm({
         brandId: blog.brand_id || "",
+        categoryId: blog.category_id || "",
         title: blog.title || "",
         slug: blog.slug || "",
         excerpt: blog.excerpt || "",
@@ -142,6 +173,8 @@ export default function BlogForm() {
         ogDescription: blog.og_description || "",
         ogImage: blog.og_image || "",
       });
+
+      await loadCategories(blog.brand_id);
     } catch (e) {
       alert(e.message || "Failed to load blog");
       navigate("/blogs");
@@ -166,6 +199,7 @@ export default function BlogForm() {
     try {
       const payload = {
         brandId: form.brandId,
+        categoryId: form.categoryId || null,
         title: form.title.trim(),
         slug: previewSlug,
         excerpt: form.excerpt,
@@ -187,11 +221,14 @@ export default function BlogForm() {
         ogImage: form.ogImage,
       };
 
-      const res = await apiFetch(isEdit ? `/admin/blogs/${blogId}` : "/admin/blogs", {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await apiFetch(
+        isEdit ? `/admin/blogs/${blogId}` : "/admin/blogs",
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const json = await res.json().catch(() => null);
 
@@ -231,11 +268,20 @@ export default function BlogForm() {
   useEffect(() => {
     loadBrands();
     loadBlog();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blogId]);
 
+  useEffect(() => {
+    if (form.brandId) {
+      loadCategories(form.brandId);
+    }
+  }, [form.brandId]);
+
   if (loading) {
-    return <div className="p-8 text-slate-500 dark:text-slate-400">Loading blog...</div>;
+    return (
+      <div className="p-8 text-slate-500 dark:text-slate-400">
+        Loading blog...
+      </div>
+    );
   }
 
   return (
@@ -252,7 +298,7 @@ export default function BlogForm() {
             </h1>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Create WordPress-style blog posts with SEO metadata and brand visibility.
+              Create blog posts with category, SEO metadata and brand visibility.
             </p>
           </div>
 
@@ -405,14 +451,35 @@ export default function BlogForm() {
                 </div>
                 <select
                   value={form.brandId}
-                  onChange={(e) => setField("brandId", e.target.value)}
+                  onChange={(e) => {
+                    setField("brandId", e.target.value);
+                    setField("categoryId", "");
+                  }}
                   disabled={isEdit}
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-gray-950 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-white disabled:opacity-60"
                 >
                   <option value="">Select Brand</option>
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
-                      {brand.name}
+                      {brand.name} ({brand.slug})
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <div className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  Category
+                </div>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => setField("categoryId", e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-gray-950 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                >
+                  <option value="">No Category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
                     </option>
                   ))}
                 </select>

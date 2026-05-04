@@ -869,7 +869,7 @@ if (role === "admin") {
 
   if (lowerEmail === "support@mahimediasolutions.com") {
     permissions = ["Overview", "Brands", "Support Chat" , "Blogs",
-  "Blog Settings",
+  "Blog Settings", "Blog Categories", "Brand Unique Pages", "Brand Inner Pages",
 ];
   }
 }
