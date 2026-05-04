@@ -1,76 +1,85 @@
 import { Link } from "react-router-dom";
 
-function getBlogUrl(blog) {
-  return `/blogs/${blog?.slug || blog?.id}`;
+function img(blog) {
+  return blog?.featured_image || blog?.og_image || blog?.image?.url || "";
 }
 
 export default function BlogSection({
   blogs = [],
-  title = "Neueste Blogbeiträge",
-  subtitle = "Ratgeber",
-  description = "Aktuelle Informationen und hilfreiche Tipps Ihrer Agentur.",
+  title = "Neueste Ratgeber",
+  subtitle = "Blog",
+  description = "Aktuelle Tipps, Informationen und hilfreiche Beiträge Ihrer Agentur.",
 }) {
   if (!Array.isArray(blogs) || blogs.length === 0) return null;
 
   return (
-    <section className="bg-[#F6F8FB] px-4 py-20">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-10 max-w-3xl">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+    <section className="py-24 md:py-32 bg-white dark:bg-surface-dark rounded-3xl">
+      <div className="px-6">
+        <div className="text-center mb-16 md:mb-20">
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-primary">
             {subtitle}
           </p>
 
-          <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-5xl">
+          <h2 className="text-4xl md:text-5xl font-bold text-text-main dark:text-white mb-6">
             {title}
           </h2>
 
-          {description ? (
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              {description}
-            </p>
-          ) : null}
+          <p className="text-xl text-text-muted max-w-2xl mx-auto">
+            {description}
+          </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {blogs.map((blog) => (
+        <div className="grid md:grid-cols-3 gap-10">
+          {blogs.map((blog, i) => (
             <Link
-              key={blog.id || blog.slug}
-              to={getBlogUrl(blog)}
-              className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+              key={blog.id || blog.slug || i}
+              to={`/blogs/${blog.slug || blog.id}`}
+              className="group bg-background-light dark:bg-background-dark rounded-[2.5rem] shadow-soft hover:shadow-lg transition-all overflow-hidden"
             >
-              <div className="h-56 overflow-hidden bg-slate-100">
-                {blog.featured_image || blog.og_image ? (
+              <div className="h-64 bg-primary/5 overflow-hidden">
+                {img(blog) ? (
                   <img
-                    src={blog.featured_image || blog.og_image}
+                    src={img(blog)}
                     alt={blog.title || "Blog"}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-slate-400">
-                    Kein Bild
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-6xl">
+                      article
+                    </span>
                   </div>
                 )}
               </div>
 
-              <div className="p-6">
-                {blog.category_name || blog.category?.name ? (
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
-                    {blog.category_name || blog.category?.name}
-                  </p>
-                ) : null}
+              <div className="p-8">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                    <span className="material-symbols-outlined text-2xl">
+                      newspaper
+                    </span>
+                  </div>
 
-                <h3 className="line-clamp-2 text-xl font-bold text-slate-950">
+                  <p className="text-sm font-semibold text-text-muted">
+                    {blog.category_name || blog.category?.name || "Ratgeber"}
+                  </p>
+                </div>
+
+                <h3 className="text-2xl font-bold text-text-main dark:text-white mb-4 line-clamp-2">
                   {blog.title}
                 </h3>
 
                 {blog.excerpt ? (
-                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
+                  <p className="text-text-muted leading-relaxed line-clamp-3">
                     {blog.excerpt}
                   </p>
                 ) : null}
 
-                <div className="mt-5 text-sm font-semibold text-blue-700">
-                  Weiterlesen →
+                <div className="mt-7 inline-flex items-center gap-2 text-primary font-bold">
+                  Weiterlesen
+                  <span className="material-symbols-outlined text-lg">
+                    arrow_forward
+                  </span>
                 </div>
               </div>
             </Link>
