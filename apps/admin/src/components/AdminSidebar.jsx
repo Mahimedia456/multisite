@@ -10,6 +10,10 @@ const NAV_ITEMS = [
   { to: "/brand-inner-pages", label: "Brand Inner Pages", translationKey: "brandInnerPages", icon: "description" },
   { to: "/brand-unique-pages", label: "Brand Unique Pages", translationKey: "brandUniquePages", icon: "web" },
   { to: "/support-chat", label: "Support Chat", translationKey: "supportChat", icon: "forum" },
+   // ✅ NEW BLOG MODULE
+  { to: "/blogs", label: "Blogs", translationKey: "blogs", icon: "article" },
+  { to: "/blog-settings", label: "Blog Settings", translationKey: "blogSettings", icon: "admin_panel_settings" },
+
 ];
 
 export default function AdminSidebar({ collapsed = false, setCollapsed }) {

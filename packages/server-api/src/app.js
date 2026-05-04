@@ -26,6 +26,7 @@ import adminAiSectionCodeRoutes from "./routes/adminAiSectionCode.js";
 import brandUniquePagesRoutes from "./routes/brandUniquePages.js";
 import brandSupportChatRoutes from "./routes/brandSupportChat.js";
 import passwordResetRoutes from "./routes/passwordReset.js";
+import blogsRoutes from "./routes/blogs.js";
 
 dotenv.config();
 
@@ -364,6 +365,17 @@ app.use(
     isUuid,
   })
 );
+
+
+app.use(
+  blogsRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+    isUuid,
+  })
+);
+
 async function downloadToBuffer(url) {
   const headers = {
     // Unsplash source sometimes blocks unknown user agents
@@ -856,7 +868,9 @@ if (role === "admin") {
   }
 
   if (lowerEmail === "support@mahimediasolutions.com") {
-    permissions = ["Overview", "Brands", "Support Chat"];
+    permissions = ["Overview", "Brands", "Support Chat" , "Blogs",
+  "Blog Settings",
+];
   }
 }
 

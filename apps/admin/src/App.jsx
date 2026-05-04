@@ -34,6 +34,10 @@ import ResetPassword from "./pages/ResetPassword";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 
 
+import BlogsIndex from "./pages/BlogsIndex.jsx";
+import BlogForm from "./pages/BlogForm.jsx";
+import BlogSettings from "./pages/BlogSettings.jsx";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -57,6 +61,11 @@ export default function App() {
               path="/brands/:brandId/templates/:templateId/builder"
               element={<TemplateBuilder />}
             />
+
+            <Route path="/blogs" element={<BlogsIndex />} />
+<Route path="/blogs/create" element={<BlogForm />} />
+<Route path="/blogs/:blogId/edit" element={<BlogForm />} />
+<Route path="/blog-settings" element={<BlogSettings />} />
 
             {/* Inner Pages */}
             <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
