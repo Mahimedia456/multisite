@@ -30,6 +30,7 @@ import blogsRoutes from "./routes/blogs.js";
 import moduleSettingsRoutes from "./routes/moduleSettings.js";
 import adminSettingsRoutes from "./routes/adminSettings.js";
 import websiteSettingsRoutes from "./routes/websiteSettings.js";
+import brandsRoutes from "./routes/brands.js";
 
 dotenv.config();
 
@@ -370,7 +371,7 @@ app.use(
     isUuid,
   })
 );
-
+app.use("/api", brandsRoutes);
 
 app.use(
   blogsRoutes({
@@ -1348,7 +1349,7 @@ app.get(
     if (!isUuid(brandId))
       return res.status(400).json({ ok: false, message: "Invalid brandId" });
 
-    const brandQ = await pool.query(
+    const brandDetailQ = await pool.query(
       `
       SELECT
         id, name, route, status, updated_at,
@@ -1362,10 +1363,10 @@ app.get(
       [brandId]
     );
 
-    if (!brandQ.rows.length)
-      return res.status(404).json({ ok: false, message: "Brand not found" });
+if (!brandDetailQ.rows.length)
+        return res.status(404).json({ ok: false, message: "Brand not found" });
 
-    const b = brandQ.rows[0];
+const b = brandDetailQ.rows[0];
     const accent = b.accent_color || b.primary_color || "#2ec2b3";
     const typography = b.typography_json || {};
 
@@ -1619,173 +1620,9 @@ app.put(
   })
 );
 
-app.get(
-  "/public/brands/:brandSlug/theme",
-  wrap(async (req, res) => {
-    const brandSlug = String(req.params.brandSlug || "").trim().toLowerCase();
 
-    const { rows } = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        slug,
-        website_url,
-        accent_color,
-        primary_color,
-        primary_dark_color,
-        accent_color_2,
-        background_light,
-        background_dark,
-        surface_light,
-        surface_dark,
-        font_family,
-        font_google_url,
-        icon_font_url,
-        logo_type,
-        logo_value,
-        logo_text,
-        company_name,
-        company_phone,
-        company_whatsapp,
-        company_email,
-        company_location,
-        support_email
-      FROM brands
-      WHERE LOWER(slug) = $1
-      LIMIT 1
-      `,
-      [brandSlug]
-    );
 
-    if (!rows.length) {
-      return res.status(404).json({ ok: false, message: "Brand not found" });
-    }
 
-    const b = rows[0];
-
-    res.json({
-      ok: true,
-      data: {
-        brand: {
-          id: b.id,
-          name: b.name,
-          slug: b.slug,
-          websiteUrl: b.website_url || "",
-
-          accentColor: b.accent_color || "",
-          primaryColor: b.primary_color || b.accent_color || "",
-          primaryDarkColor: b.primary_dark_color || "",
-          accentColor2: b.accent_color_2 || "",
-          backgroundLight: b.background_light || "",
-          backgroundDark: b.background_dark || "",
-          surfaceLight: b.surface_light || "",
-          surfaceDark: b.surface_dark || "",
-
-          fontFamily: b.font_family || "",
-          fontGoogleUrl: b.font_google_url || "",
-          iconFontUrl: b.icon_font_url || "",
-
-          logoType: b.logo_type || "material",
-          logoValue: b.logo_value || "",
-          logoText: b.logo_text || b.name || "",
-
-          company: {
-            name: b.company_name || b.name || "",
-            phone: b.company_phone || "",
-            whatsapp: b.company_whatsapp || "",
-            email: b.company_email || "",
-            location: b.company_location || "",
-            supportEmail: b.support_email || "",
-          },
-        },
-      },
-    });
-  })
-);
-
-router.get("/public/brands/:brandSlug/theme", async (req, res) => {
-  try {
-    const brandSlug = String(req.params.brandSlug || "").trim().toLowerCase();
-
-    const { rows } = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        slug,
-        website_url,
-        accent_color,
-        primary_color,
-        primary_dark_color,
-        accent_color_2,
-        background_light,
-        background_dark,
-        surface_light,
-        surface_dark,
-        font_family,
-        font_google_url,
-        icon_font_url,
-        logo_type,
-        logo_value,
-        logo_text,
-        company_name,
-        company_phone,
-        company_whatsapp,
-        company_email,
-        company_location,
-        support_email
-      FROM brands
-      WHERE LOWER(slug) = $1
-      LIMIT 1
-      `,
-      [brandSlug]
-    );
-
-    if (!rows[0]) {
-      return res.status(404).json({ ok: false, message: "Brand not found" });
-    }
-
-    const b = rows[0];
-
-    return res.json({
-      ok: true,
-      data: {
-        brand: {
-          id: b.id,
-          name: b.name,
-          slug: b.slug,
-          websiteUrl: b.website_url || "",
-          accentColor: b.accent_color || "",
-          primaryColor: b.primary_color || b.accent_color || "",
-          primaryDarkColor: b.primary_dark_color || "",
-          accentColor2: b.accent_color_2 || "",
-          backgroundLight: b.background_light || "",
-          backgroundDark: b.background_dark || "",
-          surfaceLight: b.surface_light || "",
-          surfaceDark: b.surface_dark || "",
-          fontFamily: b.font_family || "",
-          fontGoogleUrl: b.font_google_url || "",
-          iconFontUrl: b.icon_font_url || "",
-          logoType: b.logo_type || "material",
-          logoValue: b.logo_value || "",
-          logoText: b.logo_text || b.name || "",
-          company: {
-            name: b.company_name || b.name || "",
-            phone: b.company_phone || "",
-            whatsapp: b.company_whatsapp || "",
-            email: b.company_email || "",
-            location: b.company_location || "",
-            supportEmail: b.support_email || "",
-          },
-        },
-      },
-    });
-  } catch (e) {
-    console.error("GET /public/brands/:brandSlug/theme error:", e);
-    res.status(500).json({ ok: false, message: "Server error", error: e.message });
-  }
-});
 /* =========================
    Layout template versions (history list)
 ========================= */

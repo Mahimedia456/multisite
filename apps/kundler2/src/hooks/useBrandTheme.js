@@ -31,26 +31,39 @@ export function useBrandTheme(brandSlug) {
     async function loadTheme() {
       try {
         const res = await fetch(
-          `${API_BASE}/public/brands/${brandSlug}/theme?t=${Date.now()}`,
+          `${API_BASE}/api/public/brands/${brandSlug}/theme?t=${Date.now()}`,
           { cache: "no-store" }
         );
 
         const json = await res.json().catch(() => null);
-        if (!res.ok || !json?.ok) return;
+
+        if (!res.ok || !json?.ok) {
+          console.warn("[useBrandTheme] Failed to load theme", {
+            brandSlug,
+            status: res.status,
+            json,
+          });
+          return;
+        }
 
         const b = json.data?.brand || {};
 
         setVar("--primary", hexToRgb(b.primaryColor || b.accentColor, "245 196 0"));
         setVar("--primary-dark", hexToRgb(b.primaryDarkColor, "214 171 0"));
         setVar("--accent", hexToRgb(b.accentColor2 || b.accentColor, "245 196 0"));
+
         setVar("--bg-light", hexToRgb(b.backgroundLight, "246 247 248"));
         setVar("--bg-dark", hexToRgb(b.backgroundDark, "7 10 13"));
         setVar("--surface-light", hexToRgb(b.surfaceLight, "255 255 255"));
         setVar("--surface-dark", hexToRgb(b.surfaceDark, "28 42 41"));
+
         setVar("--allianz-blue", hexToRgb(b.primaryColor || "#003781", "0 55 129"));
         setVar("--text-dark", "11 15 18");
 
-        if (b.fontGoogleUrl && !document.querySelector(`[data-brand-font="${brandSlug}"]`)) {
+        if (
+          b.fontGoogleUrl &&
+          !document.querySelector(`[data-brand-font="${brandSlug}"]`)
+        ) {
           const link = document.createElement("link");
           link.rel = "stylesheet";
           link.href = b.fontGoogleUrl;
@@ -58,7 +71,10 @@ export function useBrandTheme(brandSlug) {
           document.head.appendChild(link);
         }
 
-        if (b.iconFontUrl && !document.querySelector(`[data-brand-icons="${brandSlug}"]`)) {
+        if (
+          b.iconFontUrl &&
+          !document.querySelector(`[data-brand-icons="${brandSlug}"]`)
+        ) {
           const link = document.createElement("link");
           link.rel = "stylesheet";
           link.href = b.iconFontUrl;
@@ -67,17 +83,18 @@ export function useBrandTheme(brandSlug) {
         }
 
         if (b.fontFamily) {
-          document.documentElement.style.setProperty("--brand-font", `"${b.fontFamily}", ui-sans-serif, system-ui`);
-          document.body.style.fontFamily = `"${b.fontFamily}", ui-sans-serif, system-ui`;
+          const fontStack = `"${b.fontFamily}", ui-sans-serif, system-ui`;
+          document.documentElement.style.setProperty("--brand-font", fontStack);
+          document.body.style.fontFamily = fontStack;
         }
 
         if (alive) setBrand(b);
-      } catch {
-        // Keep fallback CSS values.
+      } catch (e) {
+        console.warn("[useBrandTheme] Theme load error:", e?.message || e);
       }
     }
 
-    loadTheme();
+    if (brandSlug) loadTheme();
 
     return () => {
       alive = false;
