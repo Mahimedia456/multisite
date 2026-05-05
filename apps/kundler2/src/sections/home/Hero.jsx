@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { HOME_IMAGES } from "../../data/homeImages";
 
+function getImage(value, fallbackKey) {
+  if (value) return value;
+  return HOME_IMAGES[fallbackKey] || "";
+}
+
+function getImageFromKey(imageKey, fallbackKey) {
+  return HOME_IMAGES[imageKey] || HOME_IMAGES[fallbackKey] || "";
+}
+
 function StatPill({ value, label }) {
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
@@ -16,6 +25,7 @@ function TinyCard({ title, subtitle, img }) {
       <div className="h-28 bg-black/40">
         <img src={img} alt="" className="w-full h-full object-cover opacity-90" />
       </div>
+
       <div className="p-3">
         <div className="text-white text-xs font-extrabold">{title}</div>
         <div className="text-white/60 text-[11px] mt-1">{subtitle}</div>
@@ -24,9 +34,56 @@ function TinyCard({ title, subtitle, img }) {
   );
 }
 
-export default function Hero() {
+export default function Hero({
+  badge = "Allianz Versicherung • Privatkunden",
+  headline = "Die kalte Jahreszeit genießen – mit starker Absicherung an Ihrer Seite.",
+  highlight = "mit starker Absicherung",
+  subheading = "Empfehlungen, Services und persönliche Beratung – damit Sie im Alltag und in besonderen Momenten gut vorbereitet sind.",
+  primaryLabel = "Ansprechpartner:in vor Ort finden",
+  primaryHref = "/beratung",
+  secondaryLabel = "Meine Allianz • Anmelden",
+  secondaryHref = "/login",
+  stats = [
+    { value: "24/7", label: "Schaden melden" },
+    { value: "Mo–Fr", label: "Beratung 8–20 Uhr" },
+    { value: "Top", label: "Online-Antrag" },
+  ],
+  cards = [
+    {
+      title: "Kfz-Versicherung",
+      subtitle: "Optimaler Schutz fürs Auto",
+      imageKey: "heroCard1",
+    },
+    {
+      title: "Zahnzusatz",
+      subtitle: "Premium-Schutz ohne Wartezeit",
+      imageKey: "heroCard2",
+    },
+  ],
+  heroPoster,
+  heroPosterKey = "heroPoster",
+  heroVideos,
+  highlightTitle = "Schnelle & unkomplizierte Schadensabwicklung",
+  highlightStatus = "Aktiv",
+  highlightMeta = "Deutschlandweit",
+  highlightLinkLabel = "Mehr entdecken",
+  highlightLinkHref = "/produkte",
+}) {
   const videoRef = useRef(null);
   const [ready, setReady] = useState(false);
+
+  const posterSrc = getImage(heroPoster, heroPosterKey);
+  const videos = Array.isArray(heroVideos) && heroVideos.length
+    ? heroVideos
+    : HOME_IMAGES.heroVideos || [];
+
+  const beforeHighlight = headline.includes(highlight)
+    ? headline.split(highlight)[0]
+    : headline;
+
+  const afterHighlight = headline.includes(highlight)
+    ? headline.split(highlight).slice(1).join(highlight)
+    : "";
 
   useEffect(() => {
     const v = videoRef.current;
@@ -39,7 +96,6 @@ export default function Hero() {
 
     v.addEventListener("playing", onPlay);
     v.addEventListener("canplay", onCanPlay);
-
     v.play?.().catch(() => {});
 
     return () => {
@@ -50,26 +106,31 @@ export default function Hero() {
 
   return (
     <section className="relative overflow-hidden">
-      {/* background */}
       <div className="absolute inset-0">
-        <img src={HOME_IMAGES.heroPoster} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img
+          src={posterSrc}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
 
-        <video
-          ref={videoRef}
-          className={[
-            "absolute inset-0 w-full h-full object-cover transition-opacity duration-500",
-            ready ? "opacity-100" : "opacity-0",
-          ].join(" ")}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-        >
-          {(HOME_IMAGES.heroVideos || []).map((src) => (
-            <source key={src} src={src} type="video/mp4" />
-          ))}
-        </video>
+        {videos.length ? (
+          <video
+            ref={videoRef}
+            className={[
+              "absolute inset-0 w-full h-full object-cover transition-opacity duration-500",
+              ready ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+          >
+            {videos.map((src) => (
+              <source key={src} src={src} type="video/mp4" />
+            ))}
+          </video>
+        ) : null}
 
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
@@ -77,50 +138,61 @@ export default function Hero() {
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-16 lg:pt-20 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* left */}
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 text-[10px] font-extrabold tracking-widest uppercase">
               <span className="w-2 h-2 rounded-full bg-[#f4c300]" />
-              Allianz Versicherung • Privatkunden
+              {badge}
             </div>
 
             <h1 className="mt-5 text-white font-extrabold tracking-tight text-[38px] leading-[1.05] sm:text-5xl lg:text-6xl">
-              Die kalte Jahreszeit genießen –{" "}
-              <span className="text-[#f4c300]">mit starker Absicherung</span> an Ihrer Seite.
+              {beforeHighlight}
+              {highlight && headline.includes(highlight) ? (
+                <span className="text-[#f4c300]">{highlight}</span>
+              ) : null}
+              {afterHighlight}
             </h1>
 
             <p className="mt-5 text-white/70 text-sm sm:text-base max-w-xl">
-              Empfehlungen, Services und persönliche Beratung – damit Sie im Alltag und in besonderen Momenten gut
-              vorbereitet sind.
+              {subheading}
             </p>
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
               <a
-                href="/beratung"
+                href={primaryHref}
                 className="h-10 px-5 rounded-xl bg-[#f4c300] text-black font-extrabold text-xs inline-flex items-center justify-center hover:opacity-90 transition"
               >
-                Ansprechpartner:in vor Ort finden
+                {primaryLabel}
               </a>
+
               <a
-                href="/login"
+                href={secondaryHref}
                 className="h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white font-extrabold text-xs inline-flex items-center justify-center hover:bg-white/15 transition"
               >
-                Meine Allianz • Anmelden
+                {secondaryLabel}
               </a>
             </div>
 
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md">
-              <StatPill value="24/7" label="Schaden melden" />
-              <StatPill value="Mo–Fr" label="Beratung 8–20 Uhr" />
-              <StatPill value="Top" label="Online-Antrag" />
+              {(stats || []).map((item) => (
+                <StatPill
+                  key={`${item.value}-${item.label}`}
+                  value={item.value}
+                  label={item.label}
+                />
+              ))}
             </div>
           </div>
 
-          {/* right */}
           <div className="relative">
             <div className="grid grid-cols-2 gap-4">
-              <TinyCard img={HOME_IMAGES.heroCard1} title="Kfz-Versicherung" subtitle="Optimaler Schutz fürs Auto" />
-              <TinyCard img={HOME_IMAGES.heroCard2} title="Zahnzusatz" subtitle="Premium-Schutz ohne Wartezeit" />
+              {(cards || []).map((card) => (
+                <TinyCard
+                  key={`${card.title}-${card.subtitle}`}
+                  img={card.img || getImageFromKey(card.imageKey, "heroCard1")}
+                  title={card.title}
+                  subtitle={card.subtitle}
+                />
+              ))}
             </div>
 
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -129,9 +201,15 @@ export default function Hero() {
                   <div className="text-white/60 text-[10px] uppercase tracking-widest font-extrabold">
                     Unser Highlight
                   </div>
-                  <div className="text-white font-extrabold mt-1">Schnelle & unkomplizierte Schadensabwicklung</div>
+
+                  <div className="text-white font-extrabold mt-1">
+                    {highlightTitle}
+                  </div>
                 </div>
-                <div className="text-[#f4c300] font-extrabold">Aktiv</div>
+
+                <div className="text-[#f4c300] font-extrabold">
+                  {highlightStatus}
+                </div>
               </div>
 
               <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
@@ -139,12 +217,13 @@ export default function Hero() {
               </div>
 
               <div className="mt-3 flex items-center justify-between text-[11px] text-white/60">
-                <span>Deutschlandweit</span>
+                <span>{highlightMeta}</span>
+
                 <a
-                  href="/produkte"
+                  href={highlightLinkHref}
                   className="px-3 py-1 rounded-full bg-black/40 border border-white/10 text-white font-extrabold hover:bg-black/60 transition"
                 >
-                  Mehr entdecken
+                  {highlightLinkLabel}
                 </a>
               </div>
             </div>

@@ -7,12 +7,23 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
     "/admin/brand-unique-pages/brands",
     authMiddleware,
     wrap(async (req, res) => {
-      const { rows } = await pool.query(`
-        SELECT id, name, slug, route, status, updated_at as "updatedAt"
-        FROM brands
-        ORDER BY updated_at DESC NULLS LAST, name ASC
-      `);
-
+     const { rows } = await pool.query(`
+  SELECT
+    id,
+    name,
+    slug,
+    route,
+    status,
+    website_url as "websiteUrl",
+    company_name as "companyName",
+    company_phone as "companyPhone",
+    company_email as "companyEmail",
+    company_location as "companyLocation",
+    support_email as "supportEmail",
+    updated_at as "updatedAt"
+  FROM brands
+  ORDER BY updated_at DESC NULLS LAST, name ASC
+`);
       res.json({ ok: true, data: rows });
     })
   );
@@ -35,29 +46,26 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         return res.status(404).json({ ok: false, message: "Brand not found" });
       }
 
-      const { rows } = await pool.query(
-        `
-        SELECT
-          p.id,
-          p.brand_id as "brandId",
-          p.slug,
-          p.title,
-          p.status,
-          p.updated_at as "modifiedAt",
-          v.version as "latestVersion"
-        FROM brand_unique_pages p
-        LEFT JOIN LATERAL (
-          SELECT version
-          FROM brand_unique_page_versions
-          WHERE page_id = p.id
-          ORDER BY version DESC
-          LIMIT 1
-        ) v ON true
-        WHERE p.brand_id=$1
-        ORDER BY p.updated_at DESC NULLS LAST, p.slug ASC
-        `,
-        [brandId]
-      );
+     const brandQ = await pool.query(
+  `
+  SELECT
+    id,
+    name,
+    slug,
+    route,
+    status,
+    website_url as "websiteUrl",
+    company_name as "companyName",
+    company_phone as "companyPhone",
+    company_email as "companyEmail",
+    company_location as "companyLocation",
+    support_email as "supportEmail"
+  FROM brands
+  WHERE id=$1
+  LIMIT 1
+  `,
+  [brandId]
+);
 
       res.json({ ok: true, data: { brand: brandQ.rows[0], pages: rows } });
     })
@@ -124,20 +132,20 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         return res.status(400).json({ ok: false, message: "Invalid pageId" });
       }
 
-      const pageQ = await pool.query(
-        `
-        SELECT
-          p.*,
-          b.name as "brandName",
-          b.slug as "brandSlug"
-        FROM brand_unique_pages p
-        JOIN brands b ON b.id = p.brand_id
-        WHERE p.id=$1
-        LIMIT 1
-        `,
-        [pageId]
-      );
-
+ const pageQ = await pool.query(
+  `
+  SELECT
+    p.*,
+    b.name as "brandName",
+    b.slug as "brandSlug",
+    b.website_url as "brandPreviewUrl"
+  FROM brand_unique_pages p
+  JOIN brands b ON b.id = p.brand_id
+  WHERE p.id=$1
+  LIMIT 1
+  `,
+  [pageId]
+);
       if (!pageQ.rows.length) {
         return res.status(404).json({ ok: false, message: "Page not found" });
       }
@@ -236,15 +244,15 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         return res.status(404).json({ ok: false, message: "Brand not found" });
       }
 
-      const pageQ = await pool.query(
-        `
-        SELECT id, slug, title, status
-        FROM brand_unique_pages
-        WHERE brand_id=$1 AND LOWER(slug)=$2
-        LIMIT 1
-        `,
-        [brandQ.rows[0].id, pageSlug]
-      );
+  const brandQ = await pool.query(
+  `
+  SELECT id, name, slug, route, status, website_url as "websiteUrl"
+  FROM brands
+  WHERE id=$1
+  LIMIT 1
+  `,
+  [brandId]
+);
 
       if (!pageQ.rows.length) {
         return res.status(404).json({ ok: false, message: "Page not found" });

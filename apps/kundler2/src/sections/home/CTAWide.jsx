@@ -1,37 +1,40 @@
 import Reveal from "../../components/Reveal";
 import { HOME_IMAGES } from "../../data/homeImages";
 
-export default function CTAWide() {
+function img(key, fallback) {
+  return HOME_IMAGES[key] || HOME_IMAGES[fallback] || "";
+}
+
+export default function CTAWide({
+  eyebrow,
+  headline,
+  body,
+  primaryLabel,
+  primaryHref,
+  secondaryLabel,
+  secondaryHref,
+  imageKey = "ctaBg",
+}) {
   return (
     <section className="relative py-16 bg-black">
       <div className="absolute inset-0">
-        <img src={HOME_IMAGES.ctaBg} alt="" className="w-full h-full object-cover opacity-45" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/80" />
+        <img src={img(imageKey, "ctaBg")} className="w-full h-full object-cover opacity-45" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-7xl mx-auto px-6 text-white">
         <Reveal>
-          <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-10 sm:p-12 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-            <div>
-              <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/60">
-                Wir sind für Sie da
-              </div>
-              <div className="mt-3 text-2xl sm:text-3xl font-extrabold">
-                Persönliche oder digitale Beratung – einfach Kontakt aufnehmen
-              </div>
-              <div className="mt-2 text-sm text-white/70 max-w-2xl">
-                Mo–Fr 8–20 Uhr telefonisch oder digital. Finden Sie jetzt die passende Unterstützung.
-              </div>
-            </div>
+          <div className="text-[10px] uppercase text-white/60">{eyebrow}</div>
+          <div className="text-3xl font-extrabold mt-2">{headline}</div>
+          <p className="mt-2 text-white/70">{body}</p>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button className="h-11 px-6 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
-                Ansprechpartner:in finden
-              </button>
-              <button className="h-11 px-6 rounded-xl bg-white/10 border border-white/15 text-white font-extrabold text-sm hover:bg-white/15">
-                Online-Services
-              </button>
-            </div>
+          <div className="mt-6 flex gap-3">
+            <a href={primaryHref} className="bg-[#f5c400] text-black px-6 py-3 rounded-xl font-extrabold">
+              {primaryLabel}
+            </a>
+
+            <a href={secondaryHref} className="border border-white/20 px-6 py-3 rounded-xl">
+              {secondaryLabel}
+            </a>
           </div>
         </Reveal>
       </div>

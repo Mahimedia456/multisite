@@ -9,17 +9,25 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ["ui-sans-serif", "system-ui", "Inter", "Segoe UI", "Roboto", "Helvetica", "Arial"],
+        display: [
+          "var(--brand-font)",
+          "ui-sans-serif",
+          "system-ui",
+          "Inter",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica",
+          "Arial",
+        ],
       },
       colors: {
-        // ✅ Brand tokens
         primary: "rgb(var(--primary) / <alpha-value>)",
         "primary-dark": "rgb(var(--primary-dark) / <alpha-value>)",
         accent: "rgb(var(--accent) / <alpha-value>)",
         "background-light": "rgb(var(--bg-light) / <alpha-value>)",
         "background-dark": "rgb(var(--bg-dark) / <alpha-value>)",
-
-        // ✅ ADD THESE (used by your About design)
+        "surface-light": "rgb(var(--surface-light) / <alpha-value>)",
+        "surface-dark": "rgb(var(--surface-dark) / <alpha-value>)",
         "allianz-blue": "rgb(var(--allianz-blue) / <alpha-value>)",
         "text-dark": "rgb(var(--text-dark) / <alpha-value>)",
       },

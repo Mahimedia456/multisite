@@ -525,11 +525,13 @@ export default function BrandUniquePageBuilder() {
 
   const brandSlug = page?.brandSlug || page?.slug || "dropbrand";
 
-  const previewBaseUrl =
-    page?.previewUrl ||
-    page?.brandPreviewUrl ||
-    import.meta.env.VITE_DROPBRAND_PREVIEW_URL ||
-    "http://localhost:5174";
+const previewBaseUrl = String(page?.brandPreviewUrl || "").replace(/\/+$/, "");
+
+const pageSlug = page?.slug || "home";
+
+const previewUrl = previewBaseUrl
+  ? `${previewBaseUrl}/admin-preview/${pageSlug}?pageId=${pageId}&preview=${previewVersion}`
+  : "";
 
   const pageSlug = page?.slug || "home";
 
@@ -870,12 +872,25 @@ export default function BrandUniquePageBuilder() {
         ) : null}
 
         <main className="overflow-hidden bg-zinc-100">
-          <iframe
-            key={previewUrl}
-            title="Brand Preview"
-            src={previewUrl}
-            className="h-full w-full border-0 bg-white"
-          />
+         {previewUrl ? (
+  <iframe
+    key={previewUrl}
+    title="Brand Preview"
+    src={previewUrl}
+    className="h-full w-full border-0 bg-white"
+  />
+) : (
+  <div className="h-full w-full flex items-center justify-center bg-white text-center px-6">
+    <div>
+      <div className="text-lg font-black text-red-600">
+        Website URL missing
+      </div>
+      <div className="mt-2 text-sm text-zinc-500">
+        Please add website_url in brands table for this brand.
+      </div>
+    </div>
+  </div>
+)}
         </main>
 
         {!previewOnly ? (

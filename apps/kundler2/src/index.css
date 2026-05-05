@@ -3,48 +3,61 @@
 @tailwind utilities;
 
 /* =========================
-   Kundler2 Brand Tokens
-   (Tailwind reads these via rgb(var(--...)))
+   Dynamic Brand Tokens
+   Tailwind reads these via:
+   rgb(var(--primary) / <alpha-value>)
 ========================= */
-:root{
-  --primary: 245 196 0;        /* #f5c400 */
-  --primary-dark: 214 171 0;   /* darker yellow */
+:root {
+  --primary: 245 196 0;
+  --primary-dark: 214 171 0;
   --accent: 245 196 0;
 
-  --bg-light: 246 247 248;     /* #f6f7f8 */
-  --bg-dark: 7 10 13;          /* #070A0D */
+  --bg-light: 246 247 248;
+  --bg-dark: 7 10 13;
+
+  --surface-light: 255 255 255;
+  --surface-dark: 28 42 41;
+
+  --allianz-blue: 0 55 129;
+  --text-dark: 11 15 18;
+
+  --brand-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 }
 
-/* Base typography + smooth rendering */
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  color: #0b0f12;
-  background: #ffffff;
+  font-family: var(--brand-font);
+  color: rgb(var(--text-dark));
+  background: rgb(var(--bg-light));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Nice selection */
 ::selection {
-  background: rgba(245, 196, 0, 0.35);
+  background: rgb(var(--primary) / 0.35);
 }
 
-/* Prevent horizontal scroll from wide cards */
 #root {
   min-height: 100%;
   overflow-x: hidden;
 }
 
-/* Optional: consistent focus ring */
 :focus-visible {
-  outline: 2px solid #f5c400e6;
+  outline: 2px solid rgb(var(--primary) / 0.9);
   outline-offset: 2px;
   border-radius: 10px;
 }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

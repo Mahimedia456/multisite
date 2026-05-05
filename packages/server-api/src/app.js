@@ -1464,12 +1464,20 @@ app.put(
   authMiddleware,
   wrap(async (req, res) => {
     const { brandId } = req.params;
-    if (!isUuid(brandId))
+
+    if (!isUuid(brandId)) {
       return res.status(400).json({ ok: false, message: "Invalid brandId" });
+    }
 
     const {
       accentColor,
       primaryColor,
+      primaryDarkColor,
+      accentColor2,
+      backgroundLight,
+      backgroundDark,
+      surfaceLight,
+      surfaceDark,
       logoType,
       logoValue,
       typography,
@@ -1478,7 +1486,11 @@ app.put(
       companyWhatsapp,
       companyEmail,
       companyLocation,
+      websiteUrl,
     } = req.body || {};
+
+    const typographyPayload =
+      typography && typeof typography === "object" ? typography : null;
 
     const upd = await pool.query(
       `
@@ -1486,61 +1498,294 @@ app.put(
       SET
         accent_color = COALESCE($2, accent_color),
         primary_color = COALESCE($3, primary_color),
-        logo_type = COALESCE($4, logo_type),
-        logo_value = COALESCE($5, logo_value),
-        typography_json = COALESCE($6, typography_json),
-        company_name = COALESCE($7, company_name),
-        company_phone = COALESCE($8, company_phone),
-        company_whatsapp = COALESCE($9, company_whatsapp),
-        company_email = COALESCE($10, company_email),
-        company_location = COALESCE($11, company_location),
+        primary_dark_color = COALESCE($4, primary_dark_color),
+        accent_color_2 = COALESCE($5, accent_color_2),
+        background_light = COALESCE($6, background_light),
+        background_dark = COALESCE($7, background_dark),
+        surface_light = COALESCE($8, surface_light),
+        surface_dark = COALESCE($9, surface_dark),
+
+        font_family = COALESCE($10, font_family),
+        font_google_url = COALESCE($11, font_google_url),
+        icon_font_url = COALESCE($12, icon_font_url),
+        typography_json = COALESCE($13, typography_json),
+
+        logo_type = COALESCE($14, logo_type),
+        logo_value = COALESCE($15, logo_value),
+
+        company_name = COALESCE($16, company_name),
+        company_phone = COALESCE($17, company_phone),
+        company_whatsapp = COALESCE($18, company_whatsapp),
+        company_email = COALESCE($19, company_email),
+        company_location = COALESCE($20, company_location),
+        website_url = COALESCE($21, website_url),
+
         updated_at = NOW()
       WHERE id = $1
       RETURNING
-        id, accent_color, primary_color, logo_type, logo_value, typography_json,
-        company_name, company_phone, company_whatsapp, company_email, company_location, updated_at
+        id,
+        accent_color,
+        primary_color,
+        primary_dark_color,
+        accent_color_2,
+        background_light,
+        background_dark,
+        surface_light,
+        surface_dark,
+        font_family,
+        font_google_url,
+        icon_font_url,
+        typography_json,
+        logo_type,
+        logo_value,
+        company_name,
+        company_phone,
+        company_whatsapp,
+        company_email,
+        company_location,
+        website_url,
+        updated_at
       `,
       [
         brandId,
         accentColor ?? null,
         primaryColor ?? null,
+        primaryDarkColor ?? null,
+        accentColor2 ?? null,
+        backgroundLight ?? null,
+        backgroundDark ?? null,
+        surfaceLight ?? null,
+        surfaceDark ?? null,
+
+        typographyPayload?.family ?? null,
+        typographyPayload?.googleUrl ?? null,
+        typographyPayload?.iconsUrl ?? null,
+        typographyPayload ?? null,
+
         logoType ?? null,
         logoValue ?? null,
-        typography ?? null,
+
         companyName ?? null,
         companyPhone ?? null,
         companyWhatsapp ?? null,
         companyEmail ?? null,
         companyLocation ?? null,
+        websiteUrl ?? null,
       ]
     );
 
-    if (!upd.rows.length)
+    if (!upd.rows.length) {
       return res.status(404).json({ ok: false, message: "Brand not found" });
+    }
 
     const r = upd.rows[0];
+
     res.json({
       ok: true,
       data: {
         brandId: r.id,
+
         accentColor: r.accent_color,
         primaryColor: r.primary_color,
+        primaryDarkColor: r.primary_dark_color,
+        accentColor2: r.accent_color_2,
+        backgroundLight: r.background_light,
+        backgroundDark: r.background_dark,
+        surfaceLight: r.surface_light,
+        surfaceDark: r.surface_dark,
+
         logoType: r.logo_type,
         logoValue: r.logo_value,
-        typography: r.typography_json,
+
+        typography: {
+          family: r.font_family || r.typography_json?.family || "",
+          googleUrl: r.font_google_url || r.typography_json?.googleUrl || "",
+          iconsUrl: r.icon_font_url || r.typography_json?.iconsUrl || "",
+        },
+
         company: {
           name: r.company_name,
           phone: r.company_phone,
           whatsapp: r.company_whatsapp,
           email: r.company_email,
           location: r.company_location,
+          websiteUrl: r.website_url,
         },
+
+        websiteUrl: r.website_url,
         updatedAt: r.updated_at,
       },
     });
   })
 );
 
+app.get(
+  "/public/brands/:brandSlug/theme",
+  wrap(async (req, res) => {
+    const brandSlug = String(req.params.brandSlug || "").trim().toLowerCase();
+
+    const { rows } = await pool.query(
+      `
+      SELECT
+        id,
+        name,
+        slug,
+        website_url,
+        accent_color,
+        primary_color,
+        primary_dark_color,
+        accent_color_2,
+        background_light,
+        background_dark,
+        surface_light,
+        surface_dark,
+        font_family,
+        font_google_url,
+        icon_font_url,
+        logo_type,
+        logo_value,
+        logo_text,
+        company_name,
+        company_phone,
+        company_whatsapp,
+        company_email,
+        company_location,
+        support_email
+      FROM brands
+      WHERE LOWER(slug) = $1
+      LIMIT 1
+      `,
+      [brandSlug]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ ok: false, message: "Brand not found" });
+    }
+
+    const b = rows[0];
+
+    res.json({
+      ok: true,
+      data: {
+        brand: {
+          id: b.id,
+          name: b.name,
+          slug: b.slug,
+          websiteUrl: b.website_url || "",
+
+          accentColor: b.accent_color || "",
+          primaryColor: b.primary_color || b.accent_color || "",
+          primaryDarkColor: b.primary_dark_color || "",
+          accentColor2: b.accent_color_2 || "",
+          backgroundLight: b.background_light || "",
+          backgroundDark: b.background_dark || "",
+          surfaceLight: b.surface_light || "",
+          surfaceDark: b.surface_dark || "",
+
+          fontFamily: b.font_family || "",
+          fontGoogleUrl: b.font_google_url || "",
+          iconFontUrl: b.icon_font_url || "",
+
+          logoType: b.logo_type || "material",
+          logoValue: b.logo_value || "",
+          logoText: b.logo_text || b.name || "",
+
+          company: {
+            name: b.company_name || b.name || "",
+            phone: b.company_phone || "",
+            whatsapp: b.company_whatsapp || "",
+            email: b.company_email || "",
+            location: b.company_location || "",
+            supportEmail: b.support_email || "",
+          },
+        },
+      },
+    });
+  })
+);
+
+router.get("/public/brands/:brandSlug/theme", async (req, res) => {
+  try {
+    const brandSlug = String(req.params.brandSlug || "").trim().toLowerCase();
+
+    const { rows } = await pool.query(
+      `
+      SELECT
+        id,
+        name,
+        slug,
+        website_url,
+        accent_color,
+        primary_color,
+        primary_dark_color,
+        accent_color_2,
+        background_light,
+        background_dark,
+        surface_light,
+        surface_dark,
+        font_family,
+        font_google_url,
+        icon_font_url,
+        logo_type,
+        logo_value,
+        logo_text,
+        company_name,
+        company_phone,
+        company_whatsapp,
+        company_email,
+        company_location,
+        support_email
+      FROM brands
+      WHERE LOWER(slug) = $1
+      LIMIT 1
+      `,
+      [brandSlug]
+    );
+
+    if (!rows[0]) {
+      return res.status(404).json({ ok: false, message: "Brand not found" });
+    }
+
+    const b = rows[0];
+
+    return res.json({
+      ok: true,
+      data: {
+        brand: {
+          id: b.id,
+          name: b.name,
+          slug: b.slug,
+          websiteUrl: b.website_url || "",
+          accentColor: b.accent_color || "",
+          primaryColor: b.primary_color || b.accent_color || "",
+          primaryDarkColor: b.primary_dark_color || "",
+          accentColor2: b.accent_color_2 || "",
+          backgroundLight: b.background_light || "",
+          backgroundDark: b.background_dark || "",
+          surfaceLight: b.surface_light || "",
+          surfaceDark: b.surface_dark || "",
+          fontFamily: b.font_family || "",
+          fontGoogleUrl: b.font_google_url || "",
+          iconFontUrl: b.icon_font_url || "",
+          logoType: b.logo_type || "material",
+          logoValue: b.logo_value || "",
+          logoText: b.logo_text || b.name || "",
+          company: {
+            name: b.company_name || b.name || "",
+            phone: b.company_phone || "",
+            whatsapp: b.company_whatsapp || "",
+            email: b.company_email || "",
+            location: b.company_location || "",
+            supportEmail: b.support_email || "",
+          },
+        },
+      },
+    });
+  } catch (e) {
+    console.error("GET /public/brands/:brandSlug/theme error:", e);
+    res.status(500).json({ ok: false, message: "Server error", error: e.message });
+  }
+});
 /* =========================
    Layout template versions (history list)
 ========================= */

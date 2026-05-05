@@ -1,14 +1,12 @@
-import KundlerHomeRenderer from "../components/home/KundlerHomeRenderer";
 import BrandLoader from "../components/BrandLoader";
 import { useBrandUniquePage } from "../hooks/useBrandUniquePage";
+import KundlerContactRenderer from "../components/contact/KundlerContactRenderer";
 
-export default function Home() {
-  const { content, loading, error } = useBrandUniquePage("kundler3", "home");
+export default function Contact() {
+  const { content, loading, error } = useBrandUniquePage("kundler3", "contact");
   const sections = Array.isArray(content?.sections) ? content.sections : [];
 
-  if (loading) {
-    return <BrandLoader />;
-  }
+  if (loading) return <BrandLoader />;
 
   if (error) {
     return (
@@ -23,5 +21,5 @@ export default function Home() {
     );
   }
 
-  return <KundlerHomeRenderer brandSlug="kundler3" sections={sections} />;
+  return <KundlerContactRenderer brandSlug="kundler3" sections={sections} />;
 }

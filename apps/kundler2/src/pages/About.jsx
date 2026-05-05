@@ -1,39 +1,20 @@
-import { useEffect, useState } from "react";
-import { AboutPage } from "@multisite/ui-inner-shared";
-
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-
-import { getTenantConfig } from "@multisite/sdk";
-import { useSharedPage } from "../hooks/useSharedPage";
+import BrandLoader from "../components/BrandLoader";
+import { useBrandUniquePage } from "../hooks/useBrandUniquePage";
+import KundlerAboutRenderer from "../components/about/KundlerAboutRenderer";
 
 export default function About() {
-  const [config, setConfig] = useState(null);
-  const { content, loading, error } = useSharedPage("about");
+  const { content, loading, error } = useBrandUniquePage("kundler3", "about");
+  const sections = Array.isArray(content?.sections) ? content.sections : [];
 
-  useEffect(() => {
-    const c = getTenantConfig("kundler3"); // ✅ IMPORTANT
-    if (c?.primary) document.documentElement.style.setProperty("--brand", c.primary);
-    setConfig(c);
-  }, []);
-
-  if (!config || loading) return null;
+  if (loading) return <BrandLoader />;
 
   if (error) {
     return (
-      <div style={{ padding: 24 }}>
-        <h3 style={{ color: "red" }}>Shared page load failed</h3>
-        <pre>{String(error)}</pre>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-600 font-bold">{error}</div>
       </div>
     );
   }
 
-  return (
-    <AboutPage
-      tenantConfig={config}
-      HeaderSlot={() => <Header brandSlug="kundler3" />} // ✅ IMPORTANT
-      FooterSlot={() => <Footer brandSlug="kundler3" />} // ✅ IMPORTANT
-      content={content}
-    />
-  );
+  return <KundlerAboutRenderer sections={sections} />;
 }

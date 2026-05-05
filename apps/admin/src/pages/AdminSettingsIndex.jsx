@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
 
 export default function AdminSettingsIndex() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
   const [admins, setAdmins] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,13 +19,13 @@ export default function AdminSettingsIndex() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load admins");
+        throw new Error(json?.message || t("adminSettingsIndexFailedLoad"));
       }
 
       setAdmins(Array.isArray(json.admins) ? json.admins : []);
       setPermissions(Array.isArray(json.permissions) ? json.permissions : []);
     } catch (e) {
-      alert(e.message || "Failed to load admins");
+      alert(e.message || t("adminSettingsIndexFailedLoad"));
     } finally {
       setLoading(false);
     }
@@ -41,13 +44,15 @@ export default function AdminSettingsIndex() {
     <div className="space-y-8">
       <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
         <div className="text-xs font-black uppercase tracking-[0.2em] text-[#007ab3]">
-          Allianz Panel › Settings
+          {t("adminSettingsIndexBreadcrumb")}
         </div>
+
         <h1 className="mt-1 text-2xl font-black text-gray-950 dark:text-white">
-          Admin Settings
+          {t("adminSettingsIndexTitle")}
         </h1>
+
         <p className="mt-1 text-sm text-slate-500">
-          Select an admin email to manage module permissions.
+          {t("adminSettingsIndexSubtitle")}
         </p>
       </div>
 
@@ -56,16 +61,16 @@ export default function AdminSettingsIndex() {
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50 text-left dark:border-white/10 dark:bg-slate-950/60">
               <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                Admin Email
+                {t("adminSettingsAdminEmail")}
               </th>
               <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                Role
+                {t("adminSettingsRole")}
               </th>
               <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                Enabled Modules
+                {t("adminSettingsEnabledModules")}
               </th>
               <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                Action
+                {t("adminSettingsAction")}
               </th>
             </tr>
           </thead>
@@ -74,13 +79,13 @@ export default function AdminSettingsIndex() {
             {loading ? (
               <tr>
                 <td colSpan={4} className="px-6 py-12 text-center text-sm text-slate-500">
-                  Loading admins...
+                  {t("adminSettingsLoadingAdmins")}
                 </td>
               </tr>
             ) : admins.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-12 text-center text-sm text-slate-500">
-                  No admin users found.
+                  {t("adminSettingsNoAdmins")}
                 </td>
               </tr>
             ) : (
@@ -96,7 +101,8 @@ export default function AdminSettingsIndex() {
                           {admin.email}
                         </div>
                         <div className="mt-1 text-xs font-semibold text-slate-400">
-                          Created: {admin.created_at ? new Date(admin.created_at).toLocaleDateString() : "-"}
+                          {t("adminSettingsCreated")}:{" "}
+                          {admin.created_at ? new Date(admin.created_at).toLocaleDateString() : "-"}
                         </div>
                       </div>
                     </div>
@@ -108,16 +114,20 @@ export default function AdminSettingsIndex() {
 
                   <td className="px-6 py-5">
                     <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-green-700">
-                      {countEnabled(admin.email)} enabled
+                      {t("adminSettingsEnabledCount", {
+                        count: countEnabled(admin.email),
+                      })}
                     </span>
                   </td>
 
                   <td className="px-6 py-5 text-right">
                     <button
-                      onClick={() => navigate(`/admin-settings/${encodeURIComponent(admin.email)}`)}
+                      onClick={() =>
+                        navigate(`/admin-settings/${encodeURIComponent(admin.email)}`)
+                      }
                       className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#007ab3] px-4 text-sm font-black text-white hover:brightness-110"
                     >
-                      Manage
+                      {t("adminSettingsManage")}
                       <MIcon name="arrow_forward" className="text-[18px]" />
                     </button>
                   </td>

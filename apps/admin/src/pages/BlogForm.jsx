@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
@@ -49,6 +50,7 @@ function TextArea({ label, value, onChange, placeholder, rows = 4 }) {
 }
 
 export default function BlogForm() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { blogId } = useParams();
 
@@ -95,7 +97,7 @@ export default function BlogForm() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load brands");
+        throw new Error(json?.message || t("blogFormFailedLoadBrands"));
       }
 
       const list = Array.isArray(json.data) ? json.data : [];
@@ -124,7 +126,7 @@ export default function BlogForm() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load categories");
+        throw new Error(json?.message || t("blogFormFailedLoadCategories"));
       }
 
       setCategories(Array.isArray(json.data) ? json.data : []);
@@ -144,7 +146,7 @@ export default function BlogForm() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load blog");
+        throw new Error(json?.message || t("blogFormFailedLoadBlog"));
       }
 
       const blog = json.data || {};
@@ -176,7 +178,7 @@ export default function BlogForm() {
 
       await loadCategories(blog.brand_id);
     } catch (e) {
-      alert(e.message || "Failed to load blog");
+      alert(e.message || t("blogFormFailedLoadBlog"));
       navigate("/blogs");
     } finally {
       setLoading(false);
@@ -185,12 +187,12 @@ export default function BlogForm() {
 
   async function saveBlog() {
     if (!form.title.trim()) {
-      alert("Blog title is required");
+      alert(t("blogFormTitleRequired"));
       return;
     }
 
     if (!isEdit && !form.brandId) {
-      alert("Please select a brand");
+      alert(t("blogFormSelectBrandRequired"));
       return;
     }
 
@@ -221,24 +223,21 @@ export default function BlogForm() {
         ogImage: form.ogImage,
       };
 
-      const res = await apiFetch(
-        isEdit ? `/admin/blogs/${blogId}` : "/admin/blogs",
-        {
-          method: isEdit ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await apiFetch(isEdit ? `/admin/blogs/${blogId}` : "/admin/blogs", {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to save blog");
+        throw new Error(json?.message || t("blogFormFailedSaveBlog"));
       }
 
       navigate("/blogs");
     } catch (e) {
-      alert(e.message || "Failed to save blog");
+      alert(e.message || t("blogFormFailedSaveBlog"));
     } finally {
       setSaving(false);
     }
@@ -246,7 +245,7 @@ export default function BlogForm() {
 
   async function deleteBlog() {
     if (!isEdit) return;
-    if (!window.confirm("Delete this blog permanently?")) return;
+    if (!window.confirm(t("blogFormDeleteConfirm"))) return;
 
     try {
       const res = await apiFetch(`/admin/blogs/${blogId}`, {
@@ -256,12 +255,12 @@ export default function BlogForm() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to delete blog");
+        throw new Error(json?.message || t("blogFormFailedDeleteBlog"));
       }
 
       navigate("/blogs");
     } catch (e) {
-      alert(e.message || "Failed to delete blog");
+      alert(e.message || t("blogFormFailedDeleteBlog"));
     }
   }
 
@@ -279,7 +278,7 @@ export default function BlogForm() {
   if (loading) {
     return (
       <div className="p-8 text-slate-500 dark:text-slate-400">
-        Loading blog...
+        {t("blogFormLoading")}
       </div>
     );
   }
@@ -290,15 +289,15 @@ export default function BlogForm() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.2em] text-[#007ab3]">
-              Allianz Panel › Blogs
+              {t("blogFormBreadcrumb")}
             </div>
 
             <h1 className="mt-1 text-2xl font-black text-gray-950 dark:text-white">
-              {isEdit ? "Edit Blog" : "Add Blog"}
+              {isEdit ? t("blogFormEdit") : t("blogFormAdd")}
             </h1>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Create blog posts with category, SEO metadata and brand visibility.
+              {t("blogFormSubtitle")}
             </p>
           </div>
 
@@ -308,7 +307,7 @@ export default function BlogForm() {
               onClick={() => navigate("/blogs")}
               className="h-12 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-white"
             >
-              Cancel
+              {t("blogFormCancel")}
             </button>
 
             {isEdit ? (
@@ -317,7 +316,7 @@ export default function BlogForm() {
                 onClick={deleteBlog}
                 className="h-12 rounded-2xl bg-red-600 px-5 text-sm font-black text-white transition hover:bg-red-700"
               >
-                Delete
+                {t("blogFormDelete")}
               </button>
             ) : null}
 
@@ -328,7 +327,7 @@ export default function BlogForm() {
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#007ab3] to-[#005f8c] px-5 text-sm font-black text-white shadow-lg shadow-[#007ab3]/20 transition hover:brightness-105 disabled:opacity-60"
             >
               <MIcon name="save" className="text-[20px]" />
-              {saving ? "Saving..." : "Save Blog"}
+              {saving ? t("blogFormSaving") : t("blogFormSave")}
             </button>
           </div>
         </div>
@@ -338,41 +337,41 @@ export default function BlogForm() {
         <div className="space-y-8">
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
             <h2 className="text-lg font-black text-gray-950 dark:text-white">
-              Blog Content
+              {t("blogFormContent")}
             </h2>
 
             <div className="mt-6 grid gap-5">
               <TextInput
-                label="Title"
+                label={t("blogFormTitle")}
                 required
                 value={form.title}
                 onChange={(v) => {
                   setField("title", v);
                   if (!isEdit && !form.slug) setField("slug", slugify(v));
                 }}
-                placeholder="Enter blog title"
+                placeholder={t("blogFormTitlePlaceholder")}
               />
 
               <TextInput
-                label="Slug"
+                label={t("blogFormSlug")}
                 value={form.slug}
                 onChange={(v) => setField("slug", slugify(v))}
-                placeholder="blog-url-slug"
+                placeholder={t("blogFormSlugPlaceholder")}
               />
 
               <TextArea
-                label="Excerpt"
+                label={t("blogFormExcerpt")}
                 value={form.excerpt}
                 onChange={(v) => setField("excerpt", v)}
-                placeholder="Short blog summary"
+                placeholder={t("blogFormExcerptPlaceholder")}
                 rows={3}
               />
 
               <TextArea
-                label="Content"
+                label={t("blogFormContentField")}
                 value={form.contentText}
                 onChange={(v) => setField("contentText", v)}
-                placeholder="Write blog content here..."
+                placeholder={t("blogFormContentPlaceholder")}
                 rows={14}
               />
             </div>
@@ -380,60 +379,17 @@ export default function BlogForm() {
 
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
             <h2 className="text-lg font-black text-gray-950 dark:text-white">
-              SEO Settings
+              {t("blogFormSEO")}
             </h2>
 
             <div className="mt-6 grid gap-5">
-              <TextInput
-                label="SEO Title"
-                value={form.seoTitle}
-                onChange={(v) => setField("seoTitle", v)}
-                placeholder="Meta title"
-              />
-
-              <TextArea
-                label="SEO Description"
-                value={form.seoDescription}
-                onChange={(v) => setField("seoDescription", v)}
-                placeholder="Meta description"
-                rows={3}
-              />
-
-              <TextInput
-                label="SEO Keywords"
-                value={form.seoKeywords}
-                onChange={(v) => setField("seoKeywords", v)}
-                placeholder="keyword 1, keyword 2"
-              />
-
-              <TextInput
-                label="Canonical URL"
-                value={form.canonicalUrl}
-                onChange={(v) => setField("canonicalUrl", v)}
-                placeholder="https://domain.com/blogs/slug"
-              />
-
-              <TextInput
-                label="OG Title"
-                value={form.ogTitle}
-                onChange={(v) => setField("ogTitle", v)}
-                placeholder="Social share title"
-              />
-
-              <TextArea
-                label="OG Description"
-                value={form.ogDescription}
-                onChange={(v) => setField("ogDescription", v)}
-                placeholder="Social share description"
-                rows={3}
-              />
-
-              <TextInput
-                label="OG Image"
-                value={form.ogImage}
-                onChange={(v) => setField("ogImage", v)}
-                placeholder="https://..."
-              />
+              <TextInput label={t("blogFormSEOTitle")} value={form.seoTitle} onChange={(v) => setField("seoTitle", v)} placeholder={t("blogFormMetaTitlePlaceholder")} />
+              <TextArea label={t("blogFormSEODesc")} value={form.seoDescription} onChange={(v) => setField("seoDescription", v)} placeholder={t("blogFormMetaDescriptionPlaceholder")} rows={3} />
+              <TextInput label={t("blogFormKeywords")} value={form.seoKeywords} onChange={(v) => setField("seoKeywords", v)} placeholder={t("blogFormKeywordsPlaceholder")} />
+              <TextInput label={t("blogFormCanonical")} value={form.canonicalUrl} onChange={(v) => setField("canonicalUrl", v)} placeholder={t("blogFormCanonicalPlaceholder")} />
+              <TextInput label={t("blogFormOGTitle")} value={form.ogTitle} onChange={(v) => setField("ogTitle", v)} placeholder={t("blogFormOGTitlePlaceholder")} />
+              <TextArea label={t("blogFormOGDesc")} value={form.ogDescription} onChange={(v) => setField("ogDescription", v)} placeholder={t("blogFormOGDescPlaceholder")} rows={3} />
+              <TextInput label={t("blogFormOGImage")} value={form.ogImage} onChange={(v) => setField("ogImage", v)} placeholder="https://..." />
             </div>
           </div>
         </div>
@@ -441,13 +397,13 @@ export default function BlogForm() {
         <div className="space-y-8">
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
             <h2 className="text-lg font-black text-gray-950 dark:text-white">
-              Publishing
+              {t("blogFormPublishing")}
             </h2>
 
             <div className="mt-6 grid gap-5">
               <label className="block">
                 <div className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Brand
+                  {t("blogFormBrand")}
                 </div>
                 <select
                   value={form.brandId}
@@ -458,7 +414,7 @@ export default function BlogForm() {
                   disabled={isEdit}
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-gray-950 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-white disabled:opacity-60"
                 >
-                  <option value="">Select Brand</option>
+                  <option value="">{t("blogFormSelectBrand")}</option>
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name} ({brand.slug})
@@ -469,14 +425,14 @@ export default function BlogForm() {
 
               <label className="block">
                 <div className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Category
+                  {t("blogFormCategory")}
                 </div>
                 <select
                   value={form.categoryId}
                   onChange={(e) => setField("categoryId", e.target.value)}
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-gray-950 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-white"
                 >
-                  <option value="">No Category</option>
+                  <option value="">{t("blogFormNoCategory")}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -487,26 +443,26 @@ export default function BlogForm() {
 
               <label className="block">
                 <div className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Status
+                  {t("blogFormStatus")}
                 </div>
                 <select
                   value={form.status}
                   onChange={(e) => setField("status", e.target.value)}
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-gray-950 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-white"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="hidden">Hidden</option>
+                  <option value="draft">{t("blogFormDraft")}</option>
+                  <option value="published">{t("blogFormPublished")}</option>
+                  <option value="hidden">{t("blogFormHidden")}</option>
                 </select>
               </label>
 
               <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950">
                 <div>
                   <div className="text-sm font-black text-gray-950 dark:text-white">
-                    Hide Blog
+                    {t("blogFormHideBlog")}
                   </div>
                   <div className="mt-1 text-xs font-semibold text-slate-500">
-                    Hidden blogs will not show on public websites.
+                    {t("blogFormHideNote")}
                   </div>
                 </div>
 
@@ -522,31 +478,27 @@ export default function BlogForm() {
 
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
             <h2 className="text-lg font-black text-gray-950 dark:text-white">
-              Media
+              {t("blogFormMedia")}
             </h2>
 
             <div className="mt-6 grid gap-5">
               <TextInput
-                label="Featured Image URL"
+                label={t("blogFormImage")}
                 value={form.featuredImage}
                 onChange={(v) => setField("featuredImage", v)}
                 placeholder="https://..."
               />
 
               <TextInput
-                label="Author Name"
+                label={t("blogFormAuthor")}
                 value={form.authorName}
                 onChange={(v) => setField("authorName", v)}
-                placeholder="Author"
+                placeholder={t("blogFormAuthorPlaceholder")}
               />
 
               {form.featuredImage ? (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
-                  <img
-                    src={form.featuredImage}
-                    alt=""
-                    className="h-48 w-full object-cover"
-                  />
+                  <img src={form.featuredImage} alt="" className="h-48 w-full object-cover" />
                 </div>
               ) : null}
             </div>
@@ -554,11 +506,11 @@ export default function BlogForm() {
 
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
             <h2 className="text-lg font-black text-gray-950 dark:text-white">
-              Preview URL
+              {t("blogFormPreview")}
             </h2>
 
             <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm font-mono font-bold text-slate-600 dark:bg-slate-950 dark:text-slate-300">
-              /blogs/{previewSlug || "blog-slug"}
+              /blogs/{previewSlug || t("blogFormPreviewSlugFallback")}
             </div>
           </div>
         </div>

@@ -95,7 +95,22 @@ function TemplateCard({ template, onEdit, onView, t }) {
   );
 }
 
-function InfoBox({ label, value, icon }) {
+function InfoBox({ label, value, icon, href }) {
+  const content = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="text-sm text-[#007ab3] font-bold truncate hover:underline"
+    >
+      {value || "—"}
+    </a>
+  ) : (
+    <div className="text-sm text-gray-950 dark:text-white font-bold truncate">
+      {value || "—"}
+    </div>
+  );
+
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 p-4">
       <div className="flex items-center gap-3">
@@ -106,9 +121,7 @@ function InfoBox({ label, value, icon }) {
           <div className="text-xs text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.14em]">
             {label}
           </div>
-          <div className="text-sm text-gray-950 dark:text-white font-bold truncate">
-            {value || "—"}
-          </div>
+          {content}
         </div>
       </div>
     </div>
@@ -216,6 +229,12 @@ export default function BrandDetail() {
               whatsapp: b?.company?.whatsapp || b?.companyWhatsapp || "",
               email: b?.company?.email || b?.companyEmail || "",
               location: b?.company?.location || b?.companyLocation || "",
+              websiteUrl:
+                b?.company?.websiteUrl ||
+                b?.company?.website_url ||
+                b?.websiteUrl ||
+                b?.website_url ||
+                "",
             },
           });
         }
@@ -277,6 +296,7 @@ export default function BrandDetail() {
         whatsapp: b?.company?.whatsapp || "",
         email: b?.company?.email || "",
         location: b?.company?.location || "",
+        websiteUrl: b?.company?.websiteUrl || b?.websiteUrl || "",
       },
     });
   }
@@ -305,6 +325,7 @@ export default function BrandDetail() {
           companyWhatsapp: draft.company?.whatsapp || null,
           companyEmail: draft.company?.email || null,
           companyLocation: draft.company?.location || null,
+          websiteUrl: draft.company?.websiteUrl || null,
         }),
       });
 
@@ -319,8 +340,17 @@ export default function BrandDetail() {
         const accent = json.data.accentColor || draft.accentColor || p?.colors?.accent;
         const primary = json.data.primaryColor || draft.primaryColor || p?.colors?.primary || accent;
 
+        const nextWebsiteUrl =
+          json.data.company?.websiteUrl ??
+          json.data.websiteUrl ??
+          draft.company?.websiteUrl ??
+          p?.company?.websiteUrl ??
+          p?.websiteUrl ??
+          "";
+
         return {
           ...p,
+          websiteUrl: nextWebsiteUrl,
           colors: { ...(p.colors || {}), accent, primary },
           fonts: {
             ...(p.fonts || {}),
@@ -340,6 +370,7 @@ export default function BrandDetail() {
             whatsapp: json.data.company?.whatsapp ?? draft.company?.whatsapp ?? p?.company?.whatsapp ?? "",
             email: json.data.company?.email ?? draft.company?.email ?? p?.company?.email ?? "",
             location: json.data.company?.location ?? draft.company?.location ?? p?.company?.location ?? "",
+            websiteUrl: nextWebsiteUrl,
           },
         };
       });
@@ -376,6 +407,7 @@ export default function BrandDetail() {
   const logoData = brand?.logo || {};
   const company = brand?.company || {};
   const brandName = brand?.name || "—";
+  const websiteUrl = company?.websiteUrl || brand?.websiteUrl || "";
 
   const iconOptions = MATERIAL_ICON_SUGGESTIONS.filter((x) =>
     !iconSearch ? true : x.toLowerCase().includes(iconSearch.toLowerCase())
@@ -396,13 +428,25 @@ export default function BrandDetail() {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate(`/brands/${brandId}/templates`)}
-          className="h-11 px-5 rounded-2xl bg-gradient-to-r from-[#007ab3] to-[#005f8c] text-white text-sm font-black shadow-lg shadow-[#007ab3]/20 hover:brightness-105 transition inline-flex items-center justify-center gap-2"
-        >
-          <MIcon name="view_list" className="text-[20px]" />
-          {t("brandDetailViewAllTemplates")}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {websiteUrl ? (
+            <button
+              onClick={() => window.open(websiteUrl, "_blank", "noopener,noreferrer")}
+              className="h-11 px-5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm font-black hover:bg-[#007ab3]/10 hover:text-[#007ab3] transition inline-flex items-center justify-center gap-2"
+            >
+              <MIcon name="open_in_new" className="text-[20px]" />
+              Visit Website
+            </button>
+          ) : null}
+
+          <button
+            onClick={() => navigate(`/brands/${brandId}/templates`)}
+            className="h-11 px-5 rounded-2xl bg-gradient-to-r from-[#007ab3] to-[#005f8c] text-white text-sm font-black shadow-lg shadow-[#007ab3]/20 hover:brightness-105 transition inline-flex items-center justify-center gap-2"
+          >
+            <MIcon name="view_list" className="text-[20px]" />
+            {t("brandDetailViewAllTemplates")}
+          </button>
+        </div>
       </div>
 
       <section className="space-y-5">
@@ -561,6 +605,7 @@ export default function BrandDetail() {
               <InfoBox icon="chat" label={t("brandDetailWhatsapp")} value={company?.whatsapp} />
               <InfoBox icon="mail" label={t("brandDetailEmail")} value={company?.email} />
               <InfoBox icon="location_on" label={t("brandDetailLocation")} value={company?.location} />
+              <InfoBox icon="language" label="Website URL" value={websiteUrl} href={websiteUrl} />
             </div>
           </div>
 
@@ -583,179 +628,40 @@ export default function BrandDetail() {
         </div>
       </section>
 
-      {/* Keep your existing modal contents below if needed */}
-   
-
-      {/* Modals */}
-      <Modal
-        open={openColors}
-        title={t("brandDetailUpdateBrandColors")}
-        onClose={() => setOpenColors(false)}
-      >
+      <Modal open={openColors} title={t("brandDetailUpdateBrandColors")} onClose={() => setOpenColors(false)}>
         <div className="space-y-4">
-          <div>
-            <div className="text-xs font-bold text-zinc-600 mb-1">
-              {t("brandDetailAccentColor")}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={draft?.accentColor || "#2ec2b3"}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, accentColor: e.target.value }))
-                }
-                className="w-12 h-10 p-0 border border-zinc-200 rounded"
-              />
-
-              <input
-                value={draft?.accentColor || ""}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, accentColor: e.target.value }))
-                }
-                placeholder="#2ec2b3"
-                className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="text-xs font-bold text-zinc-600 mb-1">
-              {t("brandDetailPrimaryColor")}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={draft?.primaryColor || "#2ec2b3"}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, primaryColor: e.target.value }))
-                }
-                className="w-12 h-10 p-0 border border-zinc-200 rounded"
-              />
-
-              <input
-                value={draft?.primaryColor || ""}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, primaryColor: e.target.value }))
-                }
-                placeholder="#2ec2b3"
-                className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setOpenColors(false)}
-              className="h-10 px-4 rounded-lg border border-zinc-200 text-sm"
-            >
+          <Field label={t("brandDetailAccentColor")} value={draft?.accentColor || ""} onChange={(v) => setDraft((d) => ({ ...d, accentColor: v }))} placeholder="#2ec2b3" />
+          <Field label={t("brandDetailPrimaryColor")} value={draft?.primaryColor || ""} onChange={(v) => setDraft((d) => ({ ...d, primaryColor: v }))} placeholder="#2ec2b3" />
+          <div className="flex justify-end">
+            <button onClick={() => setOpenColors(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
               {t("brandDetailDone")}
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={openFonts}
-        title={t("brandDetailUpdateTypography")}
-        onClose={() => setOpenFonts(false)}
-      >
+      <Modal open={openFonts} title={t("brandDetailUpdateTypography")} onClose={() => setOpenFonts(false)}>
         <div className="space-y-4">
-          <div>
-            <div className="text-xs font-bold text-zinc-600 mb-1">
-              {t("brandDetailFontFamily")}
-            </div>
-
-            <input
-              value={draft?.typography?.family || ""}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  typography: {
-                    ...(d?.typography || {}),
-                    family: e.target.value,
-                  },
-                }))
-              }
-              placeholder="Inter"
-              className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-            />
-          </div>
-
-          <div>
-            <div className="text-xs font-bold text-zinc-600 mb-1">
-              {t("brandDetailGoogleFontUrl")}
-            </div>
-
-            <input
-              value={draft?.typography?.googleUrl || ""}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  typography: {
-                    ...(d?.typography || {}),
-                    googleUrl: e.target.value,
-                  },
-                }))
-              }
-              placeholder="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-              className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-            />
-          </div>
-
-          <div>
-            <div className="text-xs font-bold text-zinc-600 mb-1">
-              {t("brandDetailIconsUrlOptional")}
-            </div>
-
-            <input
-              value={draft?.typography?.iconsUrl || ""}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  typography: {
-                    ...(d?.typography || {}),
-                    iconsUrl: e.target.value,
-                  },
-                }))
-              }
-              placeholder="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-              className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setOpenFonts(false)}
-              className="h-10 px-4 rounded-lg border border-zinc-200 text-sm"
-            >
+          <Field label={t("brandDetailFontFamily")} value={draft?.typography?.family || ""} onChange={(v) => setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), family: v } }))} placeholder="Inter" />
+          <Field label={t("brandDetailGoogleFontUrl")} value={draft?.typography?.googleUrl || ""} onChange={(v) => setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), googleUrl: v } }))} placeholder="https://fonts.googleapis.com/..." />
+          <Field label={t("brandDetailIconsUrlOptional")} value={draft?.typography?.iconsUrl || ""} onChange={(v) => setDraft((d) => ({ ...d, typography: { ...(d?.typography || {}), iconsUrl: v } }))} placeholder="https://fonts.googleapis.com/..." />
+          <div className="flex justify-end">
+            <button onClick={() => setOpenFonts(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
               {t("brandDetailDone")}
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={openLogo}
-        title={t("brandDetailUpdateLogo")}
-        onClose={() => setOpenLogo(false)}
-      >
+      <Modal open={openLogo} title={t("brandDetailUpdateLogo")} onClose={() => setOpenLogo(false)}>
         <div className="space-y-4">
-          <div className="text-xs font-bold text-zinc-600 mb-1">
-            {t("brandDetailLogoType")}
-          </div>
+          <div className="text-xs font-bold text-zinc-600 mb-1">{t("brandDetailLogoType")}</div>
 
           <div className="flex gap-2">
             {["material", "emoji", "image"].map((logoType) => (
               <button
                 key={logoType}
-                onClick={() =>
-                  setDraft((d) => ({
-                    ...d,
-                    logo: { ...(d?.logo || {}), type: logoType },
-                  }))
-                }
+                onClick={() => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), type: logoType } }))}
                 className={[
                   "h-10 px-4 rounded-lg border text-sm font-semibold",
                   (draft?.logo?.type || "material") === logoType
@@ -770,182 +676,99 @@ export default function BrandDetail() {
 
           {draft?.logo?.type === "material" ? (
             <>
-              <div className="text-xs font-bold text-zinc-600 mb-1">
-                {t("brandDetailMaterialIcon")}
-              </div>
-
-              <input
-                value={iconSearch}
-                onChange={(e) => setIconSearch(e.target.value)}
-                placeholder={t("brandDetailSearchIconPlaceholder")}
-                className="w-full h-10 px-3 rounded-lg border border-zinc-200 text-sm"
-              />
+              <Field label={t("brandDetailSearchIconPlaceholder")} value={iconSearch} onChange={setIconSearch} placeholder="search icon" />
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
                 {iconOptions.map((ic) => (
                   <button
                     key={ic}
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        logo: { ...(d?.logo || {}), value: ic },
-                      }))
-                    }
+                    onClick={() => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: ic } }))}
                     className={[
                       "h-12 rounded-xl border flex items-center justify-center gap-2 text-sm",
-                      draft?.logo?.value === ic
-                        ? "border-zinc-900"
-                        : "border-zinc-200 hover:bg-zinc-50",
+                      draft?.logo?.value === ic ? "border-zinc-900" : "border-zinc-200 hover:bg-zinc-50",
                     ].join(" ")}
                     title={ic}
                   >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {ic}
-                    </span>
+                    <span className="material-symbols-outlined text-[20px]">{ic}</span>
                   </button>
                 ))}
-              </div>
-
-              <div className="text-xs text-zinc-500 mt-2">
-                {t("brandDetailSelected")}:{" "}
-                <span className="font-semibold text-zinc-800">
-                  {draft?.logo?.value || "—"}
-                </span>
               </div>
             </>
           ) : null}
 
           {draft?.logo?.type === "emoji" ? (
-            <Field
-              label={t("brandDetailEmoji")}
-              value={draft?.logo?.value || ""}
-              onChange={(v) =>
-                setDraft((d) => ({
-                  ...d,
-                  logo: { ...(d?.logo || {}), value: v },
-                }))
-              }
-              placeholder="🐾"
-            />
+            <Field label={t("brandDetailEmoji")} value={draft?.logo?.value || ""} onChange={(v) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: v } }))} placeholder="🐾" />
           ) : null}
 
           {draft?.logo?.type === "image" ? (
-            <>
-              <Field
-                label={t("brandDetailImageUrl")}
-                value={draft?.logo?.value || ""}
-                onChange={(v) =>
-                  setDraft((d) => ({
-                    ...d,
-                    logo: { ...(d?.logo || {}), value: v },
-                  }))
-                }
-                placeholder="https://.../logo.png"
-              />
-
-              <div className="text-xs text-zinc-500">
-                {t("brandDetailImageUploadNote")}
-              </div>
-            </>
+            <Field label={t("brandDetailImageUrl")} value={draft?.logo?.value || ""} onChange={(v) => setDraft((d) => ({ ...d, logo: { ...(d?.logo || {}), value: v } }))} placeholder="https://.../logo.png" />
           ) : null}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setOpenLogo(false)}
-              className="h-10 px-4 rounded-lg border border-zinc-200 text-sm"
-            >
+          <div className="flex justify-end">
+            <button onClick={() => setOpenLogo(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
               {t("brandDetailDone")}
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={openCompany}
-        title={t("brandDetailCompanyDetails")}
-        onClose={() => setOpenCompany(false)}
-      >
+      <Modal open={openCompany} title={t("brandDetailCompanyDetails")} onClose={() => setOpenCompany(false)}>
         <div className="space-y-4">
           <Field
             label={t("brandDetailCompanyName")}
             value={draft?.company?.name || ""}
-            onChange={(v) =>
-              setDraft((d) => ({
-                ...d,
-                company: { ...(d?.company || {}), name: v },
-              }))
-            }
-            placeholder="Umair Trust Life"
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), name: v } }))}
+            placeholder="Allianz 3"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
               label={t("brandDetailPhone")}
               value={draft?.company?.phone || ""}
-              onChange={(v) =>
-                setDraft((d) => ({
-                  ...d,
-                  company: { ...(d?.company || {}), phone: v },
-                }))
-              }
-              placeholder="+92 3xx xxxxxxx"
+              onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), phone: v } }))}
+              placeholder="+49 ..."
             />
 
             <Field
               label={t("brandDetailWhatsapp")}
               value={draft?.company?.whatsapp || ""}
-              onChange={(v) =>
-                setDraft((d) => ({
-                  ...d,
-                  company: { ...(d?.company || {}), whatsapp: v },
-                }))
-              }
-              placeholder="+92 3xx xxxxxxx"
+              onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), whatsapp: v } }))}
+              placeholder="+49 ..."
             />
           </div>
 
           <Field
             label={t("brandDetailEmail")}
             value={draft?.company?.email || ""}
-            onChange={(v) =>
-              setDraft((d) => ({
-                ...d,
-                company: { ...(d?.company || {}), email: v },
-              }))
-            }
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), email: v } }))}
             placeholder="support@domain.com"
           />
 
           <Field
             label={t("brandDetailLocation")}
             value={draft?.company?.location || ""}
-            onChange={(v) =>
-              setDraft((d) => ({
-                ...d,
-                company: { ...(d?.company || {}), location: v },
-              }))
-            }
-            placeholder="Karachi, Pakistan"
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), location: v } }))}
+            placeholder="Germany"
+          />
+
+          <Field
+            label="Website URL"
+            value={draft?.company?.websiteUrl || ""}
+            onChange={(v) => setDraft((d) => ({ ...d, company: { ...(d?.company || {}), websiteUrl: v } }))}
+            placeholder="https://digitraffic.de"
           />
 
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setOpenCompany(false)}
-              className="h-10 px-4 rounded-lg border border-zinc-200 text-sm"
-            >
+            <button onClick={() => setOpenCompany(false)} className="h-10 px-4 rounded-lg border border-zinc-200 text-sm">
               {t("brandDetailCancel")}
             </button>
 
-            <button
-              disabled={saving}
-              onClick={saveVariables}
-              className="h-10 px-5 rounded-lg bg-zinc-900 text-white text-sm font-semibold hover:bg-zinc-800 disabled:opacity-60"
-            >
+            <button disabled={saving} onClick={saveVariables} className="h-10 px-5 rounded-lg bg-zinc-900 text-white text-sm font-semibold hover:bg-zinc-800 disabled:opacity-60">
               {saving ? t("brandDetailSaving") : t("brandDetailSave")}
             </button>
           </div>
         </div>
       </Modal>
-     </div>
+    </div>
   );
 }

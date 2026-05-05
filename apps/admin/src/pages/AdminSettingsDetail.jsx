@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
-import MIcon from "../components/MIcon";
 import { apiFetch } from "../lib/auth";
 
 const MODULES = [
-  { key: "overview", label: "Overview" },
-  { key: "brands", label: "Brands" },
-  { key: "main_website", label: "Main Website" },
-  { key: "generate_brand", label: "Generate Brand" },
-  { key: "support_chat", label: "Support Chat" },
-  { key: "blogs", label: "Blogs" },
-  { key: "blog_categories", label: "Blog Categories" },
-  { key: "blog_settings", label: "Blog Settings" },
-  { key: "module_settings", label: "Module Settings" },
-  { key: "admin_settings", label: "Admin Settings" },
-  { key: "website_settings", label: "Website Settings" },
-  { key: "brand_unique_pages", label: "Brand Unique Pages" },
-  { key: "brand_inner_pages", label: "Brand Inner Pages" },
+  { key: "overview", labelKey: "overview" },
+  { key: "brands", labelKey: "brands" },
+  { key: "main_website", labelKey: "adminModuleMainWebsite" },
+  { key: "generate_brand", labelKey: "adminModuleGenerateBrand" },
+  { key: "support_chat", labelKey: "supportChat" },
+  { key: "blogs", labelKey: "blogs" },
+  { key: "blog_categories", labelKey: "blogCategories" },
+  { key: "blog_settings", labelKey: "adminModuleBlogSettings" },
+  { key: "module_settings", labelKey: "adminModuleModuleSettings" },
+  { key: "admin_settings", labelKey: "adminSettingsTitle" },
+  { key: "website_settings", labelKey: "adminModuleWebsiteSettings" },
+  { key: "brand_unique_pages", labelKey: "brandUniquePages" },
+  { key: "brand_inner_pages", labelKey: "brandInnerPages" },
 ];
 
 function Toggle({ checked, onChange }) {
@@ -40,6 +40,7 @@ function Toggle({ checked, onChange }) {
 }
 
 export default function AdminSettingsDetail() {
+  const { t } = useTranslation();
   const { email: encodedEmail } = useParams();
   const email = decodeURIComponent(encodedEmail || "").toLowerCase();
 
@@ -54,13 +55,13 @@ export default function AdminSettingsDetail() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to load permissions");
+        throw new Error(json?.message || t("adminSettingsFailedPermissions"));
       }
 
       const rows = Array.isArray(json.permissions) ? json.permissions : [];
       setPermissions(rows.filter((p) => String(p.email).toLowerCase() === email));
     } catch (e) {
-      alert(e.message || "Failed to load permissions");
+      alert(e.message || t("adminSettingsFailedPermissions"));
     } finally {
       setLoading(false);
     }
@@ -114,10 +115,10 @@ export default function AdminSettingsDetail() {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || "Failed to save");
+        throw new Error(json?.message || t("adminSettingsFailedSaveGeneric"));
       }
     } catch (e) {
-      alert(e.message || "Failed to save");
+      alert(e.message || t("adminSettingsFailedSaveGeneric"));
       load();
     } finally {
       setSavingKey("");
@@ -137,19 +138,21 @@ export default function AdminSettingsDetail() {
     <div className="space-y-8">
       <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
         <Link to="/admin-settings" className="text-sm font-bold text-[#007ab3]">
-          ← Back to Admin Settings
+          {t("adminSettingsBack")}
         </Link>
 
         <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.2em] text-[#007ab3]">
-              Admin Permission Detail
+              {t("adminSettingsDetailTitle")}
             </div>
+
             <h1 className="mt-1 text-2xl font-black text-gray-950 dark:text-white">
               {email}
             </h1>
+
             <p className="mt-1 text-sm text-slate-500">
-              {enabledCount} modules enabled for this admin.
+              {t("adminSettingsModulesEnabled", { count: enabledCount })}
             </p>
           </div>
         </div>
@@ -159,12 +162,24 @@ export default function AdminSettingsDetail() {
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50 text-left dark:border-white/10 dark:bg-slate-950/60">
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Module</th>
-              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">View</th>
-              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">Create</th>
-              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">Edit</th>
-              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">Delete</th>
-              <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.16em] text-slate-400">Status</th>
+              <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {t("adminSettingsModule")}
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {t("adminSettingsView")}
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {t("adminSettingsCreate")}
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {t("adminSettingsEdit")}
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {t("adminSettingsDelete")}
+              </th>
+              <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {t("adminSettingsStatus")}
+              </th>
             </tr>
           </thead>
 
@@ -172,7 +187,7 @@ export default function AdminSettingsDetail() {
             {loading ? (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center text-sm text-slate-500">
-                  Loading permissions...
+                  {t("adminSettingsLoadingPermissions")}
                 </td>
               </tr>
             ) : (
@@ -183,7 +198,7 @@ export default function AdminSettingsDetail() {
                   <tr key={module.key} className="hover:bg-[#007ab3]/5">
                     <td className="px-6 py-5">
                       <div className="text-sm font-black text-gray-950 dark:text-white">
-                        {module.label}
+                        {t(module.labelKey)}
                       </div>
                       <div className="mt-1 text-xs font-semibold text-slate-400">
                         {module.key}
@@ -202,15 +217,15 @@ export default function AdminSettingsDetail() {
                     <td className="px-6 py-5 text-right">
                       {savingKey === module.key ? (
                         <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black uppercase text-amber-700">
-                          Saving...
+                          {t("adminSettingsSaving")}
                         </span>
                       ) : row.can_view ? (
                         <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-black uppercase text-green-700">
-                          Enabled
+                          {t("adminSettingsEnabled")}
                         </span>
                       ) : (
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase text-slate-500">
-                          Disabled
+                          {t("adminSettingsDisabled")}
                         </span>
                       )}
                     </td>
