@@ -39,6 +39,12 @@ dotenv.config();
 ========================= */
 const app = express();
 app.use(express.json({ limit: "10mb" }));
+
+// ✅ CORS FIRST (VERY IMPORTANT)
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// ✅ THEN routes
 app.use(adminAiVision);
 app.use(adminAiContentRoutes({ authMiddleware }));
 app.use(adminAiThemeRoutes({ authMiddleware }));
@@ -55,7 +61,6 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .filter(Boolean);
 
 const allowVercelWildcard = process.env.ALLOW_VERCEL_WILDCARD === "true";
-const visiblePages = await fetch(`/public/${slug}/website-settings`)
 
 const corsOptions = {
   origin: (origin, cb) => {
@@ -89,8 +94,7 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ preflight
+
 const PORT = Number(process.env.PORT || process.env.API_PORT || 5050);
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
