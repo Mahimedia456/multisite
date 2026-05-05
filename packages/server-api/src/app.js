@@ -133,6 +133,7 @@ const MODULE_LABELS = {
   website_settings: "Website Settings",
   brand_unique_pages: "Brand Unique Pages",
   brand_inner_pages: "Brand Inner Pages",
+  settings: "Settings",
 };
 
 const SUPABASE_URL = process.env.SUPABASE_URL;

@@ -12,13 +12,7 @@ const MAIN_NAV_ITEMS = [
   { to: "/support-chat", label: "Support Chat", translationKey: "supportChat", icon: "forum" },
   { to: "/blogs", label: "Blogs", translationKey: "blogs", icon: "article" },
   { to: "/blog-categories", label: "Blog Categories", translationKey: "blogCategories", icon: "category" },
-];
-
-const SETTINGS_NAV_ITEMS = [
-  { to: "/admin-settings", label: "Admin Settings", translationKey: "adminSettings", icon: "manage_accounts" },
-  { to: "/settings/modules", label: "Module Settings", translationKey: "moduleSettings", icon: "settings" },
-  { to: "/website-settings", label: "Website Settings", translationKey: "websiteSettings", icon: "language" },
-  { to: "/blog-settings", label: "Blog Settings", translationKey: "blogSettings", icon: "admin_panel_settings" },
+  { to: "/settings", label: "Settings", translationKey: "settings", icon: "settings" },
 ];
 
 function hasPermission(user, label) {
@@ -54,8 +48,7 @@ export default function AdminSidebar({ collapsed = false, setCollapsed }) {
   const { t } = useTranslation();
   const user = getCurrentUser();
 
-  const mainNav = MAIN_NAV_ITEMS.filter((item) => hasPermission(user, item.label));
-  const settingsNav = SETTINGS_NAV_ITEMS.filter((item) =>
+  const mainNav = MAIN_NAV_ITEMS.filter((item) =>
     hasPermission(user, item.label)
   );
 
@@ -118,25 +111,6 @@ export default function AdminSidebar({ collapsed = false, setCollapsed }) {
               t={t}
             />
           ))}
-
-          {settingsNav.length > 0 && (
-            <>
-              {!collapsed && (
-                <div className="px-4 pb-2 pt-5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                  Settings
-                </div>
-              )}
-
-              {settingsNav.map((item) => (
-                <SidebarLink
-                  key={item.label}
-                  item={item}
-                  collapsed={collapsed}
-                  t={t}
-                />
-              ))}
-            </>
-          )}
         </nav>
       </div>
 
