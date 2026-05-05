@@ -7,7 +7,6 @@ export default function adminSettingsRoutes({ pool, authMiddleware, wrap }) {
     return String(req.user?.role || "").toLowerCase() === "admin";
   }
 
-  // ✅ GET all admin permissions
   router.get(
     "/admin/admin-settings",
     authMiddleware,
@@ -17,15 +16,23 @@ export default function adminSettingsRoutes({ pool, authMiddleware, wrap }) {
       }
 
       const adminsQ = await pool.query(`
-        select id, email, role
+        select id, email, role, created_at
         from admins
+        where lower(coalesce(role,'')) = 'admin'
         order by email asc
       `);
 
       const permissionsQ = await pool.query(`
-        select *
+        select
+          lower(email) as email,
+          module_key,
+          coalesce(can_view,false) as can_view,
+          coalesce(can_create,false) as can_create,
+          coalesce(can_edit,false) as can_edit,
+          coalesce(can_delete,false) as can_delete,
+          updated_at
         from admin_module_permissions
-        order by email asc, module_key asc
+        order by lower(email) asc, module_key asc
       `);
 
       res.json({
@@ -36,7 +43,6 @@ export default function adminSettingsRoutes({ pool, authMiddleware, wrap }) {
     })
   );
 
-  // ✅ PUT update permission
   router.put(
     "/admin/admin-settings/:email/:moduleKey",
     authMiddleware,
@@ -70,8 +76,8 @@ export default function adminSettingsRoutes({ pool, authMiddleware, wrap }) {
         returning *
         `,
         [
-          email.toLowerCase(),
-          moduleKey,
+          String(email).toLowerCase(),
+          String(moduleKey).trim(),
           Boolean(body.can_view),
           Boolean(body.can_create),
           Boolean(body.can_edit),

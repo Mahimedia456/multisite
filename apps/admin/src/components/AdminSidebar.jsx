@@ -17,8 +17,8 @@ const MAIN_NAV_ITEMS = [
 const SETTINGS_NAV_ITEMS = [
   { to: "/admin-settings", label: "Admin Settings", translationKey: "adminSettings", icon: "manage_accounts" },
   { to: "/settings/modules", label: "Module Settings", translationKey: "moduleSettings", icon: "settings" },
+  { to: "/website-settings", label: "Website Settings", translationKey: "websiteSettings", icon: "language" },
   { to: "/blog-settings", label: "Blog Settings", translationKey: "blogSettings", icon: "admin_panel_settings" },
-{ to: "/website-settings", label: "Website Settings", translationKey: "websiteSettings", icon: "language" },
 ];
 
 function hasPermission(user, label) {
