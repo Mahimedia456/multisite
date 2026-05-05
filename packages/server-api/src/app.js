@@ -821,27 +821,26 @@ async function getPermissionsForUser({ role, email, brandSlug, pool }) {
     return Array.from(new Set(["Overview", "Brands", ...dynamicPermissions]));
   }
 
-  if (role === "admin") {
-    const { rows } = await pool.query(
-      `
-      select p.module_key
-      from admin_module_permissions p
-      join admins a on a.id = p.admin_id
-      where lower(a.email) = $1
-        and p.can_view = true
-      order by p.module_key asc
-      `,
-      [lowerEmail]
-    );
+if (role === "admin") {
+  const { rows } = await pool.query(
+    `
+    select module_key
+    from admin_module_permissions
+    where lower(email) = $1
+      and can_view = true
+    order by module_key asc
+    `,
+    [lowerEmail]
+  );
 
-    if (rows.length) {
-      return rows
-        .map((r) => MODULE_LABELS[r.module_key] || r.module_key)
-        .filter(Boolean);
-    }
-
-    return ["Overview", "Brands", "Main Website"];
+  if (rows.length) {
+    return rows
+      .map((r) => MODULE_LABELS[r.module_key] || r.module_key)
+      .filter(Boolean);
   }
+
+  return ["Overview", "Brands", "Main Website"];
+}
 
   return ["Overview"];
 }
