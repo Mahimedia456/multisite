@@ -797,18 +797,6 @@ app.post(
    - Handles preflight
 ========================= */
 
-const MODULE_LABELS = {
-  overview: "Overview",
-  brands: "Brands",
-  main_website: "Main Website",
-  generate_brand: "Generate Brand",
-  support_chat: "Support Chat",
-  blogs: "Blogs",
-  blog_settings: "Blog Settings",
-  blog_categories: "Blog Categories",
-  brand_unique_pages: "Brand Unique Pages",
-  brand_inner_pages: "Brand Inner Pages",
-};
 
 async function getPermissionsForUser({ role, email, brandSlug, pool }) {
   const lowerEmail = String(email || "").toLowerCase();
