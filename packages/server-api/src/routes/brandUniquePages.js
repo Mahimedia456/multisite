@@ -1,30 +1,37 @@
 import express from "express";
 
-export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isUuid, normalizeStatus }) {
+export default function brandUniquePagesRoutes({
+  pool,
+  authMiddleware,
+  wrap,
+  isUuid,
+  normalizeStatus,
+}) {
   const router = express.Router();
 
   router.get(
     "/admin/brand-unique-pages/brands",
     authMiddleware,
     wrap(async (req, res) => {
-     const { rows } = await pool.query(`
-  SELECT
-    id,
-    name,
-    slug,
-    route,
-    status,
-    website_url as "websiteUrl",
-    company_name as "companyName",
-    company_phone as "companyPhone",
-    company_email as "companyEmail",
-    company_location as "companyLocation",
-    support_email as "supportEmail",
-    updated_at as "updatedAt"
-  FROM brands
-  ORDER BY updated_at DESC NULLS LAST, name ASC
-`);
-      res.json({ ok: true, data: rows });
+      const { rows } = await pool.query(`
+        SELECT
+          id,
+          name,
+          slug,
+          route,
+          status,
+          website_url as "websiteUrl",
+          company_name as "companyName",
+          company_phone as "companyPhone",
+          company_email as "companyEmail",
+          company_location as "companyLocation",
+          support_email as "supportEmail",
+          updated_at as "updatedAt"
+        FROM brands
+        ORDER BY updated_at DESC NULLS LAST, name ASC
+      `);
+
+      return res.json({ ok: true, data: rows });
     })
   );
 
@@ -33,12 +40,29 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
     authMiddleware,
     wrap(async (req, res) => {
       const { brandId } = req.params;
+
       if (!isUuid(brandId)) {
         return res.status(400).json({ ok: false, message: "Invalid brandId" });
       }
 
       const brandQ = await pool.query(
-        `SELECT id, name, slug, route, status FROM brands WHERE id=$1 LIMIT 1`,
+        `
+        SELECT
+          id,
+          name,
+          slug,
+          route,
+          status,
+          website_url as "websiteUrl",
+          company_name as "companyName",
+          company_phone as "companyPhone",
+          company_email as "companyEmail",
+          company_location as "companyLocation",
+          support_email as "supportEmail"
+        FROM brands
+        WHERE id = $1
+        LIMIT 1
+        `,
         [brandId]
       );
 
@@ -46,28 +70,30 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         return res.status(404).json({ ok: false, message: "Brand not found" });
       }
 
-     const brandQ = await pool.query(
-  `
-  SELECT
-    id,
-    name,
-    slug,
-    route,
-    status,
-    website_url as "websiteUrl",
-    company_name as "companyName",
-    company_phone as "companyPhone",
-    company_email as "companyEmail",
-    company_location as "companyLocation",
-    support_email as "supportEmail"
-  FROM brands
-  WHERE id=$1
-  LIMIT 1
-  `,
-  [brandId]
-);
+      const pagesQ = await pool.query(
+        `
+        SELECT
+          id,
+          brand_id as "brandId",
+          slug,
+          title,
+          status,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM brand_unique_pages
+        WHERE brand_id = $1
+        ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+        `,
+        [brandId]
+      );
 
-      res.json({ ok: true, data: { brand: brandQ.rows[0], pages: rows } });
+      return res.json({
+        ok: true,
+        data: {
+          brand: brandQ.rows[0],
+          pages: pagesQ.rows,
+        },
+      });
     })
   );
 
@@ -83,6 +109,7 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
       }
 
       const cleanSlug = String(slug || "").trim().toLowerCase();
+
       if (!cleanSlug) {
         return res.status(400).json({ ok: false, message: "slug is required" });
       }
@@ -95,7 +122,10 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         INSERT INTO brand_unique_pages (brand_id, slug, title, status, updated_at)
         VALUES ($1, $2, $3, $4, NOW())
         ON CONFLICT (brand_id, slug)
-        DO UPDATE SET title = EXCLUDED.title, updated_at = NOW()
+        DO UPDATE SET
+          title = EXCLUDED.title,
+          status = EXCLUDED.status,
+          updated_at = NOW()
         RETURNING *
         `,
         [brandId, cleanSlug, pageTitle, nextStatus]
@@ -105,7 +135,13 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
 
       const versionQ = await pool.query(
         `
-        INSERT INTO brand_unique_page_versions (page_id, version, content, status, created_by)
+        INSERT INTO brand_unique_page_versions (
+          page_id,
+          version,
+          content,
+          status,
+          created_by
+        )
         VALUES ($1, 1, $2, $3, $4)
         ON CONFLICT (page_id, version)
         DO NOTHING
@@ -119,7 +155,13 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         ]
       );
 
-      res.json({ ok: true, data: { page, version: versionQ.rows[0] || null } });
+      return res.json({
+        ok: true,
+        data: {
+          page,
+          version: versionQ.rows[0] || null,
+        },
+      });
     })
   );
 
@@ -128,40 +170,49 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
     authMiddleware,
     wrap(async (req, res) => {
       const { pageId } = req.params;
+
       if (!isUuid(pageId)) {
         return res.status(400).json({ ok: false, message: "Invalid pageId" });
       }
 
- const pageQ = await pool.query(
-  `
-  SELECT
-    p.*,
-    b.name as "brandName",
-    b.slug as "brandSlug",
-    b.website_url as "brandPreviewUrl"
-  FROM brand_unique_pages p
-  JOIN brands b ON b.id = p.brand_id
-  WHERE p.id=$1
-  LIMIT 1
-  `,
-  [pageId]
-);
+      const pageQ = await pool.query(
+        `
+        SELECT
+          p.*,
+          b.name as "brandName",
+          b.slug as "brandSlug",
+          b.website_url as "brandPreviewUrl"
+        FROM brand_unique_pages p
+        JOIN brands b ON b.id = p.brand_id
+        WHERE p.id = $1
+        LIMIT 1
+        `,
+        [pageId]
+      );
+
       if (!pageQ.rows.length) {
         return res.status(404).json({ ok: false, message: "Page not found" });
       }
 
       const latestQ = await pool.query(
         `
-        SELECT id, page_id, version, content, status, created_at, created_by
+        SELECT
+          id,
+          page_id,
+          version,
+          content,
+          status,
+          created_at,
+          created_by
         FROM brand_unique_page_versions
-        WHERE page_id=$1
+        WHERE page_id = $1
         ORDER BY version DESC
         LIMIT 1
         `,
         [pageId]
       );
 
-      res.json({
+      return res.json({
         ok: true,
         data: {
           page: pageQ.rows[0],
@@ -183,11 +234,13 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
       }
 
       if (!content || typeof content !== "object") {
-        return res.status(400).json({ ok: false, message: "content object is required" });
+        return res
+          .status(400)
+          .json({ ok: false, message: "content object is required" });
       }
 
       const pageQ = await pool.query(
-        `SELECT id FROM brand_unique_pages WHERE id=$1 LIMIT 1`,
+        `SELECT id FROM brand_unique_pages WHERE id = $1 LIMIT 1`,
         [pageId]
       );
 
@@ -199,7 +252,7 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         `
         SELECT COALESCE(MAX(version), 0) + 1 as version
         FROM brand_unique_page_versions
-        WHERE page_id=$1
+        WHERE page_id = $1
         `,
         [pageId]
       );
@@ -209,23 +262,35 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
 
       const createdQ = await pool.query(
         `
-        INSERT INTO brand_unique_page_versions (page_id, version, content, status, created_by)
+        INSERT INTO brand_unique_page_versions (
+          page_id,
+          version,
+          content,
+          status,
+          created_by
+        )
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *
         `,
-        [pageId, version, content, nextStatus, isUuid(req.user?.id) ? req.user.id : null]
+        [
+          pageId,
+          version,
+          content,
+          nextStatus,
+          isUuid(req.user?.id) ? req.user.id : null,
+        ]
       );
 
       await pool.query(
         `
         UPDATE brand_unique_pages
-        SET status=$2, updated_at=NOW()
-        WHERE id=$1
+        SET status = $2, updated_at = NOW()
+        WHERE id = $1
         `,
         [pageId, nextStatus]
       );
 
-      res.json({ ok: true, data: createdQ.rows[0] });
+      return res.json({ ok: true, data: createdQ.rows[0] });
     })
   );
 
@@ -235,8 +300,25 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
       const brandSlug = String(req.params.brandSlug || "").trim().toLowerCase();
       const pageSlug = String(req.params.pageSlug || "").trim().toLowerCase();
 
+      if (!brandSlug || !pageSlug) {
+        return res
+          .status(400)
+          .json({ ok: false, message: "brandSlug and pageSlug are required" });
+      }
+
       const brandQ = await pool.query(
-        `SELECT id, name, slug FROM brands WHERE LOWER(slug)=$1 LIMIT 1`,
+        `
+        SELECT
+          id,
+          name,
+          slug,
+          route,
+          status,
+          website_url as "websiteUrl"
+        FROM brands
+        WHERE LOWER(slug) = $1
+        LIMIT 1
+        `,
         [brandSlug]
       );
 
@@ -244,15 +326,25 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
         return res.status(404).json({ ok: false, message: "Brand not found" });
       }
 
-  const brandQ = await pool.query(
-  `
-  SELECT id, name, slug, route, status, website_url as "websiteUrl"
-  FROM brands
-  WHERE id=$1
-  LIMIT 1
-  `,
-  [brandId]
-);
+      const brand = brandQ.rows[0];
+
+      const pageQ = await pool.query(
+        `
+        SELECT
+          id,
+          brand_id,
+          slug,
+          title,
+          status,
+          created_at,
+          updated_at
+        FROM brand_unique_pages
+        WHERE brand_id = $1
+          AND LOWER(slug) = $2
+        LIMIT 1
+        `,
+        [brand.id, pageSlug]
+      );
 
       if (!pageQ.rows.length) {
         return res.status(404).json({ ok: false, message: "Page not found" });
@@ -260,19 +352,25 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
 
       const versionQ = await pool.query(
         `
-        SELECT id, version, content, status, created_at
+        SELECT
+          id,
+          version,
+          content,
+          status,
+          created_at
         FROM brand_unique_page_versions
-        WHERE page_id=$1 AND status='PUBLISHED'
+        WHERE page_id = $1
+          AND status = 'PUBLISHED'
         ORDER BY version DESC
         LIMIT 1
         `,
         [pageQ.rows[0].id]
       );
 
-      res.json({
+      return res.json({
         ok: true,
         data: {
-          brand: brandQ.rows[0],
+          brand,
           page: pageQ.rows[0],
           latestVersion: versionQ.rows[0] || null,
         },
@@ -280,7 +378,7 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
     })
   );
 
-    router.get(
+  router.get(
     "/public/brand-unique-pages/preview",
     wrap(async (req, res) => {
       const pageId = String(req.query.pageId || "").trim();
@@ -303,10 +401,11 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
             p.status,
             b.id as "brandId",
             b.name as "brandName",
-            b.slug as "brandSlug"
+            b.slug as "brandSlug",
+            b.website_url as "brandPreviewUrl"
           FROM brand_unique_pages p
           JOIN brands b ON b.id = p.brand_id
-          WHERE p.id=$1
+          WHERE p.id = $1
           LIMIT 1
           `,
           [pageId]
@@ -328,10 +427,12 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
             p.status,
             b.id as "brandId",
             b.name as "brandName",
-            b.slug as "brandSlug"
+            b.slug as "brandSlug",
+            b.website_url as "brandPreviewUrl"
           FROM brand_unique_pages p
           JOIN brands b ON b.id = p.brand_id
-          WHERE LOWER(b.slug)=$1 AND LOWER(p.slug)=$2
+          WHERE LOWER(b.slug) = $1
+            AND LOWER(p.slug) = $2
           LIMIT 1
           `,
           [brandSlug, pageSlug]
@@ -346,9 +447,16 @@ export default function brandUniquePagesRoutes({ pool, authMiddleware, wrap, isU
 
       const versionQ = await pool.query(
         `
-        SELECT id, page_id, version, content, status, created_at, created_by
+        SELECT
+          id,
+          page_id,
+          version,
+          content,
+          status,
+          created_at,
+          created_by
         FROM brand_unique_page_versions
-        WHERE page_id=$1
+        WHERE page_id = $1
         ORDER BY version DESC
         LIMIT 1
         `,

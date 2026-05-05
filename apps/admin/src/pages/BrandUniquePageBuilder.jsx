@@ -522,21 +522,19 @@ export default function BrandUniquePageBuilder() {
     }),
     [sections]
   );
+const brandSlug = page?.brandSlug || page?.brand_slug || "";
 
-  const brandSlug = page?.brandSlug || page?.slug || "dropbrand";
-
-const previewBaseUrl = String(page?.brandPreviewUrl || "").replace(/\/+$/, "");
+const previewBaseUrl = String(page?.brandPreviewUrl || page?.websiteUrl || "").replace(
+  /\/+$/,
+  ""
+);
 
 const pageSlug = page?.slug || "home";
 
 const previewUrl = previewBaseUrl
   ? `${previewBaseUrl}/admin-preview/${pageSlug}?pageId=${pageId}&preview=${previewVersion}`
   : "";
-
-  const pageSlug = page?.slug || "home";
-
-  const previewUrl = `${previewBaseUrl}/admin-preview/${pageSlug}?pageId=${pageId}&preview=${previewVersion}`;
-
+  
   useEffect(() => {
     let alive = true;
 
