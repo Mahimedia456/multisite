@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
 
-function blogImage(blog) {
-  return blog?.featured_image || blog?.og_image || blog?.image?.url || "";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1800&auto=format&fit=crop";
+
+function getImage(blog) {
+  return blog?.featured_image || blog?.og_image || blog?.image?.url || FALLBACK_IMAGE;
+}
+
+function getCategory(blog) {
+  return blog?.category_name || blog?.category?.name || blog?.category || "Ratgeber";
 }
 
 function formatDate(value) {
@@ -17,30 +24,54 @@ function formatDate(value) {
   }
 }
 
-export default function BlogDetailPage({
-  blog = null,
-  related = [],
-  loading = false,
-}) {
+function normalizeHtml(value) {
+  if (!value) return "<p>Kein Inhalt verfügbar.</p>";
+  if (typeof value === "string") return value;
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === "string") return `<p>${item}</p>`;
+        if (item?.html) return item.html;
+        if (item?.text) return `<p>${item.text}</p>`;
+        if (item?.body) return `<p>${item.body}</p>`;
+        if (item?.content) return normalizeHtml(item.content);
+        return "";
+      })
+      .join("");
+  }
+
+  if (typeof value === "object") {
+    if (value.html) return value.html;
+    if (value.text) return `<p>${value.text}</p>`;
+    if (value.body) return `<p>${value.body}</p>`;
+    if (value.content) return normalizeHtml(value.content);
+  }
+
+  return "<p>Kein Inhalt verfügbar.</p>";
+}
+
+export default function BlogDetailPage({ blog = null, related = [], loading = false }) {
   if (loading) {
     return (
-      <section className="py-24 bg-white dark:bg-surface-dark rounded-3xl">
-        <div className="px-6 text-text-muted">Blog wird geladen...</div>
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-slate-600">
+          Blog wird geladen...
+        </div>
       </section>
     );
   }
 
   if (!blog) {
     return (
-      <section className="py-24 bg-white dark:bg-surface-dark rounded-3xl">
-        <div className="px-6">
-          <h1 className="text-4xl font-bold text-text-main dark:text-white">
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-extrabold text-slate-950">
             Blogbeitrag nicht gefunden
           </h1>
-
           <Link
             to="/blogs"
-            className="mt-8 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-bold text-white"
+            className="mt-6 inline-flex h-10 px-5 rounded-xl bg-primary text-white font-extrabold text-sm items-center"
           >
             Zurück zum Blog
           </Link>
@@ -49,106 +80,93 @@ export default function BlogDetailPage({
     );
   }
 
-  const image = blogImage(blog);
+  const html = normalizeHtml(blog.content || blog.body || blog.description);
 
   return (
     <>
-      <article className="bg-white dark:bg-surface-dark rounded-3xl overflow-hidden">
-        <header className="relative min-h-[620px] flex items-end overflow-hidden rounded-3xl">
-          {image ? (
-            <img
-              src={image}
-              alt={blog.title || "Blog"}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-primary" />
-          )}
+      <section className="relative min-h-[560px] overflow-hidden bg-slate-950">
+        <img
+          src={getImage(blog)}
+          alt={blog.title || "Blog"}
+          className="absolute inset-0 h-full w-full object-cover opacity-55"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/65 to-slate-950/15" />
 
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent" />
-
-          <div className="relative z-10 px-6 py-16 lg:py-24 max-w-4xl">
+        <div className="relative z-10 mx-auto flex min-h-[560px] max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl">
             <Link
               to="/blogs"
-              className="mb-8 inline-flex items-center gap-2 text-white/80 hover:text-white font-semibold"
+              className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-white/80 hover:text-white"
             >
-              <span className="material-symbols-outlined text-lg">
-                arrow_back
-              </span>
-              Zurück zum Blog
+              ← Zurück zum Blog
             </Link>
 
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md text-white border border-white/20 w-fit mb-8">
-              <span className="material-symbols-outlined text-sm text-secondary">
-                newspaper
-              </span>
-              <span className="text-xs font-bold uppercase tracking-widest">
-                {blog.category_name || blog.category?.name || "Ratgeber"}
-              </span>
+            <div className="text-[10px] uppercase tracking-widest font-extrabold text-white/70">
+              {getCategory(blog)}
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
+            <h1 className="mt-4 text-4xl sm:text-6xl font-extrabold leading-tight text-white">
               {blog.title}
             </h1>
 
             {blog.published_at || blog.created_at ? (
-              <p className="mt-6 text-white/70 font-medium">
+              <p className="mt-5 text-sm font-bold text-white/70">
                 {formatDate(blog.published_at || blog.created_at)}
               </p>
             ) : null}
           </div>
-        </header>
-
-        <div className="px-6 py-16 md:py-20">
-          <div className="max-w-4xl mx-auto">
-            {blog.excerpt ? (
-              <p className="text-2xl text-text-muted leading-relaxed mb-12">
-                {blog.excerpt}
-              </p>
-            ) : null}
-
-            <div
-              className="prose prose-lg max-w-none prose-headings:text-text-main prose-p:text-text-muted prose-a:text-primary"
-              dangerouslySetInnerHTML={{
-                __html:
-                  blog.content ||
-                  blog.body ||
-                  blog.description ||
-                  "<p>Kein Inhalt verfügbar.</p>",
-              }}
-            />
-          </div>
         </div>
-      </article>
+      </section>
+
+      <section className="py-16 md:py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {blog.excerpt ? (
+            <p className="text-2xl leading-relaxed text-slate-800 mb-10">
+              {blog.excerpt}
+            </p>
+          ) : null}
+
+          <div
+            className="prose prose-lg max-w-none prose-headings:font-extrabold prose-headings:text-slate-950 prose-p:text-slate-700 prose-p:leading-8 prose-a:text-primary"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </div>
+      </section>
 
       {Array.isArray(related) && related.length > 0 ? (
-        <section className="py-24 md:py-32 bg-white dark:bg-surface-dark rounded-3xl mt-8">
-          <div className="px-6">
-            <h2 className="text-4xl font-bold text-text-main dark:text-white mb-12">
-              Weitere Beiträge
-            </h2>
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
+                Weitere Artikel
+              </div>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-slate-950">
+                Diese Beiträge könnten Sie auch interessieren
+              </h2>
+            </div>
 
-            <div className="grid md:grid-cols-3 gap-10">
-              {related.map((item, i) => (
-                <Link
-                  key={item.id || item.slug || i}
-                  to={`/blogs/${item.slug || item.id}`}
-                  className="bg-background-light dark:bg-background-dark p-8 rounded-[2.5rem] shadow-soft hover:shadow-lg transition-all"
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {related.map((item) => (
+                <article
+                  key={item.id || item.slug}
+                  className="rounded-[2.2rem] overflow-hidden border border-black/5 shadow-sm bg-white"
                 >
-                  <p className="text-primary font-semibold text-base mb-3">
-                    {item.category_name || item.category?.name || "Ratgeber"}
-                  </p>
-
-                  <h3 className="text-2xl font-bold text-text-main dark:text-white mb-4 line-clamp-2">
-                    {item.title}
-                  </h3>
-
-                  {item.excerpt ? (
-                    <p className="text-text-muted leading-relaxed line-clamp-3">
-                      {item.excerpt}
-                    </p>
-                  ) : null}
-                </Link>
+                  <Link to={`/blogs/${item.slug || item.id}`}>
+                    <img
+                      src={getImage(item)}
+                      alt={item.title || "Blog"}
+                      className="w-full h-56 object-cover"
+                    />
+                    <div className="p-6">
+                      <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">
+                        {getCategory(item)}
+                      </div>
+                      <h3 className="mt-2 font-extrabold text-lg leading-snug text-slate-950 line-clamp-2">
+                        {item.title}
+                      </h3>
+                    </div>
+                  </Link>
+                </article>
               ))}
             </div>
           </div>

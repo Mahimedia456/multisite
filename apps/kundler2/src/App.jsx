@@ -7,6 +7,8 @@ import BrandLoader from "./components/BrandLoader";
 import AboutKundler2 from "./pages/about-kundler2/AboutKundler2";
 import EAautoVersicherung from "./pages/EAautoVersicherung"; // ✅ ADD THIS
 import KfzVersicherung from "./pages/KfzVersicherung"; // ✅ MUST
+import Blogs from "./pages/Blogs.jsx";
+import BlogDetail from "./pages/BlogDetail.jsx";
 
 
 
@@ -38,7 +40,8 @@ export default function App() {
           <Route path="/about-kundler2" element={<AboutKundler2 />} />
           <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
           <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
-
+      <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/:slug" element={<BlogDetail />} />
 
 
         </Routes>

@@ -39,6 +39,12 @@ import BlogForm from "./pages/BlogForm.jsx";
 import BlogSettings from "./pages/BlogSettings.jsx";
 import BlogCategories from "./pages/BlogCategories.jsx";
 
+import ModuleSettings from "./pages/ModuleSettings.jsx";
+import AdminSettings from "./pages/AdminSettings.jsx";
+import WebsiteSettings from "./pages/WebsiteSettings.jsx";
+
+
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -68,7 +74,9 @@ export default function App() {
 <Route path="/blogs/:blogId/edit" element={<BlogForm />} />
 <Route path="/blog-categories" element={<BlogCategories />} />
 <Route path="/blog-settings" element={<BlogSettings />} />
-
+<Route path="/admin-settings" element={<AdminSettings />} />
+<Route path="/settings/modules" element={<ModuleSettings />} />
+<Route path="/website-settings" element={<WebsiteSettings />} />
             {/* Inner Pages */}
             <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
             <Route

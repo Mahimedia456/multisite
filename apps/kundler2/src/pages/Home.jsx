@@ -12,6 +12,8 @@ import Showcase from "../sections/home/Showcase";
 import CTAWide from "../sections/home/CTAWide";
 import FAQ from "../sections/home/FAQ";
 import Insights from "../sections/home/Insights";
+import { BrandBlogSection } from "@multisite/ui-inner-shared";
+
 
 export default function Home() {
   return (
@@ -28,7 +30,7 @@ export default function Home() {
         <Showcase />
         <CTAWide />
         <FAQ />
-        <Insights />
+      <BrandBlogSection brandSlug="kundler3" limit={3} />
       </main>
       <Footer brandSlug="kundler3" />
     </div>

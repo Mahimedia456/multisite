@@ -27,6 +27,10 @@ import brandUniquePagesRoutes from "./routes/brandUniquePages.js";
 import brandSupportChatRoutes from "./routes/brandSupportChat.js";
 import passwordResetRoutes from "./routes/passwordReset.js";
 import blogsRoutes from "./routes/blogs.js";
+import moduleSettingsRoutes from "./routes/moduleSettings.js";
+import adminSettingsRoutes from "./routes/adminSettings.js";
+import websiteSettingsRoutes from "./routes/websiteSettings.js";
+
 
 dotenv.config();
 
@@ -51,6 +55,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .filter(Boolean);
 
 const allowVercelWildcard = process.env.ALLOW_VERCEL_WILDCARD === "true";
+const visiblePages = await fetch(`/public/${slug}/website-settings`)
 
 const corsOptions = {
   origin: (origin, cb) => {
@@ -128,7 +133,20 @@ app.use((req, res, next) => {
 
 
 
-
+const MODULE_LABELS = {
+  overview: "Overview",
+  brands: "Brands",
+  main_website: "Main Website",
+  generate_brand: "Generate Brand",
+  support_chat: "Support Chat",
+  blogs: "Blogs",
+  blog_settings: "Blog Settings",
+  blog_categories: "Blog Categories",
+  module_settings: "Module Settings",
+  admin_settings: "Admin Settings",
+  brand_unique_pages: "Brand Unique Pages",
+  brand_inner_pages: "Brand Inner Pages",
+};
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -369,6 +387,32 @@ app.use(
 
 app.use(
   blogsRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+    isUuid,
+  })
+);
+
+app.use(
+  moduleSettingsRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+    isUuid,
+  })
+);
+
+app.use(
+  adminSettingsRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+  })
+);
+
+app.use(
+  websiteSettingsRoutes({
     pool,
     authMiddleware,
     wrap,
@@ -767,7 +811,66 @@ app.post(
    - Handles preflight
 ========================= */
 
+const MODULE_LABELS = {
+  overview: "Overview",
+  brands: "Brands",
+  main_website: "Main Website",
+  generate_brand: "Generate Brand",
+  support_chat: "Support Chat",
+  blogs: "Blogs",
+  blog_settings: "Blog Settings",
+  blog_categories: "Blog Categories",
+  brand_unique_pages: "Brand Unique Pages",
+  brand_inner_pages: "Brand Inner Pages",
+};
 
+async function getPermissionsForUser({ role, email, brandSlug, pool }) {
+  const lowerEmail = String(email || "").toLowerCase();
+
+  if (brandSlug) {
+    const { rows } = await pool.query(
+      `
+      select module_key
+      from brand_module_permissions bmp
+      join brands b on b.id = bmp.brand_id
+      where lower(b.slug) = $1
+        and bmp.can_view = true
+      order by module_key asc
+      `,
+      [String(brandSlug).toLowerCase()]
+    );
+
+    const dynamicPermissions = rows
+      .map((r) => MODULE_LABELS[r.module_key] || r.module_key)
+      .filter(Boolean);
+
+    return Array.from(new Set(["Overview", "Brands", ...dynamicPermissions]));
+  }
+
+  if (role === "admin") {
+    const { rows } = await pool.query(
+      `
+      select p.module_key
+      from admin_module_permissions p
+      join admins a on a.id = p.admin_id
+      where lower(a.email) = $1
+        and p.can_view = true
+      order by p.module_key asc
+      `,
+      [lowerEmail]
+    );
+
+    if (rows.length) {
+      return rows
+        .map((r) => MODULE_LABELS[r.module_key] || r.module_key)
+        .filter(Boolean);
+    }
+
+    return ["Overview", "Brands", "Main Website"];
+  }
+
+  return ["Overview"];
+}
 
 
 /* =========================
@@ -850,34 +953,13 @@ app.post(
     });
 
     // ✅ permissions
-  let permissions = ["Overview", "Brands", "Main Website"];
-if (role === "admin") {
-  permissions = [
-    "Overview",
-    "Brands",
-    "Brand Inner Pages",
-    "Generate Brand",
-    "Main Website",
-  ];
+const permissions = await getPermissionsForUser({
+  role,
+  email: admin.email,
+  brandSlug,
+  pool,
+});
 
-  if (lowerEmail === "admin2@mahimediasolutions.com") {
-    permissions = [
-      ...permissions,
-      "Brand Unique Pages",
-    ];
-  }
-
-  if (lowerEmail === "support@mahimediasolutions.com") {
-    permissions = ["Overview", "Brands", "Support Chat" , "Blogs",
-  "Blog Settings", "Blog Categories", "Brand Unique Pages", "Brand Inner Pages",
-];
-  }
-}
-
-// brand admins: allianz3/allianz4 etc.
-if (brandSlug) {
-  permissions = ["Overview", "Brands", "Support Chat"];
-}
     return res.json({
       ok: true,
       access_token,
