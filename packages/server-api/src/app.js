@@ -4,7 +4,6 @@
 // - Preflight enabled
 // - Supabase/Render SSL fix: rejectUnauthorized:false in production
 // - Includes ALL APIs you posted (no missing shared-pages versions, layout versions, template save alias, etc.)
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -18,6 +17,7 @@ import crypto from "crypto";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
+
 import adminAiVision from "./routes/adminAiVision.js";
 import adminAiContentRoutes from "./routes/adminAiContent.js";
 import adminAiThemeRoutes from "./routes/adminAiTheme.js";
@@ -31,29 +31,13 @@ import moduleSettingsRoutes from "./routes/moduleSettings.js";
 import adminSettingsRoutes from "./routes/adminSettings.js";
 import websiteSettingsRoutes from "./routes/websiteSettings.js";
 
-
 dotenv.config();
 
-/* =========================
-   App init
-========================= */
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// ✅ CORS FIRST (VERY IMPORTANT)
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
-// ✅ THEN routes
-app.use(adminAiVision);
-app.use(adminAiContentRoutes({ authMiddleware }));
-app.use(adminAiThemeRoutes({ authMiddleware }));
-app.use(adminAiPagePlanRoutes({ authMiddleware }));
-app.use(adminAiSectionCodeRoutes({ authMiddleware }));
-
-
 /* =========================
-   CORS (MUST be BEFORE routes)
+   CORS
 ========================= */
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
@@ -64,15 +48,12 @@ const allowVercelWildcard = process.env.ALLOW_VERCEL_WILDCARD === "true";
 
 const corsOptions = {
   origin: (origin, cb) => {
-    // allow non-browser clients (curl/postman/server-side)
     if (!origin) return cb(null, true);
 
-    // explicit allowlist
-    if (allowedOrigins.length && allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       return cb(null, true);
     }
 
-    // optional allow any *.vercel.app
     if (allowVercelWildcard) {
       try {
         const host = new URL(origin).hostname;
@@ -80,7 +61,6 @@ const corsOptions = {
       } catch {}
     }
 
-    // dev: allow localhost/127.0.0.1 ports 5173-5185
     const m = /^http:\/\/(localhost|127\.0\.0\.1):(\d+)$/.exec(origin);
     if (m) {
       const port = Number(m[2]);
@@ -94,6 +74,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 const PORT = Number(process.env.PORT || process.env.API_PORT || 5050);
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
@@ -104,6 +86,7 @@ const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!dbUrl) console.warn("⚠️ DATABASE_URL/DIRECT_URL missing in .env");
 
 let pool;
+
 try {
   const cfg = parse(dbUrl || "");
   delete cfg.sslmode;
@@ -115,13 +98,13 @@ try {
   });
 } catch (e) {
   console.error("❌ Failed to create DB pool:", e);
+
   pool = new Pool({
     connectionString: dbUrl,
     ssl: isProd ? { rejectUnauthorized: false } : false,
   });
 }
 
-// cache control for public endpoints (optional)
 app.use((req, res, next) => {
   if (req.path.startsWith("/public/")) {
     res.setHeader(
@@ -132,10 +115,9 @@ app.use((req, res, next) => {
     res.setHeader("Expires", "0");
     res.setHeader("Surrogate-Control", "no-store");
   }
+
   next();
 });
-
-
 
 const MODULE_LABELS = {
   overview: "Overview",
@@ -148,6 +130,7 @@ const MODULE_LABELS = {
   blog_categories: "Blog Categories",
   module_settings: "Module Settings",
   admin_settings: "Admin Settings",
+  website_settings: "Website Settings",
   brand_unique_pages: "Brand Unique Pages",
   brand_inner_pages: "Brand Inner Pages",
 };
@@ -173,19 +156,18 @@ function isAlreadySupabaseStorageUrl(url) {
   );
 }
 
-/**
- * Walk JSON and collect all { url } fields (including nested),
- * upload remote images to Supabase Storage, replace urls in JSON.
- */
-async function migrateJsonImagesToBucket({ json, folder = "shared-pages", pageKey = "unknown" }) {
+async function migrateJsonImagesToBucket({
+  json,
+  folder = "shared-pages",
+  pageKey = "unknown",
+}) {
   if (!supabaseAdmin) {
-    // env not set -> return unchanged
     return { updatedJson: json, replacements: [] };
   }
-  
 
   const replacements = [];
-  const seen = new Map(); // url -> newUrl
+  const seen = new Map();
+
 
 async function uploadOne(remoteUrl, assetKeyHint) {
   try {
