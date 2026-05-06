@@ -249,7 +249,6 @@ router.get("/public/brands/:brandSlug/theme", async (req, res) => {
           name: b.name,
           slug: b.slug,
           websiteUrl: b.website_url || "",
-
           accentColor: b.accent_color || "",
           primaryColor: b.primary_color || b.accent_color || "",
           primaryDarkColor: b.primary_dark_color || "",
@@ -258,15 +257,12 @@ router.get("/public/brands/:brandSlug/theme", async (req, res) => {
           backgroundDark: b.background_dark || "",
           surfaceLight: b.surface_light || "",
           surfaceDark: b.surface_dark || "",
-
           fontFamily: b.font_family || "",
           fontGoogleUrl: b.font_google_url || "",
           iconFontUrl: b.icon_font_url || "",
-
           logoType: b.logo_type || "material",
           logoValue: b.logo_value || "",
           logoText: b.logo_text || b.name || "",
-
           company: {
             name: b.company_name || b.name || "",
             phone: b.company_phone || "",
@@ -279,12 +275,12 @@ router.get("/public/brands/:brandSlug/theme", async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("GET /api/public/brands/:brandSlug/theme error:", e);
+    console.error("GET /public/brands/:brandSlug/theme error:", e);
     res.status(500).json({
       ok: false,
       message: "Server error",
-      error: e?.message,
-      code: e?.code,
+      error: e.message,
+      code: e.code,
     });
   }
 });

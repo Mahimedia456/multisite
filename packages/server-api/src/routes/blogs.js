@@ -877,7 +877,108 @@ export default function blogsRoutes({ pool, authMiddleware, wrap, isUuid }) {
       return res.json({ ok: true, data: q.rows });
     })
   );
+router.get(
+  "/public/brands/:brandSlug/theme",
+  wrap(async (req, res) => {
+    try {
+      const brandSlug = String(req.params.brandSlug || "")
+        .toLowerCase()
+        .trim();
 
+      const q = await pool.query(
+        `
+        SELECT
+          id,
+          name,
+          slug,
+          website_url,
+          accent_color,
+          primary_color,
+          primary_dark_color,
+          accent_color_2,
+          background_light,
+          background_dark,
+          surface_light,
+          surface_dark,
+          font_family,
+          font_google_url,
+          icon_font_url,
+          logo_type,
+          logo_value,
+          logo_text,
+          company_name,
+          company_phone,
+          company_whatsapp,
+          company_email,
+          company_location,
+          support_email
+        FROM brands
+        WHERE LOWER(slug)=$1
+        LIMIT 1
+        `,
+        [brandSlug]
+      );
+
+      const b = q.rows[0];
+
+      if (!b) {
+        return res
+          .status(404)
+          .json({ ok: false, message: "Brand not found" });
+      }
+
+      return res.json({
+        ok: true,
+        data: {
+          brand: {
+            id: b.id,
+            name: b.name,
+            slug: b.slug,
+
+            websiteUrl: b.website_url || "",
+
+            accentColor: b.accent_color || "",
+            primaryColor: b.primary_color || "",
+            primaryDarkColor: b.primary_dark_color || "",
+            accentColor2: b.accent_color_2 || "",
+
+            backgroundLight: b.background_light || "",
+            backgroundDark: b.background_dark || "",
+
+            surfaceLight: b.surface_light || "",
+            surfaceDark: b.surface_dark || "",
+
+            fontFamily: b.font_family || "",
+            fontGoogleUrl: b.font_google_url || "",
+            iconFontUrl: b.icon_font_url || "",
+
+            logoType: b.logo_type || "material",
+            logoValue: b.logo_value || "",
+            logoText: b.logo_text || b.name || "",
+
+            company: {
+              name: b.company_name || "",
+              phone: b.company_phone || "",
+              whatsapp: b.company_whatsapp || "",
+              email: b.company_email || "",
+              location: b.company_location || "",
+              supportEmail: b.support_email || "",
+            },
+          },
+        },
+      });
+    } catch (e) {
+      console.error("theme route error:", e);
+
+      return res.status(500).json({
+        ok: false,
+        message: "Server error",
+        error: e.message,
+        code: e.code,
+      });
+    }
+  })
+);
   router.get(
     "/public/:brandSlug/blogs",
     wrap(async (req, res) => {

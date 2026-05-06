@@ -45,7 +45,7 @@ export function useBrandTheme(brandSlug) {
     async function loadTheme() {
       try {
         const res = await fetch(
-          `${API_BASE}/api/public/brands/${brandSlug}/theme?t=${Date.now()}`,
+          `${API_BASE}/public/brands/${brandSlug}/theme?t=${Date.now()}`,
           { cache: "no-store" }
         );
 
