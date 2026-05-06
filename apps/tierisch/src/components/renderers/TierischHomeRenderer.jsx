@@ -36,7 +36,7 @@ export default function TierischHomeRenderer({
   showFooter = true,
 }) {
   return (
-    <main className="w-full bg-[#F6F8FB] text-slate-900">
+    <main className="w-full bg-background-light text-slate-900">
       {showHeader ? <Header brandSlug={brandSlug} /> : null}
 
       {sections.map((section) => {

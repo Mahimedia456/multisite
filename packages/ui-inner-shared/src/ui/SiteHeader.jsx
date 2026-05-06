@@ -17,7 +17,94 @@ function normalizeHref(item) {
   if (!item) return "#";
   if (isNonEmptyString(item.href)) return item.href;
   if (isNonEmptyString(item.to)) return item.to;
+  if (isNonEmptyString(item.url)) return item.url;
+  if (isNonEmptyString(item.path)) return item.path;
   return "#";
+}
+
+function cleanPath(v = "") {
+  let s = String(v || "").trim();
+  if (!s) return "";
+
+  try {
+    if (s.startsWith("http")) s = new URL(s).pathname;
+  } catch {}
+
+  s = s.split("?")[0].split("#")[0].trim();
+  if (!s.startsWith("/")) s = `/${s}`;
+  s = s.replace(/\/+$/, "");
+
+  return s || "/";
+}
+
+function getVisibilityKey(item) {
+  if (!item || typeof item !== "object") return "";
+
+  const href = cleanPath(item.href || item.to || item.url || item.path || "");
+  const label = String(item.label || item.title || "").toLowerCase().trim();
+
+  if (href === "/") return "unique:home";
+
+  if (
+    href === "/about" ||
+    label === "über uns" ||
+    label === "ueber uns" ||
+    label === "about" ||
+    label === "about us"
+  ) {
+    return "unique:about";
+  }
+
+  if (href === "/contact" || href === "/kontakt" || label === "kontakt") {
+    return "unique:contact";
+  }
+
+  if (href === "/kfz-versicherung" || label.includes("kfz")) {
+    return "shared:kfz-versicherung";
+  }
+
+  if (href === "/e-auto-versicherung" || label.includes("e-auto")) {
+    return "shared:e-auto-versicherung";
+  }
+
+  return "";
+}
+
+function filterMenuItems(items = [], hiddenWebsitePages = []) {
+  const hiddenSet = new Set(hiddenWebsitePages || []);
+
+  return (items || [])
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+
+      const key = getVisibilityKey(item);
+      if (key && hiddenSet.has(key)) return null;
+
+      const next = { ...item };
+
+      if (next.mega?.columns && Array.isArray(next.mega.columns)) {
+        next.mega = {
+          ...next.mega,
+          columns: next.mega.columns
+            .map((col) => {
+              const footerKey = getVisibilityKey(col?.footerLink);
+
+              return {
+                ...col,
+                items: filterMenuItems(col?.items || [], hiddenWebsitePages),
+                footerLink:
+                  footerKey && hiddenSet.has(footerKey) ? null : col?.footerLink,
+              };
+            })
+            .filter((col) => {
+              return (col?.items || []).length > 0 || col?.footerLink?.label;
+            }),
+        };
+      }
+
+      return next;
+    })
+    .filter(Boolean);
 }
 
 export default function SiteHeader({
@@ -25,6 +112,7 @@ export default function SiteHeader({
   LinkComponent = DefaultLink,
   variant = "bar",
   showDefaultAbout = true,
+  hiddenWebsitePages = [],
 }) {
   const Link = LinkComponent;
 
@@ -32,8 +120,8 @@ export default function SiteHeader({
   const closeTimerRef = useRef(null);
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openDesktopMega, setOpenDesktopMega] = useState(null); // label string or null
-  const [mobileOpenMega, setMobileOpenMega] = useState({}); // { [label]: boolean }
+  const [openDesktopMega, setOpenDesktopMega] = useState(null);
+  const [mobileOpenMega, setMobileOpenMega] = useState({});
 
   const {
     name,
@@ -47,14 +135,16 @@ export default function SiteHeader({
   } = brand || {};
 
   const normalizedLinks = useMemo(() => {
-    return (homeLinks || []).map((l) => ({
+    return filterMenuItems(homeLinks || [], hiddenWebsitePages).map((l) => ({
       ...l,
       label: String(l?.label || "").trim(),
       href: l?.href,
       to: l?.to,
+      url: l?.url,
+      path: l?.path,
       mega: l?.mega || null,
     }));
-  }, [homeLinks]);
+  }, [homeLinks, hiddenWebsitePages]);
 
   const activeMegaItem = useMemo(() => {
     if (!openDesktopMega) return null;
@@ -68,6 +158,7 @@ export default function SiteHeader({
 
   const renderLogo = () => {
     if (LogoIcon) return <LogoIcon className="text-3xl" />;
+
     if (logoType === "image" && logoUrl) {
       return (
         <img
@@ -77,8 +168,11 @@ export default function SiteHeader({
         />
       );
     }
-    if (logoType === "emoji")
+
+    if (logoType === "emoji") {
       return <span className="text-2xl leading-none">{logoValue}</span>;
+    }
+
     return (
       <span className="material-symbols-outlined text-2xl leading-none">
         {logoValue}
@@ -86,19 +180,20 @@ export default function SiteHeader({
     );
   };
 
-  const hasAboutAlready = (homeLinks || []).some((l) => {
+  const hasAboutAlready = normalizedLinks.some((l) => {
+    const key = getVisibilityKey(l);
     const label = String(l?.label || "").trim().toLowerCase();
-    const href = String(l?.href || l?.to || "").trim().toLowerCase();
+    const href = cleanPath(l?.href || l?.to || l?.url || l?.path || "");
+
     return (
+      key === "unique:about" ||
       label === "about" ||
       label === "about us" ||
       label === "über uns" ||
-      href === "/about" ||
-      href.startsWith("/about")
+      href === "/about"
     );
   });
 
-  // ✅ close helpers (prevents flicker when moving mouse down)
   const cancelClose = () => {
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
@@ -114,7 +209,6 @@ export default function SiteHeader({
     }, ms);
   };
 
-  // close on outside click / ESC
   useEffect(() => {
     function onDocDown(e) {
       if (!headerRef.current) return;
@@ -122,21 +216,23 @@ export default function SiteHeader({
         setOpenDesktopMega(null);
       }
     }
+
     function onEsc(e) {
       if (e.key === "Escape") {
         setOpenDesktopMega(null);
         setMobileOpen(false);
       }
     }
+
     document.addEventListener("mousedown", onDocDown);
     document.addEventListener("keydown", onEsc);
+
     return () => {
       document.removeEventListener("mousedown", onDocDown);
       document.removeEventListener("keydown", onEsc);
     };
   }, []);
 
-  // if mobile opens, close desktop mega
   useEffect(() => {
     if (mobileOpen) setOpenDesktopMega(null);
   }, [mobileOpen]);
@@ -180,8 +276,22 @@ export default function SiteHeader({
       "text-white text-sm font-bold shadow-lg shadow-primary/20 transition-all " +
       "inline-flex items-center justify-center leading-none whitespace-nowrap";
 
-    if (cta?.to) return <Link to={cta.to} className={cls}>{cta.label}</Link>;
-    if (cta?.href) return <a href={cta.href} className={cls}>{cta.label}</a>;
+    if (cta?.to) {
+      return (
+        <Link to={cta.to} className={cls}>
+          {cta.label}
+        </Link>
+      );
+    }
+
+    if (cta?.href) {
+      return (
+        <a href={cta.href} className={cls}>
+          {cta.label}
+        </a>
+      );
+    }
+
     return (
       <button type="button" className={cls} onClick={cta?.onClick}>
         {cta?.label}
@@ -189,7 +299,6 @@ export default function SiteHeader({
     );
   };
 
-  // Mobile accordion mega
   const toggleMobileMega = (label) => {
     setMobileOpenMega((prev) => ({ ...prev, [label]: !prev[label] }));
   };
@@ -198,10 +307,8 @@ export default function SiteHeader({
     if (!activeMegaItem || !hasMega(activeMegaItem)) return null;
 
     const columns = (activeMegaItem?.mega?.columns || []).filter(Boolean);
-
-    // ✅ IMPORTANT: dynamic grid based on column count (no empty 4th)
-    // 1-2 -> 2 cols, 3 -> 3 cols, 4+ -> 4 cols
     const count = columns.length;
+
     const gridCols =
       count <= 2
         ? "md:grid-cols-2"
@@ -226,15 +333,25 @@ export default function SiteHeader({
                     {(col?.items || []).map((it, j) => {
                       const href = normalizeHref(it);
                       const label = it?.label || "Link";
+
                       if (isNonEmptyString(it?.to)) {
                         return (
-                          <Link key={`${label}-${j}`} to={it.to} className={megaLink}>
+                          <Link
+                            key={`${label}-${j}`}
+                            to={it.to}
+                            className={megaLink}
+                          >
                             {label}
                           </Link>
                         );
                       }
+
                       return (
-                        <a key={`${label}-${j}`} href={href} className={megaLink}>
+                        <a
+                          key={`${label}-${j}`}
+                          href={href}
+                          className={megaLink}
+                        >
                           {label}
                         </a>
                       );
@@ -271,7 +388,6 @@ export default function SiteHeader({
 
   const Inner = (
     <div className="w-full" ref={headerRef}>
-      {/* Row 1 */}
       <div className="h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 shrink-0">
           <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -306,7 +422,6 @@ export default function SiteHeader({
         </div>
       </div>
 
-      {/* Row 2 Desktop Nav */}
       <div className="border-t border-gray-100 hidden sm:block relative">
         <div className="flex items-center justify-center">
           <div className="flex items-center justify-center flex-nowrap min-w-0">
@@ -330,7 +445,9 @@ export default function SiteHeader({
                     }}
                     onClick={() => {
                       cancelClose();
-                      setOpenDesktopMega((v) => (v === item.label ? null : item.label));
+                      setOpenDesktopMega((v) =>
+                        v === item.label ? null : item.label
+                      );
                     }}
                     aria-expanded={isOpen}
                     aria-haspopup="menu"
@@ -345,7 +462,11 @@ export default function SiteHeader({
 
               if (item?.to) {
                 return (
-                  <Link key={`${item.label}-${idx}`} className={navItem} to={item.to}>
+                  <Link
+                    key={`${item.label}-${idx}`}
+                    className={navItem}
+                    to={item.to}
+                  >
                     {item.label || "Link"}
                   </Link>
                 );
@@ -355,7 +476,7 @@ export default function SiteHeader({
                 <a
                   key={`${item.label}-${idx}`}
                   className={navItem}
-                  href={item?.href || "#"}
+                  href={item?.href || item?.url || item?.path || "#"}
                 >
                   {item?.label || "Link"}
                 </a>
@@ -370,11 +491,9 @@ export default function SiteHeader({
           </div>
         </div>
 
-        {/* ✅ SINGLE GLOBAL MEGA PANEL */}
         {renderDesktopMegaPanel()}
       </div>
 
-      {/* Mobile Menu */}
       {mobileOpen && (
         <div className="sm:hidden border-t border-gray-100 bg-white">
           <div className="flex flex-col py-2">
@@ -383,6 +502,7 @@ export default function SiteHeader({
 
               if (hasMega(item)) {
                 const opened = !!mobileOpenMega[label];
+
                 return (
                   <div key={`${label}-${idx}`} className="px-4">
                     <button
@@ -398,7 +518,10 @@ export default function SiteHeader({
                     {opened ? (
                       <div className="pb-3">
                         {(item?.mega?.columns || []).map((col, cIdx) => (
-                          <div key={`${col?.title || "col"}-${cIdx}`} className="mt-3">
+                          <div
+                            key={`${col?.title || "col"}-${cIdx}`}
+                            className="mt-3"
+                          >
                             <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">
                               {col?.title || ""}
                             </div>
@@ -407,6 +530,7 @@ export default function SiteHeader({
                               {(col?.items || []).map((it, j) => {
                                 const href = normalizeHref(it);
                                 const l = it?.label || "Link";
+
                                 if (isNonEmptyString(it?.to)) {
                                   return (
                                     <Link
@@ -422,6 +546,7 @@ export default function SiteHeader({
                                     </Link>
                                   );
                                 }
+
                                 return (
                                   <a
                                     key={`${l}-${j}`}
@@ -476,6 +601,7 @@ export default function SiteHeader({
               }
 
               const href = normalizeHref(item);
+
               return (
                 <div key={`${label}-${idx}`} className="px-4 py-2">
                   {item.to ? (
@@ -499,7 +625,7 @@ export default function SiteHeader({
               );
             })}
 
-            {!hasAboutAlready && (
+            {showDefaultAbout && !hasAboutAlready ? (
               <Link
                 to="/about"
                 className="px-4 py-2 block text-slate-700 text-sm font-medium"
@@ -507,7 +633,7 @@ export default function SiteHeader({
               >
                 About Us
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       )}

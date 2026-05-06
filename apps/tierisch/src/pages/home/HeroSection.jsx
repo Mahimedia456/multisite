@@ -40,7 +40,7 @@ export default function HeroSection({
                 {(badges || []).map((x) => (
                   <span
                     key={x}
-                    className="rounded-full bg-[#E9FFFE] px-3 py-1 text-xs font-bold text-[#007C79]"
+                    className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
                   >
                     {x}
                   </span>
@@ -50,14 +50,14 @@ export default function HeroSection({
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
                   href={primaryButtonHref}
-                  className="rounded-xl bg-[#00938F] px-5 py-3 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(0,147,143,0.25)] transition hover:-translate-y-0.5"
+                  className="rounded-xl bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(var(--primary),0.25)] transition hover:-translate-y-0.5"
                 >
                   {primaryButtonLabel}
                 </a>
 
                 <a
                   href={secondaryButtonHref}
-                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-800 transition hover:-translate-y-0.5"
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-800 transition hover:-translate-y-0.5 hover:border-primary/30"
                 >
                   {secondaryButtonLabel}
                 </a>
