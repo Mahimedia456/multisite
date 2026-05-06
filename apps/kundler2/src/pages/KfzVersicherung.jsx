@@ -12,7 +12,7 @@ export default function KfzVersicherung() {
   const { content, loading, error } = useSharedPage("kfz-versicherung");
 
   useEffect(() => {
-    const c = getTenantConfig("allianz3");
+    const c = getTenantConfig("kundler3");
     if (c?.primary) document.documentElement.style.setProperty("--brand", c.primary);
     setConfig(c);
   }, []);

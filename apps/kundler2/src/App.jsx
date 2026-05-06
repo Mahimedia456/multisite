@@ -10,9 +10,12 @@ import Blogs from "./pages/Blogs.jsx";
 import BlogDetail from "./pages/BlogDetail.jsx";
 import { useBrandTheme } from "./hooks/useBrandTheme";
 import UniquePagePreview from "./pages/UniquePagePreview.jsx";
+import VisiblePage from "./components/VisiblePage.jsx";
+
+const BRAND = "kundler3";
 
 export default function App() {
-  useBrandTheme("kundler3");
+  useBrandTheme(BRAND);
 
   return (
     <>
@@ -20,13 +23,53 @@ export default function App() {
 
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/e-auto-versicherung" element={<EAautoVersicherung />} />
-          <Route path="/kfz-versicherung" element={<KfzVersicherung />} />
+          <Route
+            path="/"
+            element={
+              <VisiblePage brandSlug={BRAND} type="unique" slug="home">
+                <Home />
+              </VisiblePage>
+            }
+          />
+
+          <Route
+            path="/about"
+            element={
+              <VisiblePage brandSlug={BRAND} type="unique" slug="about">
+                <About />
+              </VisiblePage>
+            }
+          />
+
+          <Route
+            path="/contact"
+            element={
+              <VisiblePage brandSlug={BRAND} type="unique" slug="contact">
+                <Contact />
+              </VisiblePage>
+            }
+          />
+
+          <Route
+            path="/e-auto-versicherung"
+            element={
+              <VisiblePage brandSlug={BRAND} type="shared" slug="e-auto-versicherung">
+                <EAautoVersicherung />
+              </VisiblePage>
+            }
+          />
+
+          <Route
+            path="/kfz-versicherung"
+            element={
+              <VisiblePage brandSlug={BRAND} type="shared" slug="kfz-versicherung">
+                <KfzVersicherung />
+              </VisiblePage>
+            }
+          />
+
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
         </Routes>
       </BrowserRouter>

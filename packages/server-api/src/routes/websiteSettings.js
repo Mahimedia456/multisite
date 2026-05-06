@@ -106,27 +106,47 @@ export default function websiteSettingsRoutes({ pool, authMiddleware, wrap }) {
     })
   );
 
-  router.get(
-    "/public/:slug/website-settings",
-    wrap(async (req, res) => {
-      const slug = String(req.params.slug || "").trim().toLowerCase();
+router.get(
+  "/public/:slug/website-settings",
+  wrap(async (req, res) => {
+    const slug = String(req.params.slug || "").trim().toLowerCase();
 
-      const { rows } = await pool.query(
-        `
-        select
-          w.page_type,
-          w.page_id,
-          w.is_visible
-        from brand_website_pages w
-        join brands b on b.id = w.brand_id
-        where lower(b.slug) = $1
-        `,
-        [slug]
-      );
+    const brandQ = await pool.query(
+      `select id from brands where lower(slug) = $1 limit 1`,
+      [slug]
+    );
 
-      return res.json({ ok: true, data: rows });
-    })
-  );
+    const brand = brandQ.rows[0];
+    if (!brand) {
+      return res.status(404).json({ ok: false, message: "Brand not found" });
+    }
+
+    const { rows } = await pool.query(
+      `
+      select
+        w.page_type,
+        w.page_id,
+        w.is_visible,
+        case
+          when w.page_type = 'shared' then sp.slug
+          when w.page_type = 'unique' then up.slug
+          else null
+        end as slug
+      from brand_website_pages w
+      left join brand_shared_pages sp
+        on sp.id = w.page_id
+        and w.page_type = 'shared'
+      left join brand_unique_pages up
+        on up.id = w.page_id
+        and w.page_type = 'unique'
+      where w.brand_id = $1
+      `,
+      [brand.id]
+    );
+
+    return res.json({ ok: true, data: rows });
+  })
+);
 
   return router;
 }
