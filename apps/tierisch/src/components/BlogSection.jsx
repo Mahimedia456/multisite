@@ -1,5 +1,5 @@
 import { BrandBlogSection } from "@multisite/ui-inner-shared";
 
-export default function BlogSection() {
-  return <BrandBlogSection brandSlug="allianz4" limit={3} />;
+export default function BlogSection({ brandSlug = "allianz4", limit = 3 }) {
+  return <BrandBlogSection brandSlug={brandSlug} limit={limit} />;
 }

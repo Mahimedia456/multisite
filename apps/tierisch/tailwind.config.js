@@ -1,18 +1,48 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-
-    // ✅ monorepo packages (adjust path if needed)
-    "../../packages/ui-inner-shared/**/*.{js,ts,jsx,tsx}",
-    "../../packages/ui-inner-shared/src/**/*.{js,ts,jsx,tsx}",
-
-    // agar aur shared packages hain:
-    "../../packages/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "../../packages/ui-inner-shared/src/**/*.{js,jsx,ts,tsx}",
+    "../../packages/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: [
+          "var(--brand-font)",
+          "ui-sans-serif",
+          "system-ui",
+          "Inter",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica",
+          "Arial",
+        ],
+      },
+      colors: {
+        primary: "rgb(var(--primary) / <alpha-value>)",
+        "primary-dark": "rgb(var(--primary-dark) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+
+        "background-light": "rgb(var(--bg-light) / <alpha-value>)",
+        "background-dark": "rgb(var(--bg-dark) / <alpha-value>)",
+
+        "surface-light": "rgb(var(--surface-light) / <alpha-value>)",
+        "surface-dark": "rgb(var(--surface-dark) / <alpha-value>)",
+
+        "text-dark": "rgb(var(--text-dark) / <alpha-value>)",
+      },
+      boxShadow: {
+        soft: "0 18px 50px rgba(0,0,0,0.12)",
+        "soft-lg": "0 26px 70px rgba(0,0,0,0.16)",
+      },
+      borderRadius: {
+        "3xl": "1.5rem",
+        "4xl": "2rem",
+      },
+    },
   },
   plugins: [],
 };

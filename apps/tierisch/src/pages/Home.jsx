@@ -1,42 +1,25 @@
-import React from "react";
-import Header from "../components/Header";
-
-import HeroSection from "./home/HeroSection";
-import StepsSection from "./home/StepsSection";
-import VideoSection from "./home/VideoSection";
-import ProtectionSection from "./home/ProtectionSection";
-import StatsSection from "./home/StatsSection";
-import TestimonialsSection from "./home/TestimonialsSection";
-import FeatureBoxesSection from "./home/FeatureBoxesSection";
-import AboutSection from "./home/AboutSection";
-import LeistungTabsSection from "./home/LeistungTabsSection";
-import FAQSection from "./home/FAQSection";
-import AngebotSection from "./home/AngebotSection";
-import Footer from "../components/Footer";
-
-import { BrandBlogSection } from "@multisite/ui-inner-shared";
+import BrandLoader from "../components/BrandLoader";
+import TierischHomeRenderer from "../components/renderers/TierischHomeRenderer";
+import { useBrandUniquePage } from "../hooks/useBrandUniquePage";
 
 export default function Home() {
-  return (
-    <main className="w-full bg-[#F6F8FB] text-slate-900">
-      <Header brandSlug="allianz4" />
+  const { content, loading, error } = useBrandUniquePage("allianz4", "home");
+  const sections = Array.isArray(content?.sections) ? content.sections : [];
 
-      <HeroSection />
-      <StepsSection />
-      <VideoSection />
-      <ProtectionSection />
-      <StatsSection />
-      <TestimonialsSection />
-      <FeatureBoxesSection />
-      <AboutSection />
-      <LeistungTabsSection />
-      <FAQSection />
-      <AngebotSection />
+  if (loading) return <BrandLoader />;
 
-      <BrandBlogSection brandSlug="allianz4" limit={3} />
+  if (error) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-white px-6 text-center">
+        <div>
+          <div className="text-lg font-extrabold text-red-600">
+            Seite konnte nicht geladen werden
+          </div>
+          <div className="mt-2 text-sm text-slate-500">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
-      <Footer brandSlug="allianz4" />
-      <div className="h-10" />
-    </main>
-  );
+  return <TierischHomeRenderer brandSlug="allianz4" sections={sections} />;
 }

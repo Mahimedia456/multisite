@@ -1,9 +1,9 @@
 import BrandLoader from "../components/BrandLoader";
-import TierischAboutRenderer from "../components/renderers/TierischAboutRenderer";
+import TierischContactRenderer from "../components/renderers/TierischContactRenderer";
 import { useBrandUniquePage } from "../hooks/useBrandUniquePage";
 
-export default function AboutTierisch() {
-  const { content, loading, error } = useBrandUniquePage("allianz4", "about");
+export default function Contact() {
+  const { content, loading, error } = useBrandUniquePage("allianz4", "contact");
   const sections = Array.isArray(content?.sections) ? content.sections : [];
 
   if (loading) return <BrandLoader />;
@@ -21,5 +21,5 @@ export default function AboutTierisch() {
     );
   }
 
-  return <TierischAboutRenderer brandSlug="allianz4" sections={sections} />;
+  return <TierischContactRenderer brandSlug="allianz4" sections={sections} />;
 }

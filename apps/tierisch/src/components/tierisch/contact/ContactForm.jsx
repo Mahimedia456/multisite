@@ -1,30 +1,35 @@
-import React from "react";
-import Reveal from "../../components/Reveal";
-import SectionShell from "../../components/ui/SectionShell";
-import PillDivider from "../../components/ui/PillDivider";
-import Card from "../../components/ui/Card";
+import Card from "../../ui/Card";
 
-export default function AngebotSection({
-  title = "Holen Sie sich ein Angebot",
-
-  mapUrl = "https://maps.google.com/maps?q=Vollbrecht%20und%20Greulich%3F%20Offheimer%20Weg%2036%2065549%20Limburg&t=m&z=10&output=embed&iwloc=near",
-
+export default function ContactForm({
+  title = "Schreiben Sie uns eine Nachricht",
+  description = "Füllen Sie das Formular aus und wir melden uns schnellstmöglich zurück.",
+  highlightSmall = "Kostenlose Beratung",
+  highlightTitle = "Individuell, verständlich und unverbindlich.",
+  submitLabel = "Nachricht senden",
   animalOptions = ["Hund", "Katze", "Pferd"],
-
-  submitLabel = "Angebot anfordern",
 }) {
   return (
-    <SectionShell id="Angebot" className="py-14">
-      <Reveal>
-        <h2 className="text-center text-2xl font-black text-slate-900">
-          {title}
-        </h2>
-      </Reveal>
+    <section id="kontaktformular" className="py-20 bg-[rgb(var(--background))]">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <div>
+            <h2 className="text-3xl font-extrabold text-zinc-900">
+              {title}
+            </h2>
 
-      <PillDivider />
+            <p className="mt-4 text-zinc-600 leading-relaxed">
+              {description}
+            </p>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <Reveal>
+            <div className="mt-8 rounded-3xl bg-primary p-8 text-white shadow-primary/20">
+              <div className="text-sm text-white/80">{highlightSmall}</div>
+
+              <div className="mt-2 text-2xl font-extrabold">
+                {highlightTitle}
+              </div>
+            </div>
+          </div>
+
           <Card className="p-6">
             <form className="grid gap-4 md:grid-cols-2">
               <div>
@@ -80,7 +85,7 @@ export default function AngebotSection({
                 </label>
 
                 <textarea
-                  rows={4}
+                  rows={5}
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#00938F]"
                 />
               </div>
@@ -95,19 +100,8 @@ export default function AngebotSection({
               </div>
             </form>
           </Card>
-        </Reveal>
-
-        <Reveal delay={120}>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(2,6,23,0.08)]">
-            <iframe
-              title="map"
-              src={mapUrl}
-              className="h-[420px] w-full"
-              loading="lazy"
-            />
-          </div>
-        </Reveal>
+        </div>
       </div>
-    </SectionShell>
+    </section>
   );
 }

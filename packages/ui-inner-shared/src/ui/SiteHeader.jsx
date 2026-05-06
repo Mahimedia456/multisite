@@ -23,7 +23,8 @@ function normalizeHref(item) {
 export default function SiteHeader({
   brand,
   LinkComponent = DefaultLink,
-  variant = "bar", // "bar" | "boxed"
+  variant = "bar",
+  showDefaultAbout = true,
 }) {
   const Link = LinkComponent;
 
@@ -361,7 +362,7 @@ export default function SiteHeader({
               );
             })}
 
-            {!hasAboutAlready ? (
+            {showDefaultAbout && !hasAboutAlready ? (
               <Link className={navItem} to="/about">
                 About Us
               </Link>

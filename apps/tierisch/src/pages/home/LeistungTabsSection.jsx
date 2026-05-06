@@ -5,7 +5,6 @@ import PillDivider from "../../components/ui/PillDivider";
 import SimpleTabs from "../../components/ui/SimpleTabs";
 import { ASSET_BASE } from "../../components/ui/helpers";
 
-// lucide icons
 import {
   BadgePercent,
   Banknote,
@@ -16,88 +15,115 @@ import {
   Stethoscope,
 } from "lucide-react";
 
-export default function LeistungTabsSection() {
-  const tabs = useMemo(
+const ICON_MAP = {
+  BadgePercent,
+  Banknote,
+  HeartPulse,
+  ClipboardList,
+  Scan,
+  Sparkles,
+  Stethoscope,
+};
+
+export default function LeistungTabsSection({
+  title = "Leistungsübersicht – Tierisch Gut Versichert",
+  items,
+}) {
+  const defaultTabs = useMemo(
     () => [
       {
         key: "kombis",
         label: "Kombinachlässe",
-        Icon: BadgePercent,
+        icon: "BadgePercent",
         title: "Kombinationsrabatt: Sparen bei zwei Versicherungen",
         text:
-          "Wenn du neben der Tierkrankenversicherung auch eine Tierhalterhaftpflichtversicherung bei uns abschließt, profitierst du von einem attraktiven Rabatt auf beide Policen.",
+          "Wenn du neben der Tierkrankenversicherung auch eine Tierhalterhaftpflichtversicherung abschließt, profitierst du von attraktiven Rabatten.",
         imageSrc: `${ASSET_BASE}/images/Kombinationsrabatt.webp`,
       },
+
       {
         key: "got",
         label: "4-facher GOT-Satz",
-        Icon: Banknote,
+        icon: "Banknote",
         title: "Top-Leistungen – auch im Ernstfall",
         text:
-          "Tierärztliche Behandlungen können teuer werden – besonders nachts, an Wochenenden oder im Notdienst.",
+          "Tierärztliche Behandlungen können teuer werden – besonders nachts oder im Notdienst.",
         imageSrc: `${ASSET_BASE}/images/4-facher-GOT-Satz-Notfallgebuhren-1.webp`,
       },
+
       {
         key: "reha",
         label: "Therapien & Reha",
-        Icon: HeartPulse,
+        icon: "HeartPulse",
         title: "Therapien & Reha Maßnahmen",
         text:
-          "Gesundheit endet nicht mit der Operation. Wir übernehmen auch Therapien wie Physiotherapie, Reha und Goldakupunktur.",
+          "Wir übernehmen Therapien wie Physiotherapie, Reha und Goldakupunktur.",
         imageSrc: `${ASSET_BASE}/images/Therapien-Reha-1.webp`,
       },
+
       {
         key: "rassen",
         label: "Rassenrisiken",
-        Icon: ClipboardList,
+        icon: "ClipboardList",
         title: "Versicherung, die Unterschiede kennt",
         text:
-          "Einige Rassen bringen besondere gesundheitliche Risiken mit. Unsere Tarife berücksichtigen das transparent und fair.",
+          "Einige Rassen bringen besondere gesundheitliche Risiken mit.",
         imageSrc: `${ASSET_BASE}/images/Rassenspezifische-Erkrankungen-1.webp`,
       },
+
       {
         key: "diag",
         label: "Diagnostik",
-        Icon: Scan,
+        icon: "Scan",
         title: "Klarheit schafft Sicherheit",
         text:
-          "Ob MRT, CT, Röntgen oder Labor – moderne Diagnostik ist entscheidend. Wir sichern notwendige Untersuchungen ab.",
+          "MRT, CT, Röntgen oder Labor – moderne Diagnostik ist entscheidend.",
         imageSrc: `${ASSET_BASE}/images/Moderne-Diagnostik-1.webp`,
       },
+
       {
         key: "sofort",
         label: "Sofortschutz",
-        Icon: Sparkles,
+        icon: "Sparkles",
         title: "Sicherheit ab dem ersten Tag",
         text:
-          "Für Welpen, Kitten und Fohlen gilt keine Wartezeit – der Schutz startet direkt ab dem ersten Tag.",
+          "Für Welpen, Kitten und Fohlen gilt keine Wartezeit.",
         imageSrc: `${ASSET_BASE}/images/Sofortschutz-fur-Jungtiere-1.webp`,
       },
+
       {
         key: "wahl",
         label: "Tierarztwahl",
-        Icon: Stethoscope,
+        icon: "Stethoscope",
         title: "Freie Tierarztwahl",
         text:
-          "Sie entscheiden, wo Ihr Tier behandelt wird – freie Tierarzt- und Klinikwahl. Ihr Lieblingstierarzt bleibt Ihre erste Adresse.",
+          "Freie Tierarzt- und Klinikwahl.",
         imageSrc: `${ASSET_BASE}/images/Freie-Tierarztwahl-1.webp`,
       },
     ],
     []
   );
 
+  const tabs =
+    Array.isArray(items) && items.length ? items : defaultTabs;
+
+  const finalTabs = tabs.map((t) => ({
+    ...t,
+    Icon: ICON_MAP[t.icon] || BadgePercent,
+  }));
+
   return (
     <SectionShell id="Leistungen" className="py-14">
       <Reveal>
         <h2 className="text-center text-2xl font-black text-slate-900">
-          Leistungsübersicht – Tierisch Gut Versichert
+          {title}
         </h2>
       </Reveal>
 
       <PillDivider />
 
       <Reveal delay={120}>
-        <SimpleTabs items={tabs} />
+        <SimpleTabs items={finalTabs} />
       </Reveal>
     </SectionShell>
   );

@@ -1,5 +1,4 @@
-// src/components/tierisch/about/AboutTimeline.jsx
-const TIMELINE = [
+const DEFAULT_TIMELINE = [
   {
     year: "2018",
     title: "Die Idee entsteht",
@@ -22,23 +21,29 @@ const TIMELINE = [
   },
 ];
 
-export default function AboutTimeline() {
+export default function AboutTimeline({
+  title = "Unsere Reise",
+  items = DEFAULT_TIMELINE,
+}) {
+  const timeline = Array.isArray(items) && items.length ? items : DEFAULT_TIMELINE;
+
   return (
     <section id="timeline" className="py-24 bg-[rgb(var(--background))]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl lg:text-4xl font-extrabold mb-16 text-center text-zinc-900">
-          Unsere Reise
+          {title}
         </h2>
 
         <div className="relative">
           <div className="absolute left-1/2 -translate-x-1/2 h-full w-0.5 bg-primary/10 hidden md:block" />
 
           <div className="space-y-12">
-            {TIMELINE.map((t, idx) => {
+            {timeline.map((t, idx) => {
               const left = idx % 2 === 0;
+
               return (
                 <div
-                  key={t.title}
+                  key={`${t.year}-${t.title}`}
                   className="relative flex flex-col md:flex-row items-center justify-between"
                 >
                   <div
