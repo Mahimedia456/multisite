@@ -35,7 +35,7 @@ export default function KundlerHomeRenderer({
   showFooter = true,
 }) {
   return (
-    <div className="min-h-screen bg-white text-[#0b0f12] overflow-x-hidden antialiased">
+    <div className="min-h-screen bg-background-light text-text-dark overflow-x-hidden antialiased">
       {showHeader ? <Header brandSlug={brandSlug} /> : null}
 
       <main>

@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
 
 const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL || "https://multisite-server-api.vercel.app"
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://multisite-server-api.vercel.app"
 ).replace(/\/+$/, "");
 
+function makePublicUrl(path) {
+  const clean = String(path || "").replace(/^\/+/, "");
+
+  if (clean.startsWith("api/")) {
+    return `${API_BASE}/${clean}`;
+  }
+
+  return `${API_BASE}/${clean}`;
+}
+
 export function useSharedBrandBlogs(slug, options = {}) {
-  const {
-    limit = 100,
-    search = "",
-    category = "",
-  } = options;
+  const { limit = 100, search = "", category = "" } = options;
 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -36,12 +43,11 @@ export function useSharedBrandBlogs(slug, options = {}) {
         if (search) params.set("search", search);
         if (category) params.set("category", category);
         if (limit) params.set("limit", String(limit));
-
         params.set("t", String(Date.now()));
 
-        const url = `${API_BASE}/public/${encodeURIComponent(
-          slug
-        )}/blogs?${params.toString()}`;
+        const url = makePublicUrl(
+          `/public/${encodeURIComponent(slug)}/blogs?${params.toString()}`
+        );
 
         const res = await fetch(url, {
           cache: "no-store",
@@ -108,9 +114,9 @@ export function useSharedBrandBlogCategories(slug) {
           return;
         }
 
-        const url = `${API_BASE}/public/${encodeURIComponent(
-          slug
-        )}/blog-categories?t=${Date.now()}`;
+        const url = makePublicUrl(
+          `/public/${encodeURIComponent(slug)}/blog-categories?t=${Date.now()}`
+        );
 
         const res = await fetch(url, {
           cache: "no-store",
@@ -181,9 +187,11 @@ export function useSharedBrandBlogDetail(slug, blogSlug) {
           return;
         }
 
-        const url = `${API_BASE}/public/${encodeURIComponent(
-          slug
-        )}/blogs/${encodeURIComponent(blogSlug)}?t=${Date.now()}`;
+        const url = makePublicUrl(
+          `/public/${encodeURIComponent(slug)}/blogs/${encodeURIComponent(
+            blogSlug
+          )}?t=${Date.now()}`
+        );
 
         const res = await fetch(url, {
           cache: "no-store",

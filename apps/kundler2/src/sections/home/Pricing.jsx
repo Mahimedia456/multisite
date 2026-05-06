@@ -14,7 +14,7 @@ export default function Pricing({
   plans = defaultPlans,
 }) {
   return (
-    <section className="py-16 bg-[#070A0D] text-white" id="pricing">
+    <section className="py-16 bg-background-dark text-white" id="pricing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <Reveal>
@@ -43,7 +43,7 @@ export default function Pricing({
               className={[
                 "rounded-[2.2rem] border p-7 shadow-sm",
                 p.highlight
-                  ? "bg-[#f5c400] text-black border-[#f5c400]"
+                  ? "bg-primary text-text-dark border-primary"
                   : "bg-white/5 text-white border-white/10",
               ].join(" ")}
             >
@@ -54,7 +54,7 @@ export default function Pricing({
               <button
                 className={[
                   "mt-7 h-11 w-full rounded-xl font-extrabold text-sm",
-                  p.highlight ? "bg-black text-white" : "bg-[#f5c400] text-black",
+                  p.highlight ? "bg-background-dark text-white" : "bg-primary text-text-dark",
                 ].join(" ")}
               >
                 Mehr erfahren

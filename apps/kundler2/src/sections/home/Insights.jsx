@@ -32,7 +32,7 @@ export default function Insights() {
               <div className="p-6">
                 <div className="text-[10px] uppercase tracking-widest font-extrabold text-black/60">Ratgeber</div>
                 <h3 className="mt-2 font-extrabold text-lg leading-snug">{p.title}</h3>
-                <button className="mt-5 h-10 px-5 rounded-xl bg-[#f5c400] text-black font-extrabold text-sm hover:opacity-90">
+                <button className="mt-5 h-10 px-5 rounded-xl bg-primary text-black font-extrabold text-sm hover:opacity-90">
                   Mehr lesen
                 </button>
               </div>

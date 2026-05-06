@@ -14,18 +14,18 @@ export default function Showcase({
   cards = [],
 }) {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-surface-light">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between">
           <div>
             <Reveal>
-              <div className="text-[10px] uppercase font-extrabold text-black/60">
+              <div className="text-[10px] uppercase font-extrabold text-text-dark/60">
                 {eyebrow}
               </div>
             </Reveal>
 
             <Reveal delay={80}>
-              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold">
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-text-dark">
                 {headline}
               </h2>
             </Reveal>
@@ -33,7 +33,7 @@ export default function Showcase({
 
           <a
             href={buttonHref}
-            className="hidden sm:inline-flex h-10 px-5 rounded-xl bg-[#f5c400] text-black font-extrabold"
+            className="hidden sm:inline-flex h-10 px-5 rounded-xl bg-primary text-text-dark font-extrabold"
           >
             {buttonLabel}
           </a>
@@ -41,11 +41,11 @@ export default function Showcase({
 
         <Stagger className="mt-10 grid md:grid-cols-3 gap-6" from={120} step={90}>
           {(cards || []).map((c) => (
-            <div key={c.title} className="rounded-2xl overflow-hidden border shadow-sm">
-              <img src={img(c.imageKey, "project1")} className="h-64 w-full object-cover" />
+            <div key={c.title} className="rounded-2xl overflow-hidden border border-text-dark/10 shadow-sm bg-surface-light">
+              <img src={img(c.imageKey, "project1")} alt="" className="h-64 w-full object-cover" />
               <div className="p-6">
-                <div className="font-extrabold">{c.title}</div>
-                <div className="text-sm text-black/60 mt-1">{c.body}</div>
+                <div className="font-extrabold text-text-dark">{c.title}</div>
+                <div className="text-sm text-text-dark/60 mt-1">{c.body}</div>
               </div>
             </div>
           ))}

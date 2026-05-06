@@ -3,38 +3,10 @@ import Stagger from "../../components/Stagger";
 import { HOME_IMAGES } from "../../data/homeImages";
 
 const defaultServices = [
-  {
-    n: "01",
-    title: "Auto, Haus & Recht",
-    desc: "Schützen Sie, was Ihnen wichtig ist – verlässlich und flexibel.",
-    imageKey: "service1",
-    href: "/auto-haus-recht",
-    cta: "Mehr erfahren",
-  },
-  {
-    n: "02",
-    title: "Gesundheit & Freizeit",
-    desc: "Leistungen, die im Alltag entlasten – von Zahn bis Reise.",
-    imageKey: "service2",
-    href: "/gesundheit-freizeit",
-    cta: "Mehr erfahren",
-  },
-  {
-    n: "03",
-    title: "Tier",
-    desc: "Für Hund & Katze: Schutz, der mit Ihrem Alltag mitgeht.",
-    imageKey: "service3",
-    href: "/tier",
-    cta: "Mehr erfahren",
-  },
-  {
-    n: "04",
-    title: "Vorsorge & Vermögen",
-    desc: "Vorsorgen, anlegen, absichern – passend zu Ihrem Lebensplan.",
-    imageKey: "service4",
-    href: "/vorsorge-vermoegen",
-    cta: "Mehr erfahren",
-  },
+  { n: "01", title: "Auto, Haus & Recht", desc: "Schützen Sie, was Ihnen wichtig ist – verlässlich und flexibel.", imageKey: "service1", href: "/auto-haus-recht", cta: "Mehr erfahren" },
+  { n: "02", title: "Gesundheit & Freizeit", desc: "Leistungen, die im Alltag entlasten – von Zahn bis Reise.", imageKey: "service2", href: "/gesundheit-freizeit", cta: "Mehr erfahren" },
+  { n: "03", title: "Tier", desc: "Für Hund & Katze: Schutz, der mit Ihrem Alltag mitgeht.", imageKey: "service3", href: "/tier", cta: "Mehr erfahren" },
+  { n: "04", title: "Vorsorge & Vermögen", desc: "Vorsorgen, anlegen, absichern – passend zu Ihrem Lebensplan.", imageKey: "service4", href: "/vorsorge-vermoegen", cta: "Mehr erfahren" },
 ];
 
 function imageFromKey(imageKey, fallbackKey) {
@@ -50,24 +22,24 @@ export default function Services({
   services = defaultServices,
 }) {
   return (
-    <section id="services" className="py-14 bg-white">
+    <section id="services" className="py-14 bg-surface-light">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-start justify-between gap-6">
           <div>
             <Reveal>
-              <div className="text-[10px] uppercase tracking-widest font-extrabold text-gray-400">
+              <div className="text-[10px] uppercase tracking-widest font-extrabold text-text-dark/50">
                 {eyebrow}
               </div>
             </Reveal>
 
             <Reveal delay={80}>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-gray-900">
+              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-text-dark">
                 {headline}
               </h2>
             </Reveal>
 
             <Reveal delay={140}>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl">
+              <p className="mt-2 text-sm text-text-dark/60 max-w-2xl">
                 {subheading}
               </p>
             </Reveal>
@@ -76,44 +48,40 @@ export default function Services({
           <Reveal delay={160} className="hidden sm:block">
             <a
               href={buttonHref}
-              className="inline-flex h-10 px-5 rounded-xl bg-[#f4c300] text-black font-extrabold text-xs items-center justify-center hover:opacity-90 transition"
+              className="inline-flex h-10 px-5 rounded-xl bg-primary text-text-dark font-extrabold text-xs items-center justify-center hover:opacity-90 transition"
             >
               {buttonLabel}
             </a>
           </Reveal>
         </div>
 
-        <Stagger
-          className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          from={120}
-          step={90}
-        >
+        <Stagger className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" from={120} step={90}>
           {(services || []).map((s) => {
             const img = s.img || imageFromKey(s.imageKey, "service1");
 
             return (
               <div
                 key={`${s.n}-${s.title}`}
-                className="rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition"
+                className="rounded-2xl border border-text-dark/10 bg-surface-light shadow-sm overflow-hidden hover:shadow-md transition"
               >
-                <div className="h-36 bg-gray-100">
+                <div className="h-36 bg-background-light">
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </div>
 
                 <div className="p-5">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-black text-white text-[10px] font-extrabold flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-lg bg-background-dark text-white text-[10px] font-extrabold flex items-center justify-center">
                       {s.n}
                     </div>
 
-                    <h3 className="font-extrabold text-gray-900">{s.title}</h3>
+                    <h3 className="font-extrabold text-text-dark">{s.title}</h3>
                   </div>
 
-                  <p className="mt-2 text-sm text-gray-500">{s.desc}</p>
+                  <p className="mt-2 text-sm text-text-dark/60">{s.desc}</p>
 
                   <a
                     href={s.href}
-                    className="mt-4 inline-flex h-9 px-4 rounded-xl bg-[#f4c300] text-black text-[11px] font-extrabold items-center justify-center hover:opacity-90 transition"
+                    className="mt-4 inline-flex h-9 px-4 rounded-xl bg-primary text-text-dark text-[11px] font-extrabold items-center justify-center hover:opacity-90 transition"
                   >
                     {s.cta}
                   </a>

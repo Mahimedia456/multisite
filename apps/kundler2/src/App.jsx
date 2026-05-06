@@ -9,6 +9,7 @@ import KfzVersicherung from "./pages/KfzVersicherung";
 import Blogs from "./pages/Blogs.jsx";
 import BlogDetail from "./pages/BlogDetail.jsx";
 import { useBrandTheme } from "./hooks/useBrandTheme";
+import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 
 export default function App() {
   useBrandTheme("kundler3");
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/blogs/:slug" element={<BlogDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
         </Routes>
       </BrowserRouter>
     </>

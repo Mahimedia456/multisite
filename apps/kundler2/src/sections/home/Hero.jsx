@@ -49,16 +49,8 @@ export default function Hero({
     { value: "Top", label: "Online-Antrag" },
   ],
   cards = [
-    {
-      title: "Kfz-Versicherung",
-      subtitle: "Optimaler Schutz fürs Auto",
-      imageKey: "heroCard1",
-    },
-    {
-      title: "Zahnzusatz",
-      subtitle: "Premium-Schutz ohne Wartezeit",
-      imageKey: "heroCard2",
-    },
+    { title: "Kfz-Versicherung", subtitle: "Optimaler Schutz fürs Auto", imageKey: "heroCard1" },
+    { title: "Zahnzusatz", subtitle: "Premium-Schutz ohne Wartezeit", imageKey: "heroCard2" },
   ],
   heroPoster,
   heroPosterKey = "heroPoster",
@@ -73,9 +65,10 @@ export default function Hero({
   const [ready, setReady] = useState(false);
 
   const posterSrc = getImage(heroPoster, heroPosterKey);
-  const videos = Array.isArray(heroVideos) && heroVideos.length
-    ? heroVideos
-    : HOME_IMAGES.heroVideos || [];
+  const videos =
+    Array.isArray(heroVideos) && heroVideos.length
+      ? heroVideos
+      : HOME_IMAGES.heroVideos || [];
 
   const beforeHighlight = headline.includes(highlight)
     ? headline.split(highlight)[0]
@@ -107,11 +100,7 @@ export default function Hero({
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
-        <img
-          src={posterSrc}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={posterSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
 
         {videos.length ? (
           <video
@@ -140,14 +129,14 @@ export default function Hero({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 text-[10px] font-extrabold tracking-widest uppercase">
-              <span className="w-2 h-2 rounded-full bg-[#f4c300]" />
+              <span className="w-2 h-2 rounded-full bg-primary" />
               {badge}
             </div>
 
             <h1 className="mt-5 text-white font-extrabold tracking-tight text-[38px] leading-[1.05] sm:text-5xl lg:text-6xl">
               {beforeHighlight}
               {highlight && headline.includes(highlight) ? (
-                <span className="text-[#f4c300]">{highlight}</span>
+                <span className="text-primary">{highlight}</span>
               ) : null}
               {afterHighlight}
             </h1>
@@ -159,7 +148,7 @@ export default function Hero({
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
               <a
                 href={primaryHref}
-                className="h-10 px-5 rounded-xl bg-[#f4c300] text-black font-extrabold text-xs inline-flex items-center justify-center hover:opacity-90 transition"
+                className="h-10 px-5 rounded-xl bg-primary text-text-dark font-extrabold text-xs inline-flex items-center justify-center hover:opacity-90 transition"
               >
                 {primaryLabel}
               </a>
@@ -174,11 +163,7 @@ export default function Hero({
 
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md">
               {(stats || []).map((item) => (
-                <StatPill
-                  key={`${item.value}-${item.label}`}
-                  value={item.value}
-                  label={item.label}
-                />
+                <StatPill key={`${item.value}-${item.label}`} value={item.value} label={item.label} />
               ))}
             </div>
           </div>
@@ -207,13 +192,11 @@ export default function Hero({
                   </div>
                 </div>
 
-                <div className="text-[#f4c300] font-extrabold">
-                  {highlightStatus}
-                </div>
+                <div className="text-primary font-extrabold">{highlightStatus}</div>
               </div>
 
               <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
-                <div className="h-full w-[78%] bg-[#f4c300]" />
+                <div className="h-full w-[78%] bg-primary" />
               </div>
 
               <div className="mt-3 flex items-center justify-between text-[11px] text-white/60">
@@ -228,7 +211,7 @@ export default function Hero({
               </div>
             </div>
 
-            <div className="absolute -z-10 -top-10 -right-10 w-56 h-56 rounded-full bg-[#f4c300]/20 blur-3xl" />
+            <div className="absolute -z-10 -top-10 -right-10 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
           </div>
         </div>
       </div>

@@ -16,9 +16,9 @@ export default function CTAWide({
   imageKey = "ctaBg",
 }) {
   return (
-    <section className="relative py-16 bg-black">
+    <section className="relative py-16 bg-background-dark">
       <div className="absolute inset-0">
-        <img src={img(imageKey, "ctaBg")} className="w-full h-full object-cover opacity-45" />
+        <img src={img(imageKey, "ctaBg")} alt="" className="w-full h-full object-cover opacity-45" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-6 text-white">
@@ -28,7 +28,7 @@ export default function CTAWide({
           <p className="mt-2 text-white/70">{body}</p>
 
           <div className="mt-6 flex gap-3">
-            <a href={primaryHref} className="bg-[#f5c400] text-black px-6 py-3 rounded-xl font-extrabold">
+            <a href={primaryHref} className="bg-primary text-text-dark px-6 py-3 rounded-xl font-extrabold">
               {primaryLabel}
             </a>
 
