@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
+const ADMIN_LOGIN_URL = "https://multisite-admin.vercel.app/login";
+
 const DefaultLink = ({ to, href, children, ...rest }) => {
   const finalHref = href ?? to ?? "#";
   return (
@@ -59,6 +61,14 @@ function getVisibilityKey(item) {
     return "unique:contact";
   }
 
+  if (
+    href === "/knowledge" ||
+    label.includes("wissen") ||
+    label.includes("knowledge")
+  ) {
+    return "shared:knowledge";
+  }
+
   if (href === "/kfz-versicherung" || label.includes("kfz")) {
     return "shared:kfz-versicherung";
   }
@@ -93,7 +103,9 @@ function filterMenuItems(items = [], hiddenWebsitePages = []) {
                 ...col,
                 items: filterMenuItems(col?.items || [], hiddenWebsitePages),
                 footerLink:
-                  footerKey && hiddenSet.has(footerKey) ? null : col?.footerLink,
+                  footerKey && hiddenSet.has(footerKey)
+                    ? null
+                    : col?.footerLink,
               };
             })
             .filter((col) => {
@@ -107,12 +119,85 @@ function filterMenuItems(items = [], hiddenWebsitePages = []) {
     .filter(Boolean);
 }
 
+function getBrandContact(brand = {}) {
+  const email =
+    brand.company_email ||
+    brand.companyEmail ||
+    brand.email ||
+    brand.contactEmail ||
+    brand.contact_email ||
+    brand.supportEmail ||
+    brand.support_email ||
+    brand.mail ||
+    brand.company?.email ||
+    brand.contact?.email ||
+    brand.support?.email ||
+    "";
+
+  const phone =
+    brand.company_phone ||
+    brand.companyPhone ||
+    brand.phone ||
+    brand.telephone ||
+    brand.tel ||
+    brand.contactPhone ||
+    brand.contact_phone ||
+    brand.supportPhone ||
+    brand.support_phone ||
+    brand.company?.phone ||
+    brand.contact?.phone ||
+    brand.support?.phone ||
+    "";
+
+  const whatsapp =
+    brand.company_whatsapp ||
+    brand.companyWhatsapp ||
+    brand.whatsapp ||
+    brand.company?.whatsapp ||
+    brand.contact?.whatsapp ||
+    brand.support?.whatsapp ||
+    "";
+
+  const location =
+    brand.company_location ||
+    brand.companyLocation ||
+    brand.location ||
+    brand.address ||
+    brand.company?.location ||
+    brand.company?.address ||
+    brand.contact?.location ||
+    brand.contact?.address ||
+    "";
+
+  return { email, phone, whatsapp, location };
+}
+
+function telHref(phone = "") {
+  const cleaned = String(phone || "").replace(/[^\d+]/g, "");
+  return cleaned ? `tel:${cleaned}` : "#";
+}
+
+function whatsappHref(whatsapp = "") {
+  const cleaned = String(whatsapp || "").replace(/[^\d]/g, "");
+  return cleaned ? `https://wa.me/${cleaned}` : "#";
+}
+
 export default function SiteHeader({
   brand,
   LinkComponent = DefaultLink,
   variant = "bar",
   showDefaultAbout = true,
   hiddenWebsitePages = [],
+
+  /**
+   * "topbar" = company details topbar + logo row buttons
+   * "actions" = only logo row buttons, no topbar
+   * "both" = same as topbar, kept for backward compatibility
+   * "none" = no topbar and no logo row buttons
+   */
+  contactPlacement = "topbar",
+
+  showTopBar = true,
 }) {
   const Link = LinkComponent;
 
@@ -130,9 +215,11 @@ export default function SiteHeader({
     logoUrl = "",
     LogoIcon,
     homeLinks = [],
-    login = { label: "Log In", to: "/login" },
-    cta = { label: "Get a Quote" },
+    login = { label: "Log In", href: ADMIN_LOGIN_URL },
+    cta = { label: "kontakt", to: "/contact" },
   } = brand || {};
+
+  const { email, phone, whatsapp, location } = getBrandContact(brand);
 
   const normalizedLinks = useMemo(() => {
     return filterMenuItems(homeLinks || [], hiddenWebsitePages).map((l) => ({
@@ -270,16 +357,19 @@ export default function SiteHeader({
     </span>
   );
 
+  const loginHref = login?.href || login?.url || ADMIN_LOGIN_URL;
+
   const renderCta = () => {
+    const label = cta?.label || "kontakt";
     const cls =
-      "h-10 px-5 rounded-xl bg-primary hover:bg-primary-dark " +
-      "text-white text-sm font-bold shadow-lg shadow-primary/20 transition-all " +
+      "h-11 px-6 rounded-xl bg-primary hover:bg-primary-dark " +
+      "text-white text-sm font-extrabold shadow-lg shadow-primary/20 transition-all " +
       "inline-flex items-center justify-center leading-none whitespace-nowrap";
 
     if (cta?.to) {
       return (
         <Link to={cta.to} className={cls}>
-          {cta.label}
+          {label}
         </Link>
       );
     }
@@ -287,20 +377,122 @@ export default function SiteHeader({
     if (cta?.href) {
       return (
         <a href={cta.href} className={cls}>
-          {cta.label}
+          {label}
         </a>
       );
     }
 
     return (
-      <button type="button" className={cls} onClick={cta?.onClick}>
-        {cta?.label}
-      </button>
+      <Link to="/contact" className={cls}>
+        {label}
+      </Link>
     );
   };
 
+  const renderTopbarContactInfo = () => {
+    return (
+      <div className="flex min-w-0 items-center gap-5 xl:gap-7">
+        {phone ? (
+          <a
+            href={telHref(phone)}
+            className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px] shrink-0">
+              call
+            </span>
+            <span className="whitespace-nowrap">{phone}</span>
+          </a>
+        ) : null}
+
+        {email ? (
+          <a
+            href={`mailto:${email}`}
+            className="inline-flex min-w-0 items-center gap-2 text-white hover:text-white/80 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px] shrink-0">
+              mail
+            </span>
+            <span className="truncate max-w-[260px]">{email}</span>
+          </a>
+        ) : null}
+
+        {whatsapp ? (
+          <a
+            href={whatsappHref(whatsapp)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-white hover:text-white/80 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px] shrink-0">
+              chat
+            </span>
+            <span className="whitespace-nowrap">{whatsapp}</span>
+          </a>
+        ) : null}
+
+        {location ? (
+          <span className="inline-flex min-w-0 items-center gap-2 text-white">
+            <span className="material-symbols-outlined text-[18px] shrink-0">
+              location_on
+            </span>
+            <span className="truncate max-w-[360px]">{location}</span>
+          </span>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderHeaderRowActions = () => {
+    return (
+      <div className="hidden lg:flex items-center justify-end gap-3">
+        <Link
+          to="/knowledge"
+          className="h-11 px-5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:text-primary transition-all inline-flex items-center gap-2 text-sm font-extrabold shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[22px] text-primary">
+            support_agent
+          </span>
+          <span>Support</span>
+        </Link>
+
+        <a
+          href={loginHref}
+          className="h-11 w-11 rounded-xl bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 inline-flex items-center justify-center"
+          aria-label="My account"
+        >
+          <span className="material-symbols-outlined text-[24px]">person</span>
+        </a>
+
+        {renderCta()}
+      </div>
+    );
+  };
+
+  const shouldShowTopbar =
+    showTopBar && (contactPlacement === "topbar" || contactPlacement === "both");
+
+  const shouldShowHeaderActions =
+    contactPlacement === "topbar" ||
+    contactPlacement === "actions" ||
+    contactPlacement === "both";
+
   const toggleMobileMega = (label) => {
     setMobileOpenMega((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const renderTopBar = () => {
+    if (!shouldShowTopbar) return null;
+
+    return (
+      <div className="hidden lg:block bg-primary text-white border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-11 flex items-center justify-between gap-6 text-sm font-bold">
+            {renderTopbarContactInfo()}
+            <div className="shrink-0" />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderDesktopMegaPanel = () => {
@@ -388,27 +580,19 @@ export default function SiteHeader({
 
   const Inner = (
     <div className="w-full" ref={headerRef}>
-      <div className="h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+      <div className="h-16 flex items-center justify-between gap-4">
+        <Link to="/" className="flex items-center gap-3 shrink-0 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
             {renderLogo()}
           </div>
-          <span className="text-base font-extrabold tracking-tight text-slate-900 whitespace-nowrap">
+
+          <span className="text-base font-extrabold tracking-tight text-slate-900 whitespace-nowrap truncate">
             {name}
           </span>
         </Link>
 
         <div className="flex items-center gap-3 shrink-0">
-          {login?.to ? (
-            <Link
-              className="hidden sm:inline-flex text-sm font-medium text-slate-700 hover:text-primary transition-colors whitespace-nowrap"
-              to={login.to}
-            >
-              {login.label ?? "Log In"}
-            </Link>
-          ) : null}
-
-          {renderCta()}
+          {shouldShowHeaderActions ? renderHeaderRowActions() : null}
 
           <button
             className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
@@ -497,6 +681,89 @@ export default function SiteHeader({
       {mobileOpen && (
         <div className="sm:hidden border-t border-gray-100 bg-white">
           <div className="flex flex-col py-2">
+            {phone ? (
+              <a
+                href={telHref(phone)}
+                className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="material-symbols-outlined text-primary text-[20px]">
+                  call
+                </span>
+                {phone}
+              </a>
+            ) : null}
+
+            {email ? (
+              <a
+                href={`mailto:${email}`}
+                className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="material-symbols-outlined text-primary text-[20px]">
+                  mail
+                </span>
+                {email}
+              </a>
+            ) : null}
+
+            {whatsapp ? (
+              <a
+                href={whatsappHref(whatsapp)}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="material-symbols-outlined text-primary text-[20px]">
+                  chat
+                </span>
+                {whatsapp}
+              </a>
+            ) : null}
+
+            {location ? (
+              <div className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100">
+                <span className="material-symbols-outlined text-primary text-[20px]">
+                  location_on
+                </span>
+                {location}
+              </div>
+            ) : null}
+
+            <Link
+              to="/knowledge"
+              className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="material-symbols-outlined text-primary text-[20px]">
+                support_agent
+              </span>
+              Support
+            </Link>
+
+            <a
+              href={loginHref}
+              className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="material-symbols-outlined text-primary text-[20px]">
+                person
+              </span>
+              My account
+            </a>
+
+            <Link
+              to="/contact"
+              className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="material-symbols-outlined text-primary text-[20px]">
+                contact_mail
+              </span>
+              kontakt
+            </Link>
+
             {normalizedLinks.map((item, idx) => {
               const label = item?.label || `Link-${idx}`;
 
@@ -644,6 +911,7 @@ export default function SiteHeader({
     return (
       <div className="sticky top-3 z-50 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {renderTopBar()}
           <nav className="backdrop-blur-md border bg-white/90 border-gray-100 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-4 sm:px-6 lg:px-8">{Inner}</div>
           </nav>
@@ -653,8 +921,11 @@ export default function SiteHeader({
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full backdrop-blur-md border-b bg-white/90 border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{Inner}</div>
-    </nav>
+    <div className="sticky top-0 z-50 w-full">
+      {renderTopBar()}
+      <nav className="w-full backdrop-blur-md border-b bg-white/90 border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{Inner}</div>
+      </nav>
+    </div>
   );
 }

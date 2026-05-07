@@ -18,6 +18,8 @@ import KnowledgeArea from "./pages/KnowledgeArea.jsx";
 import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
 import KnowledgeForm from "./pages/KnowledgeForm.jsx";
 
+import NotFound from "./pages/NotFound.jsx";
+
 const BRAND = "allianz4";
 
 export default function App() {
@@ -97,6 +99,9 @@ export default function App() {
           />
 
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
+
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </>

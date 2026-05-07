@@ -20,31 +20,39 @@ export default function ContactFAQSection({
   items = DEFAULT_ITEMS,
 }) {
   return (
-    <section className="bg-[#f6f7f8] py-24">
-      <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:px-10 md:grid-cols-[0.8fr_1.2fr]">
+    <section className="bg-[#f5f8f8] py-24">
+      <div className="mx-auto grid max-w-7xl gap-12 px-6 md:grid-cols-[0.8fr_1.2fr] lg:px-10">
         <div>
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.25em] text-primary">
+          <p className="mb-4 inline-flex rounded-full bg-primary/10 px-5 py-2 text-xs font-black uppercase tracking-[0.25em] text-primary">
             {eyebrow}
           </p>
 
-          <h2 className="text-4xl font-black leading-tight text-zinc-950 md:text-5xl">
+          <h2 className="text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl">
             {headline}
           </h2>
 
-          <p className="mt-4 text-zinc-600 leading-7">{subheading}</p>
+          <p className="mt-5 text-base font-semibold leading-8 text-slate-600">
+            {subheading}
+          </p>
         </div>
 
         <div className="space-y-4">
           {(items || []).map((item, index) => (
             <div
               key={`${item.q}-${index}`}
-              className="rounded-3xl bg-white p-6 shadow-sm border border-black/5"
+              className="group rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:border-primary hover:shadow-soft"
             >
-              <h3 className="text-base font-black text-zinc-950">
-                {String(index + 1).padStart(2, "0")}. {item.q}
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-sm font-black text-primary">
+                {String(index + 1).padStart(2, "0")}
+              </div>
+
+              <h3 className="text-lg font-black leading-snug text-slate-950">
+                {item.q}
               </h3>
 
-              <p className="mt-3 text-sm leading-7 text-zinc-600">{item.a}</p>
+              <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">
+                {item.a}
+              </p>
             </div>
           ))}
         </div>

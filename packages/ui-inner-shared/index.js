@@ -29,6 +29,8 @@ export { default as KnowledgeAreaPage } from "./src/pages/KnowledgeAreaPage.jsx"
 export { default as KnowledgeArticlePage } from "./src/pages/KnowledgeArticlePage.jsx";
 export { default as KnowledgeFormPage } from "./src/pages/KnowledgeFormPage.jsx";
 
+export { default as Shared404Page } from "./src/pages/Shared404Page.jsx";
+
 // about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";
 export { default as SubTabs } from "./src/sections/about/SubTabs.jsx";

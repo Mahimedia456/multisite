@@ -37,7 +37,7 @@ const KNOWLEDGE_ITEMS = [
     titleKey: "knowledgeSettings",
     descriptionKey: "knowledgeSettingsDesc",
     icon: "settings",
-    path: "/knowledge/settings",
+    path: "/settings/knowledge",
   },
 ];
 
