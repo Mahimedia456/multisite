@@ -21,12 +21,17 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
 
   async function submitForm(e) {
     e.preventDefault();
+
     setSubmitError("");
     setSuccessMessage("");
 
     for (const field of fields) {
       if (field.required && !String(values[field.name] || "").trim()) {
-        setSubmitError(lang === "en" ? "Please fill all required fields." : "Bitte füllen Sie alle Pflichtfelder aus.");
+        setSubmitError(
+          lang === "en"
+            ? "Please fill all required fields."
+            : "Bitte füllen Sie alle Pflichtfelder aus."
+        );
         return;
       }
     }
@@ -39,7 +44,10 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
         full_name: values.full_name || values.name || "",
         email: values.email || "",
         phone: values.phone || values.telefon || "",
-        subject: values.subject || values.betreff || pickLang(form, "title", lang),
+        subject:
+          values.subject ||
+          values.betreff ||
+          pickLang(form, "title", lang),
         message: values.message || values.nachricht || "",
       });
 
@@ -53,7 +61,12 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
 
       setValues({});
     } catch (e) {
-      setSubmitError(e.message || (lang === "en" ? "Form could not be submitted." : "Formular konnte nicht gesendet werden."));
+      setSubmitError(
+        e.message ||
+          (lang === "en"
+            ? "Form could not be submitted."
+            : "Formular konnte nicht gesendet werden.")
+      );
     } finally {
       setSending(false);
     }
@@ -65,68 +78,144 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
     const value = values[name] || "";
 
     const baseClass =
-      "w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-900 outline-none focus:border-[#007ab3]";
+      "w-full rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
 
     if (field.type === "textarea") {
-      return <textarea rows={5} value={value} required={field.required} placeholder={placeholder} onChange={(e) => updateValue(name, e.target.value)} className={baseClass} />;
+      return (
+        <textarea
+          rows={5}
+          value={value}
+          required={field.required}
+          placeholder={placeholder}
+          onChange={(e) => updateValue(name, e.target.value)}
+          className={baseClass}
+        />
+      );
     }
 
     if (field.type === "select") {
       return (
-        <select value={value} required={field.required} onChange={(e) => updateValue(name, e.target.value)} className={baseClass}>
-          <option value="">{lang === "en" ? "Please select" : "Bitte auswählen"}</option>
+        <select
+          value={value}
+          required={field.required}
+          onChange={(e) => updateValue(name, e.target.value)}
+          className={baseClass}
+        >
+          <option value="">
+            {lang === "en" ? "Please select" : "Bitte auswählen"}
+          </option>
+
           {(field.options || []).map((option) => (
-            <option key={option} value={option}>{option}</option>
+            <option key={option} value={option}>
+              {option}
+            </option>
           ))}
         </select>
       );
     }
 
-    return <input type={field.type === "email" ? "email" : field.type === "phone" ? "tel" : "text"} value={value} required={field.required} placeholder={placeholder} onChange={(e) => updateValue(name, e.target.value)} className={baseClass} />;
+    return (
+      <input
+        type={
+          field.type === "email"
+            ? "email"
+            : field.type === "phone"
+              ? "tel"
+              : "text"
+        }
+        value={value}
+        required={field.required}
+        placeholder={placeholder}
+        onChange={(e) => updateValue(name, e.target.value)}
+        className={baseClass}
+      />
+    );
   }
 
   if (!form) {
     return (
-      <main className="mx-auto max-w-4xl px-5 py-16">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-red-700">
-          {lang === "en" ? "Form not found." : "Formular nicht gefunden."}
-        </div>
+      <main className="min-h-screen bg-[#f5f8f8] text-slate-900">
+        <section className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-sm font-bold text-red-700">
+            {lang === "en" ? "Form not found." : "Formular nicht gefunden."}
+          </div>
+        </section>
       </main>
     );
   }
 
   return (
-    <main className="bg-[#f6f8fb]">
-      <section className="mx-auto max-w-4xl px-5 py-16">
-        <Link to="/knowledge" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-[#007ab3] shadow-sm">
-          ← {lang === "en" ? "Back to Knowledge Area" : "Zurück zum Wissensbereich"}
-        </Link>
+    <main className="min-h-screen bg-[#f5f8f8] text-slate-900">
+      <section className="relative overflow-hidden bg-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-white to-primary/5" />
 
-        <div className="mt-8 rounded-[36px] border border-slate-200 bg-white p-8 shadow-sm md:p-10">
-          <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
-            {lang === "en" ? "Form" : "Formular"}
+        <div className="relative mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+          <Link
+            to="/knowledge"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-primary shadow-sm transition hover:border-primary hover:bg-primary hover:text-white"
+          >
+            <span>←</span>
+            {lang === "en" ? "Back to Knowledge Area" : "Zurück zum Wissensbereich"}
+          </Link>
+
+          <div className="mt-10">
+            <div className="mb-5 inline-flex rounded-full bg-primary/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-primary">
+              {lang === "en" ? "Form" : "Formular"}
+            </div>
+
+            <h1 className="max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl">
+              {pickLang(form, "title", lang)}
+            </h1>
+
+            {pickLang(form, "description", lang) ? (
+              <p className="mt-6 max-w-3xl text-base font-semibold leading-8 text-slate-600">
+                {pickLang(form, "description", lang)}
+              </p>
+            ) : null}
           </div>
+        </div>
+      </section>
 
-          <h1 className="mt-4 text-4xl font-black leading-tight text-slate-950">
-            {pickLang(form, "title", lang)}
-          </h1>
+      <section className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm md:p-10">
+          {successMessage ? (
+            <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm font-bold leading-6 text-green-700">
+              {successMessage}
+            </div>
+          ) : null}
 
-          {successMessage ? <div className="mt-6 rounded-3xl border border-green-200 bg-green-50 p-5 text-sm font-bold leading-6 text-green-700">{successMessage}</div> : null}
-          {submitError ? <div className="mt-6 rounded-3xl border border-red-200 bg-red-50 p-5 text-sm font-bold leading-6 text-red-700">{submitError}</div> : null}
+          {submitError ? (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold leading-6 text-red-700">
+              {submitError}
+            </div>
+          ) : null}
 
-          <form onSubmit={submitForm} className="mt-8 space-y-5">
+          <form onSubmit={submitForm} className="space-y-6">
             {fields.map((field) => (
               <label key={field.name} className="block space-y-2">
                 <span className="text-sm font-black text-slate-700">
                   {pickLang(field, "label", lang) || field.name}
-                  {field.required ? <span className="text-red-500"> *</span> : null}
+                  {field.required ? (
+                    <span className="text-red-500"> *</span>
+                  ) : null}
                 </span>
+
                 {renderField(field)}
               </label>
             ))}
 
-            <button type="submit" disabled={sending} className="inline-flex w-full items-center justify-center rounded-2xl bg-[#007ab3] px-6 py-4 text-sm font-black text-white shadow-lg shadow-[#007ab3]/20 transition hover:bg-[#005f8c] disabled:cursor-not-allowed disabled:opacity-60">
-              {sending ? (lang === "en" ? "Sending..." : "Wird gesendet...") : lang === "en" ? "Submit" : "Absenden"}
+            <button
+              type="submit"
+              disabled={sending}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {sending
+                ? lang === "en"
+                  ? "Sending..."
+                  : "Wird gesendet..."
+                : lang === "en"
+                  ? "Submit"
+                  : "Absenden"}
             </button>
           </form>
         </div>
