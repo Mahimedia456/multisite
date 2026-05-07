@@ -5,7 +5,14 @@ function pickLang(item, key, lang = "de") {
   return item?.[`${key}_${lang}`] || item?.[`${key}_de`] || item?.[`${key}_en`] || "";
 }
 
-export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
+export default function KnowledgeFormPage({
+  tenantConfig,
+  HeaderSlot,
+  FooterSlot,
+  lang = "de",
+  form,
+  onSubmit,
+}) {
   const fields = useMemo(() => {
     return Array.isArray(form?.fields_json) ? form.fields_json : [];
   }, [form]);
@@ -21,7 +28,6 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
 
   async function submitForm(e) {
     e.preventDefault();
-
     setSubmitError("");
     setSuccessMessage("");
 
@@ -44,10 +50,7 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
         full_name: values.full_name || values.name || "",
         email: values.email || "",
         phone: values.phone || values.telefon || "",
-        subject:
-          values.subject ||
-          values.betreff ||
-          pickLang(form, "title", lang),
+        subject: values.subject || values.betreff || pickLang(form, "title", lang),
         message: values.message || values.nachricht || "",
       });
 
@@ -58,7 +61,6 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
             ? "Thank you. Your request has been submitted successfully."
             : "Vielen Dank. Ihre Anfrage wurde erfolgreich gesendet.")
       );
-
       setValues({});
     } catch (e) {
       setSubmitError(
@@ -101,14 +103,9 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
           onChange={(e) => updateValue(name, e.target.value)}
           className={baseClass}
         >
-          <option value="">
-            {lang === "en" ? "Please select" : "Bitte auswählen"}
-          </option>
-
+          <option value="">{lang === "en" ? "Please select" : "Bitte auswählen"}</option>
           {(field.options || []).map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
+            <option key={option} value={option}>{option}</option>
           ))}
         </select>
       );
@@ -116,13 +113,7 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
 
     return (
       <input
-        type={
-          field.type === "email"
-            ? "email"
-            : field.type === "phone"
-              ? "tel"
-              : "text"
-        }
+        type={field.type === "email" ? "email" : field.type === "phone" ? "tel" : "text"}
         value={value}
         required={field.required}
         placeholder={placeholder}
@@ -132,94 +123,98 @@ export default function KnowledgeFormPage({ lang = "de", form, onSubmit }) {
     );
   }
 
-  if (!form) {
-    return (
-      <main className="min-h-screen bg-[#f5f8f8] text-slate-900">
-        <section className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-sm font-bold text-red-700">
-            {lang === "en" ? "Form not found." : "Formular nicht gefunden."}
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-[#f5f8f8] text-slate-900">
-      <section className="relative overflow-hidden bg-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-white to-primary/5" />
+    <>
+      {HeaderSlot ? <HeaderSlot tenant={tenantConfig} /> : null}
 
-        <div className="relative mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <Link
-            to="/knowledge"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-primary shadow-sm transition hover:border-primary hover:bg-primary hover:text-white"
-          >
-            <span>←</span>
-            {lang === "en" ? "Back to Knowledge Area" : "Zurück zum Wissensbereich"}
-          </Link>
-
-          <div className="mt-10">
-            <div className="mb-5 inline-flex rounded-full bg-primary/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-primary">
-              {lang === "en" ? "Form" : "Formular"}
+      <main className="bg-[#f5f8f8] text-slate-900">
+        {!form ? (
+          <section className="mx-auto max-w-4xl px-4 py-24 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 shadow-sm">
+              <h1 className="text-4xl font-black text-slate-950">
+                {lang === "en" ? "Form not found." : "Formular nicht gefunden."}
+              </h1>
             </div>
+          </section>
+        ) : (
+          <>
+            <section className="relative overflow-hidden bg-white py-24">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-white to-primary/5" />
 
-            <h1 className="max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl">
-              {pickLang(form, "title", lang)}
-            </h1>
+              <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                <Link
+                  to="/knowledge"
+                  className="inline-flex items-center rounded-full border-2 border-primary px-5 py-3 text-sm font-black text-primary transition hover:bg-primary hover:text-white"
+                >
+                  ← {lang === "en" ? "Back to Knowledge Area" : "Zurück zum Wissensbereich"}
+                </Link>
 
-            {pickLang(form, "description", lang) ? (
-              <p className="mt-6 max-w-3xl text-base font-semibold leading-8 text-slate-600">
-                {pickLang(form, "description", lang)}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </section>
+                <div className="mt-12">
+                  <div className="mb-5 inline-flex rounded-full bg-primary/10 px-5 py-2 text-xs font-black uppercase tracking-[0.22em] text-primary">
+                    {lang === "en" ? "Form" : "Formular"}
+                  </div>
 
-      <section className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm md:p-10">
-          {successMessage ? (
-            <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm font-bold leading-6 text-green-700">
-              {successMessage}
-            </div>
-          ) : null}
+                  <h1 className="text-5xl font-black leading-tight tracking-tight text-slate-950 md:text-6xl">
+                    {pickLang(form, "title", lang)}
+                  </h1>
 
-          {submitError ? (
-            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold leading-6 text-red-700">
-              {submitError}
-            </div>
-          ) : null}
-
-          <form onSubmit={submitForm} className="space-y-6">
-            {fields.map((field) => (
-              <label key={field.name} className="block space-y-2">
-                <span className="text-sm font-black text-slate-700">
-                  {pickLang(field, "label", lang) || field.name}
-                  {field.required ? (
-                    <span className="text-red-500"> *</span>
+                  {pickLang(form, "description", lang) ? (
+                    <p className="mt-6 max-w-3xl text-lg font-semibold leading-8 text-slate-600">
+                      {pickLang(form, "description", lang)}
+                    </p>
                   ) : null}
-                </span>
+                </div>
+              </div>
+            </section>
 
-                {renderField(field)}
-              </label>
-            ))}
+            <section className="py-20">
+              <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm md:p-12">
+                  {successMessage ? (
+                    <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm font-bold leading-6 text-green-700">
+                      {successMessage}
+                    </div>
+                  ) : null}
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {sending
-                ? lang === "en"
-                  ? "Sending..."
-                  : "Wird gesendet..."
-                : lang === "en"
-                  ? "Submit"
-                  : "Absenden"}
-            </button>
-          </form>
-        </div>
-      </section>
-    </main>
+                  {submitError ? (
+                    <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold leading-6 text-red-700">
+                      {submitError}
+                    </div>
+                  ) : null}
+
+                  <form onSubmit={submitForm} className="space-y-6">
+                    {fields.map((field) => (
+                      <label key={field.name} className="block space-y-2">
+                        <span className="text-sm font-black text-slate-700">
+                          {pickLang(field, "label", lang) || field.name}
+                          {field.required ? <span className="text-red-500"> *</span> : null}
+                        </span>
+                        {renderField(field)}
+                      </label>
+                    ))}
+
+                    <button
+                      type="submit"
+                      disabled={sending}
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {sending
+                        ? lang === "en"
+                          ? "Sending..."
+                          : "Wird gesendet..."
+                        : lang === "en"
+                          ? "Submit"
+                          : "Absenden"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+
+      {FooterSlot ? <FooterSlot tenant={tenantConfig} /> : null}
+    </>
   );
 }

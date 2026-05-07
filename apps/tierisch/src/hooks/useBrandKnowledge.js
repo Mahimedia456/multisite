@@ -179,4 +179,4 @@ export async function submitBrandKnowledgeForm({ brandSlug, formSlug, payload })
       body: JSON.stringify(payload || {}),
     }
   );
-}
+} 

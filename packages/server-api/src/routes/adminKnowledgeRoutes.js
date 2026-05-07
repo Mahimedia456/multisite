@@ -953,11 +953,11 @@ router.get(
       `
       select f.*
       from knowledge_forms f
-      join brands b on b.slug = $1
+      join brands b on lower(b.slug) = lower($1)
       left join brand_knowledge_settings s on s.brand_id = b.id
-      where f.slug = $2
+      where lower(f.slug) = lower($2)
         and f.status = 'active'
-        and coalesce(s.knowledge_enabled, false) = true
+        and coalesce(s.knowledge_enabled, true) = true
         and coalesce(s.forms_enabled, true) = true
       limit 1
       `,
@@ -967,7 +967,7 @@ router.get(
     if (!rows[0]) {
       return res.status(404).json({
         ok: false,
-        message: "Form not found",
+        message: "Form not found or knowledge form disabled",
       });
     }
 
@@ -980,17 +980,19 @@ router.post(
   wrap(async (req, res) => {
     const { brandSlug, slug } = req.params;
     const body = req.body || {};
-    const data = body.data || body.data_json || {};
+    const data = body.data || body.data_json || body || {};
 
     const brandResult = await pool.query(
       `
       select
-        b.*,
-        coalesce(s.knowledge_enabled, false) as knowledge_enabled,
+        b.id,
+        b.name,
+        b.slug,
+        coalesce(s.knowledge_enabled, true) as knowledge_enabled,
         coalesce(s.forms_enabled, true) as forms_enabled
       from brands b
       left join brand_knowledge_settings s on s.brand_id = b.id
-      where b.slug = $1
+      where lower(b.slug) = lower($1)
       limit 1
       `,
       [brandSlug]
@@ -998,10 +1000,17 @@ router.post(
 
     const brand = brandResult.rows[0];
 
-    if (!brand || !brand.knowledge_enabled || !brand.forms_enabled) {
+    if (!brand) {
       return res.status(404).json({
         ok: false,
-        message: "Knowledge form not available",
+        message: "Brand not found",
+      });
+    }
+
+    if (!brand.knowledge_enabled || !brand.forms_enabled) {
+      return res.status(403).json({
+        ok: false,
+        message: "Knowledge form disabled for this brand",
       });
     }
 
@@ -1009,7 +1018,7 @@ router.post(
       `
       select *
       from knowledge_forms
-      where slug = $1
+      where lower(slug) = lower($1)
         and status = 'active'
       limit 1
       `,
@@ -1028,28 +1037,33 @@ router.post(
     const fullName =
       cleanText(body.full_name) ||
       cleanText(data.full_name) ||
-      cleanText(data.name);
+      cleanText(data.name) ||
+      cleanText(data.vorname) ||
+      cleanText(data.fullName);
 
     const email =
       cleanText(body.email) ||
       cleanText(data.email) ||
-      cleanText(data["e-mail"]);
+      cleanText(data["e-mail"]) ||
+      cleanText(data.mail);
 
     const phone =
       cleanText(body.phone) ||
       cleanText(data.phone) ||
-      cleanText(data.telefon);
+      cleanText(data.telefon) ||
+      cleanText(data.mobile);
 
     const subject =
       cleanText(body.subject) ||
       cleanText(data.subject) ||
       cleanText(data.betreff) ||
-      form.title_de;
+      cleanText(form.title_de);
 
     const message =
       cleanText(body.message) ||
       cleanText(data.message) ||
-      cleanText(data.nachricht);
+      cleanText(data.nachricht) ||
+      cleanText(data.description);
 
     const insertResult = await pool.query(
       `
@@ -1062,11 +1076,9 @@ router.post(
         subject,
         message,
         data_json,
-        status,
-        email_sent,
-        email_to
+        status
       )
-      values ($1,$2,$3,$4,$5,$6,$7,$8,'new',false,$9)
+      values ($1,$2,$3,$4,$5,$6,$7,$8,'new')
       returning *
       `,
       [
@@ -1078,7 +1090,6 @@ router.post(
         subject,
         message,
         JSON.stringify(data),
-        EMAIL_TO,
       ]
     );
 
@@ -1091,20 +1102,6 @@ router.post(
         brand,
         form,
       });
-
-      if (emailSent) {
-        const updateResult = await pool.query(
-          `
-          update knowledge_form_submissions
-          set email_sent = true, updated_at = now()
-          where id = $1
-          returning *
-          `,
-          [submission.id]
-        );
-
-        submission = updateResult.rows[0] || submission;
-      }
     } catch (emailError) {
       console.error("[knowledge form email failed]", emailError);
     }

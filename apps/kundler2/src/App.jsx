@@ -12,7 +12,12 @@ import { useBrandTheme } from "./hooks/useBrandTheme";
 import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
 
+import KnowledgeArea from "./pages/KnowledgeArea.jsx";
+import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
+import KnowledgeForm from "./pages/KnowledgeForm.jsx";
+
 const BRAND = "kundler3";
+const LANG = "de";
 
 export default function App() {
   useBrandTheme(BRAND);
@@ -70,6 +75,22 @@ export default function App() {
 
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
+
+          <Route
+            path="/knowledge"
+            element={<KnowledgeArea brandSlug={BRAND} lang={LANG} />}
+          />
+
+          <Route
+            path="/knowledge/articles/:slug"
+            element={<KnowledgeArticle brandSlug={BRAND} lang={LANG} />}
+          />
+
+          <Route
+            path="/knowledge/forms/:slug"
+            element={<KnowledgeForm brandSlug={BRAND} lang={LANG} />}
+          />
+
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
         </Routes>
       </BrowserRouter>
