@@ -25,7 +25,9 @@ export {
   useSharedBrandBlogDetail,
 } from "./src/blog/BrandBlogProvider.jsx";
 
-
+export { default as KnowledgeAreaPage } from "./src/pages/KnowledgeAreaPage.jsx";
+export { default as KnowledgeArticlePage } from "./src/pages/KnowledgeArticlePage.jsx";
+export { default as KnowledgeFormPage } from "./src/pages/KnowledgeFormPage.jsx";
 
 // about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";

@@ -1,204 +1,182 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const API_BASE = (
   import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "https://multisite-server-api.vercel.app"
-).replace(/\/api\/?$/, "");
+  (import.meta.env.PROD ? "https://multisite-server-api.vercel.app" : "")
+).replace(/\/+$/, "");
 
-function getJsonUrl(path) {
-  return `${API_BASE}${path}`;
-}
+async function fetchJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  const j = await r.json().catch(() => null);
 
-async function fetchJson(path) {
-  const res = await fetch(getJsonUrl(path));
-  const json = await res.json().catch(() => null);
-
-  if (!res.ok || !json?.ok) {
-    throw new Error(json?.message || "Failed to load knowledge data");
+  if (!r.ok || !j?.ok) {
+    throw new Error(j?.message || `Failed (${r.status})`);
   }
 
-  return json.data;
+  return j.data;
 }
 
 export function useBrandKnowledge(brandSlug) {
-  const [data, setData] = useState({
-    brand: null,
-    settings: null,
+  const [state, setState] = useState({
     categories: [],
     articles: [],
     faqs: [],
     forms: [],
+    settings: {},
+    loading: true,
+    error: "",
   });
 
-  const [loading, setLoading] = useState(Boolean(brandSlug));
-  const [error, setError] = useState("");
-
   useEffect(() => {
-    let alive = true;
+    let cancelled = false;
 
     async function load() {
-      if (!brandSlug) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError("");
+      setState((p) => ({ ...p, loading: true, error: "" }));
 
       try {
-        const result = await fetchJson(`/public/${brandSlug}/knowledge`);
+        const data = await fetchJson(
+          `${API_BASE}/public/${encodeURIComponent(brandSlug)}/knowledge`
+        );
 
-        if (!alive) return;
-
-        setData({
-          brand: result?.brand || null,
-          settings: result?.settings || null,
-          categories: result?.categories || [],
-          articles: result?.articles || [],
-          faqs: result?.faqs || [],
-          forms: result?.forms || [],
-        });
+        if (!cancelled) {
+          setState({
+            categories: data?.categories || [],
+            articles: data?.articles || [],
+            faqs: data?.faqs || [],
+            forms: data?.forms || [],
+            settings: data?.settings || {},
+            loading: false,
+            error: "",
+          });
+        }
       } catch (e) {
-        if (!alive) return;
-
-        setError(e.message || "Failed to load knowledge data");
-        setData({
-          brand: null,
-          settings: null,
-          categories: [],
-          articles: [],
-          faqs: [],
-          forms: [],
-        });
-      } finally {
-        if (alive) setLoading(false);
+        if (!cancelled) {
+          setState((p) => ({
+            ...p,
+            loading: false,
+            error: e?.message || "Failed to load knowledge area",
+          }));
+        }
       }
     }
 
-    load();
+    if (brandSlug) load();
 
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [brandSlug]);
 
-  const enabled = Boolean(data.settings?.knowledge_enabled);
-
-  return useMemo(
-    () => ({
-      ...data,
-      enabled,
-      loading,
-      error,
-    }),
-    [data, enabled, loading, error]
-  );
+  return state;
 }
 
 export function useBrandKnowledgeArticle(brandSlug, articleSlug) {
-  const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(Boolean(brandSlug && articleSlug));
-  const [error, setError] = useState("");
+  const [state, setState] = useState({
+    article: null,
+    loading: true,
+    error: "",
+  });
 
   useEffect(() => {
-    let alive = true;
+    let cancelled = false;
 
     async function load() {
-      if (!brandSlug || !articleSlug) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError("");
+      setState({ article: null, loading: true, error: "" });
 
       try {
-        const result = await fetchJson(
-          `/public/${brandSlug}/knowledge/articles/${articleSlug}`
+        const data = await fetchJson(
+          `${API_BASE}/public/${encodeURIComponent(
+            brandSlug
+          )}/knowledge/articles/${encodeURIComponent(articleSlug)}`
         );
 
-        if (!alive) return;
-        setArticle(result || null);
+        if (!cancelled) {
+          setState({
+            article: data || null,
+            loading: false,
+            error: "",
+          });
+        }
       } catch (e) {
-        if (!alive) return;
-        setArticle(null);
-        setError(e.message || "Failed to load article");
-      } finally {
-        if (alive) setLoading(false);
+        if (!cancelled) {
+          setState({
+            article: null,
+            loading: false,
+            error: e?.message || "Failed to load article",
+          });
+        }
       }
     }
 
-    load();
+    if (brandSlug && articleSlug) load();
 
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [brandSlug, articleSlug]);
 
-  return { article, loading, error };
+  return state;
 }
 
 export function useBrandKnowledgeForm(brandSlug, formSlug) {
-  const [form, setForm] = useState(null);
-  const [loading, setLoading] = useState(Boolean(brandSlug && formSlug));
-  const [error, setError] = useState("");
+  const [state, setState] = useState({
+    form: null,
+    loading: true,
+    error: "",
+  });
 
   useEffect(() => {
-    let alive = true;
+    let cancelled = false;
 
     async function load() {
-      if (!brandSlug || !formSlug) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError("");
+      setState({ form: null, loading: true, error: "" });
 
       try {
-        const result = await fetchJson(
-          `/public/${brandSlug}/knowledge/forms/${formSlug}`
+        const data = await fetchJson(
+          `${API_BASE}/public/${encodeURIComponent(
+            brandSlug
+          )}/knowledge/forms/${encodeURIComponent(formSlug)}`
         );
 
-        if (!alive) return;
-        setForm(result || null);
+        if (!cancelled) {
+          setState({
+            form: data || null,
+            loading: false,
+            error: "",
+          });
+        }
       } catch (e) {
-        if (!alive) return;
-        setForm(null);
-        setError(e.message || "Failed to load form");
-      } finally {
-        if (alive) setLoading(false);
+        if (!cancelled) {
+          setState({
+            form: null,
+            loading: false,
+            error: e?.message || "Failed to load form",
+          });
+        }
       }
     }
 
-    load();
+    if (brandSlug && formSlug) load();
 
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [brandSlug, formSlug]);
 
-  return { form, loading, error };
+  return state;
 }
 
 export async function submitBrandKnowledgeForm({ brandSlug, formSlug, payload }) {
-  const res = await fetch(
-    getJsonUrl(`/public/${brandSlug}/knowledge/forms/${formSlug}/submit`),
+  return fetchJson(
+    `${API_BASE}/public/${encodeURIComponent(
+      brandSlug
+    )}/knowledge/forms/${encodeURIComponent(formSlug)}/submit`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload || {}),
     }
   );
-
-  const json = await res.json().catch(() => null);
-
-  if (!res.ok || !json?.ok) {
-    throw new Error(json?.message || "Failed to submit form");
-  }
-
-  return json;
 }

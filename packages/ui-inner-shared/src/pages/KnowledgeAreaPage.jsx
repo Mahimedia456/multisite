@@ -1,15 +1,18 @@
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { useBrandKnowledge } from "../hooks/useBrandKnowledge";
 
 function pickLang(item, key, lang = "de") {
   return item?.[`${key}_${lang}`] || item?.[`${key}_de`] || item?.[`${key}_en`] || "";
 }
 
-export default function KnowledgeAreaPage({ brandSlug, lang = "de" }) {
-  const { categories, articles, faqs, forms, settings, loading, error } =
-    useBrandKnowledge(brandSlug);
-
+export default function KnowledgeAreaPage({
+  lang = "de",
+  categories = [],
+  articles = [],
+  faqs = [],
+  forms = [],
+  settings = {},
+}) {
   const [query, setQuery] = useState("");
 
   const q = query.toLowerCase().trim();
@@ -30,17 +33,7 @@ export default function KnowledgeAreaPage({ brandSlug, lang = "de" }) {
     });
   }, [faqs, q, lang]);
 
-  if (loading) {
-    return (
-      <main className="mx-auto max-w-7xl px-5 py-16">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-600">
-          Wird geladen...
-        </div>
-      </main>
-    );
-  }
-
-  if (error || !settings?.knowledge_enabled) {
+  if (!settings?.knowledge_enabled) {
     return (
       <main className="mx-auto max-w-7xl px-5 py-16">
         <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-red-700">
@@ -59,9 +52,7 @@ export default function KnowledgeAreaPage({ brandSlug, lang = "de" }) {
           </div>
 
           <h1 className="mt-4 text-4xl font-black md:text-5xl">
-            {lang === "en"
-              ? "How can we help you?"
-              : "Wie können wir Ihnen helfen?"}
+            {lang === "en" ? "How can we help you?" : "Wie können wir Ihnen helfen?"}
           </h1>
 
           <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-white/85">
@@ -74,11 +65,7 @@ export default function KnowledgeAreaPage({ brandSlug, lang = "de" }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                lang === "en"
-                  ? "Search articles and FAQs..."
-                  : "Artikel und FAQs suchen..."
-              }
+              placeholder={lang === "en" ? "Search articles and FAQs..." : "Artikel und FAQs suchen..."}
               className="w-full rounded-2xl border border-white/20 bg-white px-5 py-4 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
             />
           </div>
@@ -87,10 +74,7 @@ export default function KnowledgeAreaPage({ brandSlug, lang = "de" }) {
         {categories.length ? (
           <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
-              >
+              <div key={cat.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="text-lg font-black text-slate-950">
                   {pickLang(cat, "title", lang)}
                 </div>
@@ -141,10 +125,7 @@ export default function KnowledgeAreaPage({ brandSlug, lang = "de" }) {
 
             <div className="mt-5 space-y-4">
               {filteredFaqs.map((faq) => (
-                <details
-                  key={faq.id}
-                  className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-                >
+                <details key={faq.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <summary className="cursor-pointer text-lg font-black text-slate-950">
                     {pickLang(faq, "question", lang)}
                   </summary>
