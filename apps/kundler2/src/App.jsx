@@ -12,10 +12,17 @@ import { useBrandTheme } from "./hooks/useBrandTheme";
 import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
 
+import {
+  KnowledgeAreaPage,
+  KnowledgeArticlePage,
+  KnowledgeFormPage,
+} from "@multisite/ui-inner-shared";
+
 const BRAND = "kundler3";
 
 export default function App() {
   useBrandTheme(BRAND);
+  const lang = localStorage.getItem("site_lang") || "de";
 
   return (
     <>
@@ -70,6 +77,20 @@ export default function App() {
 
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
+
+          <Route
+            path="/knowledge"
+            element={<KnowledgeAreaPage brandSlug={BRAND} lang={lang} />}
+          />
+          <Route
+            path="/knowledge/articles/:slug"
+            element={<KnowledgeArticlePage brandSlug={BRAND} lang={lang} />}
+          />
+          <Route
+            path="/knowledge/forms/:slug"
+            element={<KnowledgeFormPage brandSlug={BRAND} lang={lang} />}
+          />
+
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
         </Routes>
       </BrowserRouter>

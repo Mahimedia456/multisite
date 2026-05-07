@@ -136,6 +136,14 @@ const MODULE_LABELS = {
   brand_unique_pages: "Brand Unique Pages",
   brand_inner_pages: "Brand Inner Pages",
   settings: "Settings",
+
+  knowledge_area: "Knowledge Area",
+  knowledge_categories: "Knowledge Categories",
+  knowledge_articles: "Knowledge Articles",
+  knowledge_faqs: "Knowledge FAQs",
+  knowledge_forms: "Knowledge Forms",
+  knowledge_submissions: "Knowledge Submissions",
+  knowledge_settings: "Knowledge Settings",
 };
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -410,7 +418,6 @@ app.use(
 );
 
 app.use(
-  "/api",
   adminKnowledgeRoutes({
     pool,
     authMiddleware,

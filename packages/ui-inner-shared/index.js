@@ -30,11 +30,11 @@ export {
   useBrandKnowledgeArticle,
   useBrandKnowledgeForm,
   submitBrandKnowledgeForm,
-} from "./hooks/useBrandKnowledge";
+} from "./src/hooks/useBrandKnowledge";
 
-export { default as KnowledgeAreaPage } from "./pages/KnowledgeAreaPage";
-export { default as KnowledgeArticlePage } from "./pages/KnowledgeArticlePage";
-export { default as KnowledgeFormPage } from "./pages/KnowledgeFormPage";
+export { default as KnowledgeAreaPage } from "./src/pages/KnowledgeAreaPage";
+export { default as KnowledgeArticlePage } from "./src/pages/KnowledgeArticlePage";
+export { default as KnowledgeFormPage } from "./src/pages/KnowledgeFormPage";
 
 // about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";
