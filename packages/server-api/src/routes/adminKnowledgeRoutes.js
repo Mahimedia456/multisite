@@ -28,7 +28,7 @@ function isUuid(value) {
 export default function adminKnowledgeRoutes({ pool, authMiddleware, wrap }) {
   const router = express.Router();
 
-  router.use(authMiddleware);
+  router.use("/admin/knowledge", authMiddleware);
 
   /**
    * CATEGORIES

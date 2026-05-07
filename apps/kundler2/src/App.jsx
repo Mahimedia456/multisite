@@ -1,30 +1,21 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
-import Team from "./pages/Team";
-import AboutTierisch from "./pages/AboutTierisch";
-import Contact from "./pages/Contact";
+import About from "./pages/About.jsx";
+import Contact from "./pages/Contact.jsx";
+import BrandLoader from "./components/BrandLoader";
 import EAautoVersicherung from "./pages/EAautoVersicherung";
 import KfzVersicherung from "./pages/KfzVersicherung";
-
-import BrandLoader from "./components/BrandLoader";
 import Blogs from "./pages/Blogs.jsx";
 import BlogDetail from "./pages/BlogDetail.jsx";
+import { useBrandTheme } from "./hooks/useBrandTheme";
 import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
-import { useBrandTheme } from "./hooks/useBrandTheme";
 
-import {
-  KnowledgeAreaPage,
-  KnowledgeArticlePage,
-  KnowledgeFormPage,
-} from "@multisite/ui-inner-shared";
-
-const BRAND = "allianz4";
+const BRAND = "kundler3";
 
 export default function App() {
   useBrandTheme(BRAND);
-  const lang = localStorage.getItem("site_lang") || "de";
 
   return (
     <>
@@ -45,7 +36,7 @@ export default function App() {
             path="/about"
             element={
               <VisiblePage brandSlug={BRAND} type="unique" slug="about">
-                <AboutTierisch />
+                <About />
               </VisiblePage>
             }
           />
@@ -58,8 +49,6 @@ export default function App() {
               </VisiblePage>
             }
           />
-
-          <Route path="/team" element={<Team />} />
 
           <Route
             path="/e-auto-versicherung"
@@ -81,20 +70,6 @@ export default function App() {
 
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
-
-          <Route
-            path="/knowledge"
-            element={<KnowledgeAreaPage brandSlug={BRAND} lang={lang} />}
-          />
-          <Route
-            path="/knowledge/articles/:slug"
-            element={<KnowledgeArticlePage brandSlug={BRAND} lang={lang} />}
-          />
-          <Route
-            path="/knowledge/forms/:slug"
-            element={<KnowledgeFormPage brandSlug={BRAND} lang={lang} />}
-          />
-
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
         </Routes>
       </BrowserRouter>
