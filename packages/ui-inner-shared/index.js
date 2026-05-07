@@ -25,17 +25,6 @@ export {
   useSharedBrandBlogDetail,
 } from "./src/blog/BrandBlogProvider.jsx";
 
-export {
-  useBrandKnowledge,
-  useBrandKnowledgeArticle,
-  useBrandKnowledgeForm,
-  submitBrandKnowledgeForm,
-} from "./src/hooks/useBrandKnowledge";
-
-export { default as KnowledgeAreaPage } from "./src/pages/KnowledgeAreaPage";
-export { default as KnowledgeArticlePage } from "./src/pages/KnowledgeArticlePage";
-export { default as KnowledgeFormPage } from "./src/pages/KnowledgeFormPage";
-
 // about sections
 export { default as StickyHeader } from "./src/sections/about/StickyHeader.jsx";
 export { default as SubTabs } from "./src/sections/about/SubTabs.jsx";

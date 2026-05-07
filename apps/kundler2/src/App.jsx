@@ -1,16 +1,18 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
-import About from "./pages/About.jsx";
-import Contact from "./pages/Contact.jsx";
-import BrandLoader from "./components/BrandLoader";
+import Team from "./pages/Team";
+import AboutTierisch from "./pages/AboutTierisch";
+import Contact from "./pages/Contact";
 import EAautoVersicherung from "./pages/EAautoVersicherung";
 import KfzVersicherung from "./pages/KfzVersicherung";
+
+import BrandLoader from "./components/BrandLoader";
 import Blogs from "./pages/Blogs.jsx";
 import BlogDetail from "./pages/BlogDetail.jsx";
-import { useBrandTheme } from "./hooks/useBrandTheme";
 import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
+import { useBrandTheme } from "./hooks/useBrandTheme";
 
 import {
   KnowledgeAreaPage,
@@ -18,7 +20,7 @@ import {
   KnowledgeFormPage,
 } from "@multisite/ui-inner-shared";
 
-const BRAND = "kundler3";
+const BRAND = "allianz4";
 
 export default function App() {
   useBrandTheme(BRAND);
@@ -43,7 +45,7 @@ export default function App() {
             path="/about"
             element={
               <VisiblePage brandSlug={BRAND} type="unique" slug="about">
-                <About />
+                <AboutTierisch />
               </VisiblePage>
             }
           />
@@ -56,6 +58,8 @@ export default function App() {
               </VisiblePage>
             }
           />
+
+          <Route path="/team" element={<Team />} />
 
           <Route
             path="/e-auto-versicherung"
