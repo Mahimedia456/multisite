@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE =
+const API_BASE = (
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL ||
-  "https://multisite-server-api.vercel.app/api";
+  "https://multisite-server-api.vercel.app"
+).replace(/\/api\/?$/, "");
 
 function getJsonUrl(path) {
   return `${API_BASE}${path}`;
@@ -181,11 +182,7 @@ export function useBrandKnowledgeForm(brandSlug, formSlug) {
   return { form, loading, error };
 }
 
-export async function submitBrandKnowledgeForm({
-  brandSlug,
-  formSlug,
-  payload,
-}) {
+export async function submitBrandKnowledgeForm({ brandSlug, formSlug, payload }) {
   const res = await fetch(
     getJsonUrl(`/public/${brandSlug}/knowledge/forms/${formSlug}/submit`),
     {

@@ -14,10 +14,16 @@ import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
 import { useBrandTheme } from "./hooks/useBrandTheme";
 
+import KnowledgeArea from "./pages/KnowledgeArea.jsx";
+import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
+import KnowledgeForm from "./pages/KnowledgeForm.jsx";
+
 const BRAND = "allianz4";
 
 export default function App() {
   useBrandTheme(BRAND);
+
+  const lang = localStorage.getItem("site_lang") || "de";
 
   return (
     <>
@@ -74,6 +80,21 @@ export default function App() {
 
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
+
+          <Route
+            path="/knowledge"
+            element={<KnowledgeArea brandSlug={BRAND} lang={lang} />}
+          />
+
+          <Route
+            path="/knowledge/articles/:slug"
+            element={<KnowledgeArticle brandSlug={BRAND} lang={lang} />}
+          />
+
+          <Route
+            path="/knowledge/forms/:slug"
+            element={<KnowledgeForm brandSlug={BRAND} lang={lang} />}
+          />
 
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
         </Routes>
