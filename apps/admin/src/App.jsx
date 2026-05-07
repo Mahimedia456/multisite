@@ -27,12 +27,10 @@ import VisualPageBuilder from "./pages/VisualPageBuilder";
 import SupportChat from "./pages/SupportChat.jsx";
 import Notifications from "./pages/Notifications.jsx";
 
-
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyOtp from "./pages/VerifyOtp";
 import ResetPassword from "./pages/ResetPassword";
 import AuthLayout from "./layouts/AuthLayout.jsx";
-
 
 import BlogsIndex from "./pages/BlogsIndex.jsx";
 import BlogForm from "./pages/BlogForm.jsx";
@@ -46,24 +44,29 @@ import WebsiteSettingsIndex from "./pages/WebsiteSettingsIndex.jsx";
 import WebsiteSettingsDetail from "./pages/WebsiteSettingsDetail.jsx";
 import SettingsIndex from "./pages/SettingsIndex.jsx";
 
-
+import KnowledgeIndex from "./pages/knowledge/KnowledgeIndex";
+import KnowledgeCategories from "./pages/knowledge/KnowledgeCategories";
+import KnowledgeArticles from "./pages/knowledge/KnowledgeArticles";
+import KnowledgeFaqs from "./pages/knowledge/KnowledgeFaqs";
+import KnowledgeForms from "./pages/knowledge/KnowledgeForms";
+import KnowledgeSubmissions from "./pages/knowledge/KnowledgeSubmissions";
+import KnowledgeSettings from "./pages/knowledge/KnowledgeSettings";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-       <Route element={<AuthLayout />}>
-  <Route path="/login" element={<AdminLogin />} />
-  <Route path="/forgot-password" element={<ForgotPassword />} />
-  <Route path="/verify-otp" element={<VerifyOtp />} />
-  <Route path="/reset-password" element={<ResetPassword />} />
-</Route>
-        {/* Protected */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<AdminLogin />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+        </Route>
+
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
 
-            {/* Brands */}
             <Route path="/brands" element={<BrandsPortfolio />} />
             <Route path="/brands/:brandId" element={<BrandDetail />} />
             <Route path="/brands/:brandId/templates" element={<BrandTemplates />} />
@@ -73,24 +76,32 @@ export default function App() {
             />
 
             <Route path="/blogs" element={<BlogsIndex />} />
-<Route path="/blogs/create" element={<BlogForm />} />
-<Route path="/blogs/:blogId/edit" element={<BlogForm />} />
-<Route path="/blog-categories" element={<BlogCategories />} />
-<Route path="/settings" element={<SettingsIndex />} />
-<Route path="/admin-settings" element={<AdminSettingsIndex />} />
-<Route path="/admin-settings/:email" element={<AdminSettingsDetail />} />
-<Route path="/settings/modules" element={<ModuleSettings />} />
-<Route path="/website-settings" element={<WebsiteSettingsIndex />} />
-<Route path="/website-settings/:brandId" element={<WebsiteSettingsDetail />} />
-<Route path="/blog-settings" element={<BlogSettings />} />
-            {/* Inner Pages */}
+            <Route path="/blogs/create" element={<BlogForm />} />
+            <Route path="/blogs/:blogId/edit" element={<BlogForm />} />
+            <Route path="/blog-categories" element={<BlogCategories />} />
+
+            <Route path="/knowledge" element={<KnowledgeIndex />} />
+            <Route path="/knowledge/categories" element={<KnowledgeCategories />} />
+            <Route path="/knowledge/articles" element={<KnowledgeArticles />} />
+            <Route path="/knowledge/faqs" element={<KnowledgeFaqs />} />
+            <Route path="/knowledge/forms" element={<KnowledgeForms />} />
+            <Route path="/knowledge/submissions" element={<KnowledgeSubmissions />} />
+
+            <Route path="/settings" element={<SettingsIndex />} />
+            <Route path="/admin-settings" element={<AdminSettingsIndex />} />
+            <Route path="/admin-settings/:email" element={<AdminSettingsDetail />} />
+            <Route path="/settings/modules" element={<ModuleSettings />} />
+            <Route path="/settings/knowledge" element={<KnowledgeSettings />} />
+            <Route path="/website-settings" element={<WebsiteSettingsIndex />} />
+            <Route path="/website-settings/:brandId" element={<WebsiteSettingsDetail />} />
+            <Route path="/blog-settings" element={<BlogSettings />} />
+
             <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
             <Route
               path="/brand-inner-pages/:pageId"
               element={<BrandInnerPageDetail />}
             />
 
-            {/* Brand Unique Pages */}
             <Route path="/brand-unique-pages" element={<BrandUniquePagesIndex />} />
             <Route
               path="/brand-unique-pages/:brandId"
@@ -103,15 +114,10 @@ export default function App() {
 
             <Route path="/support-chat" element={<SupportChat />} />
             <Route path="/notifications" element={<Notifications />} />
-            
 
-            {/* Generate Brand */}
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />
-
-            {/* AI Site Builder */}
             <Route path="/admin/ai-site-builder" element={<AISiteBuilder />} />
 
-            {/* Main Website */}
             <Route path="/site" element={<SitePages />} />
             <Route
               path="/site/templates/:templateId/builder"
@@ -122,7 +128,6 @@ export default function App() {
           <Route path="/admin/page-builder/:pageId" element={<VisualPageBuilder />} />
         </Route>
 
-        {/* Default */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

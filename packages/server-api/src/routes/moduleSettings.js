@@ -37,7 +37,8 @@ export default function moduleSettingsRoutes({ pool, authMiddleware, wrap }) {
             ('blog_categories'),
             ('blog_settings'),
             ('brand_unique_pages'),
-            ('brand_inner_pages')
+            ('brand_inner_pages'),
+            ('knowledge_area')
         ) as m(module_key)
         left join brand_module_permissions p
           on p.brand_id = b.id

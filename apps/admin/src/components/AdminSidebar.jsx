@@ -12,6 +12,10 @@ const MAIN_NAV_ITEMS = [
   { to: "/support-chat", label: "Support Chat", translationKey: "supportChat", icon: "forum" },
   { to: "/blogs", label: "Blogs", translationKey: "blogs", icon: "article" },
   { to: "/blog-categories", label: "Blog Categories", translationKey: "blogCategories", icon: "category" },
+
+  // ✅ NEW: Knowledge Area sidebar item
+  { to: "/knowledge", label: "Knowledge Area", translationKey: "knowledgeArea", icon: "school" },
+
   { to: "/settings", label: "Settings", translationKey: "settings", icon: "settings" },
 ];
 

@@ -808,6 +808,321 @@ websiteSettingsSaving: "Speichert...",
 websiteSettingsVisible: "Sichtbar",
 websiteSettingsHidden: "Ausgeblendet",
 
+knowledgeArea: "Wissensbereich",
+knowledgeCategories: "Kategorien",
+knowledgeArticles: "Artikel",
+knowledgeFaqs: "FAQs",
+knowledgeForms: "Formulare",
+knowledgeSubmissions: "Einreichungen",
+addArticle: "Artikel hinzufügen",
+addFaq: "FAQ hinzufügen",
+addForm: "Formular hinzufügen",
+
+
+knowledgeArea: "Wissensbereich",
+knowledgeCategories: "Kategorien",
+knowledgeArticles: "Artikel",
+knowledgeFaqs: "FAQs",
+knowledgeForms: "Formulare",
+knowledgeSubmissions: "Einreichungen",
+knowledgeSettings: "Wissensbereich Einstellungen",
+
+addCategory: "Kategorie hinzufügen",
+addArticle: "Artikel hinzufügen",
+addFaq: "FAQ hinzufügen",
+addForm: "Formular hinzufügen",
+
+categoryTitleDe: "Kategorietitel DE",
+categoryTitleEn: "Kategorietitel EN",
+articleTitleDe: "Artikeltitel DE",
+articleTitleEn: "Artikeltitel EN",
+faqQuestionDe: "Frage DE",
+faqQuestionEn: "Frage EN",
+formTitleDe: "Formulartitel DE",
+formTitleEn: "Formulartitel EN",
+
+status: "Status",
+actions: "Aktionen",
+save: "Speichern",
+cancel: "Abbrechen",
+edit: "Bearbeiten",
+delete: "Löschen",
+published: "Veröffentlicht",
+draft: "Entwurf",
+active: "Aktiv",
+inactive: "Inaktiv",
+
+knowledgeArea: "Wissensbereich",
+knowledgeAreaSubtitle: "Verwalten Sie Kategorien, Artikel, FAQs, Formulare und Einreichungen für alle Agenturen.",
+knowledgeCategories: "Kategorien",
+knowledgeCategoriesDesc: "Erstellen und verwalten Sie Kategorien für Artikel und FAQs.",
+knowledgeArticles: "Artikel",
+knowledgeArticlesDesc: "Erstellen Sie Wissensartikel mit deutschen und englischen Inhalten.",
+knowledgeFaqs: "FAQs",
+knowledgeFaqsDesc: "Verwalten Sie häufig gestellte Fragen pro Kategorie.",
+knowledgeForms: "Formulare",
+knowledgeFormsDesc: "Erstellen Sie Support-, Beschwerde- und Anfrageformulare.",
+knowledgeSubmissions: "Einreichungen",
+knowledgeSubmissionsDesc: "Sehen Sie alle Formular-Einreichungen der Benutzer.",
+knowledgeSettings: "Einstellungen",
+knowledgeSettingsDesc: "Steuern Sie Sichtbarkeit und Aktivierung pro Agentur.",
+knowledgeOpen: "Öffnen",
+
+knowledgeCategoriesPageSubtitle: "Erstellen und verwalten Sie Kategorien für Artikel und FAQs.",
+knowledgeAddCategory: "Kategorie hinzufügen",
+knowledgeEditCategory: "Kategorie bearbeiten",
+knowledgeCategory: "Kategorie",
+knowledgeCategoryTitleDe: "Kategorietitel DE",
+knowledgeCategoryTitleEn: "Kategorietitel EN",
+knowledgeDescriptionDe: "Beschreibung DE",
+knowledgeDescriptionEn: "Beschreibung EN",
+knowledgeSlug: "Slug",
+knowledgeType: "Typ",
+knowledgeStatus: "Status",
+knowledgeSortOrder: "Sortierung",
+knowledgeActions: "Aktionen",
+knowledgeSave: "Speichern",
+knowledgeSaving: "Speichert...",
+knowledgeCancel: "Abbrechen",
+knowledgeEdit: "Bearbeiten",
+knowledgeDelete: "Löschen",
+knowledgeActive: "Aktiv",
+knowledgeInactive: "Inaktiv",
+knowledgeTypeBoth: "Beide",
+knowledgeTypeArticle: "Artikel",
+knowledgeTypeFaq: "FAQ",
+knowledgeTypeValue_both: "Beide",
+knowledgeTypeValue_article: "Artikel",
+knowledgeTypeValue_faq: "FAQ",
+knowledgeStatusValue_active: "Aktiv",
+knowledgeStatusValue_inactive: "Inaktiv",
+knowledgeCategoriesLoading: "Kategorien werden geladen...",
+knowledgeNoCategories: "Noch keine Kategorien vorhanden.",
+knowledgeCategoriesFailedLoad: "Kategorien konnten nicht geladen werden",
+knowledgeCategoriesFailedSave: "Kategorie konnte nicht gespeichert werden",
+knowledgeCategoriesFailedDelete: "Kategorie konnte nicht gelöscht werden",
+knowledgeCategoryTitleDeRequired: "Kategorietitel DE ist erforderlich",
+knowledgeSlugRequired: "Slug ist erforderlich",
+knowledgeCategoryDeleteConfirm: "Kategorie \"{{title}}\" wirklich löschen?",
+
+
+knowledgeArticlesPageSubtitle: "Erstellen und verwalten Sie Wissensartikel mit deutschen und englischen Inhalten.",
+knowledgeAddArticle: "Artikel hinzufügen",
+knowledgeEditArticle: "Artikel bearbeiten",
+knowledgeArticle: "Artikel",
+knowledgeArticleTitleDe: "Artikeltitel DE",
+knowledgeArticleTitleEn: "Artikeltitel EN",
+knowledgeExcerptDe: "Kurzbeschreibung DE",
+knowledgeExcerptEn: "Kurzbeschreibung EN",
+knowledgeContentDe: "Inhalt DE",
+knowledgeContentEn: "Inhalt EN",
+knowledgeNoCategory: "Keine Kategorie",
+knowledgeDraft: "Entwurf",
+knowledgePublished: "Veröffentlicht",
+knowledgeStatusValue_draft: "Entwurf",
+knowledgeStatusValue_published: "Veröffentlicht",
+knowledgeArticlesLoading: "Artikel werden geladen...",
+knowledgeNoArticles: "Noch keine Artikel vorhanden.",
+knowledgeArticlesFailedLoad: "Artikel konnten nicht geladen werden",
+knowledgeArticlesFailedSave: "Artikel konnte nicht gespeichert werden",
+knowledgeArticlesFailedDelete: "Artikel konnte nicht gelöscht werden",
+knowledgeArticleTitleDeRequired: "Artikeltitel DE ist erforderlich",
+knowledgeArticleDeleteConfirm: "Artikel \"{{title}}\" wirklich löschen?",
+
+
+
+
+knowledgeFaqsPageSubtitle: "Erstellen und verwalten Sie häufig gestellte Fragen mit deutschen und englischen Antworten.",
+knowledgeAddFaq: "FAQ hinzufügen",
+knowledgeEditFaq: "FAQ bearbeiten",
+knowledgeFaqQuestion: "Frage",
+knowledgeFaqQuestionDe: "Frage DE",
+knowledgeFaqQuestionEn: "Frage EN",
+knowledgeFaqAnswerDe: "Antwort DE",
+knowledgeFaqAnswerEn: "Antwort EN",
+knowledgeFaqsLoading: "FAQs werden geladen...",
+knowledgeNoFaqs: "Noch keine FAQs vorhanden.",
+knowledgeFaqsFailedLoad: "FAQs konnten nicht geladen werden",
+knowledgeFaqsFailedSave: "FAQ konnte nicht gespeichert werden",
+knowledgeFaqsFailedDelete: "FAQ konnte nicht gelöscht werden",
+knowledgeFaqQuestionDeRequired: "Frage DE ist erforderlich",
+knowledgeFaqAnswerDeRequired: "Antwort DE ist erforderlich",
+knowledgeFaqDeleteConfirm: "FAQ \"{{title}}\" wirklich löschen?",
+
+
+knowledgeFormsPageSubtitle: "Erstellen und verwalten Sie Support-, Beschwerde- und Anfrageformulare.",
+knowledgeAddForm: "Formular hinzufügen",
+knowledgeEditForm: "Formular bearbeiten",
+knowledgeForm: "Formular",
+knowledgeFormTitleDe: "Formulartitel DE",
+knowledgeFormTitleEn: "Formulartitel EN",
+knowledgeFormType: "Formulartyp",
+knowledgeFormTypeSupport: "Support",
+knowledgeFormTypeComplaint: "Beschwerde",
+knowledgeFormTypeRequest: "Anfrage",
+knowledgeFormTypeCustom: "Benutzerdefiniert",
+knowledgeFormTypeValue_support: "Support",
+knowledgeFormTypeValue_complaint: "Beschwerde",
+knowledgeFormTypeValue_request: "Anfrage",
+knowledgeFormTypeValue_custom: "Benutzerdefiniert",
+knowledgeSuccessMessageDe: "Erfolgsmeldung DE",
+knowledgeSuccessMessageEn: "Erfolgsmeldung EN",
+knowledgeFormFields: "Formularfelder",
+knowledgeFields: "Felder",
+knowledgeField: "Feld",
+knowledgeAddField: "Feld hinzufügen",
+knowledgeFieldLabelDe: "Feldlabel DE",
+knowledgeFieldLabelEn: "Feldlabel EN",
+knowledgeFieldName: "Feldname",
+knowledgeFieldTypeText: "Text",
+knowledgeFieldTypeEmail: "E-Mail",
+knowledgeFieldTypePhone: "Telefon",
+knowledgeFieldTypeTextarea: "Textbereich",
+knowledgeFieldTypeSelect: "Auswahl",
+knowledgePlaceholderDe: "Platzhalter DE",
+knowledgePlaceholderEn: "Platzhalter EN",
+knowledgeRequired: "Pflichtfeld",
+knowledgeFieldOptionsPlaceholder: "Optionen, eine pro Zeile",
+knowledgeFormsLoading: "Formulare werden geladen...",
+knowledgeNoForms: "Noch keine Formulare vorhanden.",
+knowledgeFormsFailedLoad: "Formulare konnten nicht geladen werden",
+knowledgeFormsFailedSave: "Formular konnte nicht gespeichert werden",
+knowledgeFormsFailedDelete: "Formular konnte nicht gelöscht werden",
+knowledgeFormTitleDeRequired: "Formulartitel DE ist erforderlich",
+knowledgeFormDeleteConfirm: "Formular \"{{title}}\" wirklich löschen?",
+
+
+
+knowledgeSubmissionsPageSubtitle: "Alle Formular-Einreichungen der Benutzer anzeigen und bearbeiten.",
+knowledgeRefresh: "Aktualisieren",
+knowledgeSubmissionsLoading: "Einreichungen werden geladen...",
+knowledgeNoSubmissions: "Noch keine Einreichungen vorhanden.",
+knowledgeSubmissionsFailedLoad: "Einreichungen konnten nicht geladen werden",
+knowledgeSubmissionsFailedUpdate: "Status konnte nicht aktualisiert werden",
+knowledgeUser: "Benutzer",
+knowledgeSubject: "Betreff",
+knowledgeEmailSent: "E-Mail gesendet",
+knowledgeCreatedAt: "Erstellt am",
+knowledgeSubmissionStatusNew: "Neu",
+knowledgeSubmissionStatusInProgress: "In Bearbeitung",
+knowledgeSubmissionStatusResolved: "Erledigt",
+knowledgeYes: "Ja",
+knowledgeNo: "Nein",
+knowledgeView: "Ansehen",
+knowledgeSubmissionDetail: "Einreichungsdetails",
+knowledgeSelectSubmission: "Wählen Sie eine Einreichung aus, um Details anzuzeigen.",
+knowledgeClose: "Schließen",
+knowledgeEmailTo: "E-Mail an",
+knowledgePhone: "Telefon",
+knowledgeMessage: "Nachricht",
+knowledgeSubmittedData: "Übermittelte Daten",
+
+knowledgeSettingsPageSubtitle: "Steuern Sie den Wissensbereich pro Agentur: Artikel, FAQs, Formulare sowie Header- und Footer-Sichtbarkeit.",
+knowledgeSettingsLoading: "Einstellungen werden geladen...",
+knowledgeNoSettings: "Keine Agentur-Einstellungen gefunden.",
+knowledgeSettingsFailedLoad: "Wissensbereich-Einstellungen konnten nicht geladen werden",
+knowledgeSettingsFailedSave: "Wissensbereich-Einstellungen konnten nicht gespeichert werden",
+knowledgeBrand: "Agentur",
+knowledgeModule: "Modul",
+knowledgeShowHeader: "Im Header anzeigen",
+knowledgeShowFooter: "Im Footer anzeigen",
+knowledgeUnnamedBrand: "Unbenannte Agentur",
+knowledgeSettingsAutoSaveNote: "Änderungen werden automatisch gespeichert.",
+
+
+
+knowledgeSettingsDesc: "Steuern Sie den Wissensbereich pro Agentur.",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1645,6 +1960,299 @@ websiteSettingsNoPages: "No pages found.",
 websiteSettingsSaving: "Saving...",
 websiteSettingsVisible: "Visible",
 websiteSettingsHidden: "Hidden",
+
+knowledgeArea: "Knowledge Area",
+knowledgeCategories: "Categories",
+knowledgeArticles: "Articles",
+knowledgeFaqs: "FAQs",
+knowledgeForms: "Forms",
+knowledgeSubmissions: "Submissions",
+addArticle: "Add Article",
+addFaq: "Add FAQ",
+addForm: "Add Form",
+
+knowledgeArea: "Knowledge Area",
+knowledgeCategories: "Categories",
+knowledgeArticles: "Articles",
+knowledgeFaqs: "FAQs",
+knowledgeForms: "Forms",
+knowledgeSubmissions: "Submissions",
+knowledgeSettings: "Knowledge Settings",
+
+addCategory: "Add Category",
+addArticle: "Add Article",
+addFaq: "Add FAQ",
+addForm: "Add Form",
+
+categoryTitleDe: "Category Title DE",
+categoryTitleEn: "Category Title EN",
+articleTitleDe: "Article Title DE",
+articleTitleEn: "Article Title EN",
+faqQuestionDe: "Question DE",
+faqQuestionEn: "Question EN",
+formTitleDe: "Form Title DE",
+formTitleEn: "Form Title EN",
+
+status: "Status",
+actions: "Actions",
+save: "Save",
+cancel: "Cancel",
+edit: "Edit",
+delete: "Delete",
+published: "Published",
+draft: "Draft",
+active: "Active",
+inactive: "Inactive",
+
+
+
+
+
+
+
+
+
+
+
+knowledgeArea: "Knowledge Area",
+knowledgeAreaSubtitle: "Manage categories, articles, FAQs, forms, and submissions for all agencies.",
+knowledgeCategories: "Categories",
+knowledgeCategoriesDesc: "Create and manage categories for articles and FAQs.",
+knowledgeArticles: "Articles",
+knowledgeArticlesDesc: "Create knowledge articles with German and English content.",
+knowledgeFaqs: "FAQs",
+knowledgeFaqsDesc: "Manage frequently asked questions by category.",
+knowledgeForms: "Forms",
+knowledgeFormsDesc: "Create support, complaint, and request forms.",
+knowledgeSubmissions: "Submissions",
+knowledgeSubmissionsDesc: "View all user form submissions.",
+knowledgeSettings: "Settings",
+knowledgeSettingsDesc: "Control visibility and activation per agency.",
+knowledgeOpen: "Open",
+
+
+knowledgeCategoriesPageSubtitle: "Create and manage categories for articles and FAQs.",
+knowledgeAddCategory: "Add Category",
+knowledgeEditCategory: "Edit Category",
+knowledgeCategory: "Category",
+knowledgeCategoryTitleDe: "Category Title DE",
+knowledgeCategoryTitleEn: "Category Title EN",
+knowledgeDescriptionDe: "Description DE",
+knowledgeDescriptionEn: "Description EN",
+knowledgeSlug: "Slug",
+knowledgeType: "Type",
+knowledgeStatus: "Status",
+knowledgeSortOrder: "Sort Order",
+knowledgeActions: "Actions",
+knowledgeSave: "Save",
+knowledgeSaving: "Saving...",
+knowledgeCancel: "Cancel",
+knowledgeEdit: "Edit",
+knowledgeDelete: "Delete",
+knowledgeActive: "Active",
+knowledgeInactive: "Inactive",
+knowledgeTypeBoth: "Both",
+knowledgeTypeArticle: "Article",
+knowledgeTypeFaq: "FAQ",
+knowledgeTypeValue_both: "Both",
+knowledgeTypeValue_article: "Article",
+knowledgeTypeValue_faq: "FAQ",
+knowledgeStatusValue_active: "Active",
+knowledgeStatusValue_inactive: "Inactive",
+knowledgeCategoriesLoading: "Loading categories...",
+knowledgeNoCategories: "No categories yet.",
+knowledgeCategoriesFailedLoad: "Failed to load categories",
+knowledgeCategoriesFailedSave: "Failed to save category",
+knowledgeCategoriesFailedDelete: "Failed to delete category",
+knowledgeCategoryTitleDeRequired: "Category title DE is required",
+knowledgeSlugRequired: "Slug is required",
+knowledgeCategoryDeleteConfirm: "Delete category \"{{title}}\"?",
+
+
+knowledgeArticlesPageSubtitle: "Create and manage knowledge articles with German and English content.",
+knowledgeAddArticle: "Add Article",
+knowledgeEditArticle: "Edit Article",
+knowledgeArticle: "Article",
+knowledgeArticleTitleDe: "Article Title DE",
+knowledgeArticleTitleEn: "Article Title EN",
+knowledgeExcerptDe: "Excerpt DE",
+knowledgeExcerptEn: "Excerpt EN",
+knowledgeContentDe: "Content DE",
+knowledgeContentEn: "Content EN",
+knowledgeNoCategory: "No Category",
+knowledgeDraft: "Draft",
+knowledgePublished: "Published",
+knowledgeStatusValue_draft: "Draft",
+knowledgeStatusValue_published: "Published",
+knowledgeArticlesLoading: "Loading articles...",
+knowledgeNoArticles: "No articles yet.",
+knowledgeArticlesFailedLoad: "Failed to load articles",
+knowledgeArticlesFailedSave: "Failed to save article",
+knowledgeArticlesFailedDelete: "Failed to delete article",
+knowledgeArticleTitleDeRequired: "Article title DE is required",
+knowledgeArticleDeleteConfirm: "Delete article \"{{title}}\"?",
+
+knowledgeFaqsPageSubtitle: "Create and manage frequently asked questions with German and English answers.",
+knowledgeAddFaq: "Add FAQ",
+knowledgeEditFaq: "Edit FAQ",
+knowledgeFaqQuestion: "Question",
+knowledgeFaqQuestionDe: "Question DE",
+knowledgeFaqQuestionEn: "Question EN",
+knowledgeFaqAnswerDe: "Answer DE",
+knowledgeFaqAnswerEn: "Answer EN",
+knowledgeFaqsLoading: "Loading FAQs...",
+knowledgeNoFaqs: "No FAQs yet.",
+knowledgeFaqsFailedLoad: "Failed to load FAQs",
+knowledgeFaqsFailedSave: "Failed to save FAQ",
+knowledgeFaqsFailedDelete: "Failed to delete FAQ",
+knowledgeFaqQuestionDeRequired: "Question DE is required",
+knowledgeFaqAnswerDeRequired: "Answer DE is required",
+knowledgeFaqDeleteConfirm: "Delete FAQ \"{{title}}\"?",
+
+knowledgeFormsPageSubtitle: "Create and manage support, complaint, and request forms.",
+knowledgeAddForm: "Add Form",
+knowledgeEditForm: "Edit Form",
+knowledgeForm: "Form",
+knowledgeFormTitleDe: "Form Title DE",
+knowledgeFormTitleEn: "Form Title EN",
+knowledgeFormType: "Form Type",
+knowledgeFormTypeSupport: "Support",
+knowledgeFormTypeComplaint: "Complaint",
+knowledgeFormTypeRequest: "Request",
+knowledgeFormTypeCustom: "Custom",
+knowledgeFormTypeValue_support: "Support",
+knowledgeFormTypeValue_complaint: "Complaint",
+knowledgeFormTypeValue_request: "Request",
+knowledgeFormTypeValue_custom: "Custom",
+knowledgeSuccessMessageDe: "Success Message DE",
+knowledgeSuccessMessageEn: "Success Message EN",
+knowledgeFormFields: "Form Fields",
+knowledgeFields: "Fields",
+knowledgeField: "Field",
+knowledgeAddField: "Add Field",
+knowledgeFieldLabelDe: "Field Label DE",
+knowledgeFieldLabelEn: "Field Label EN",
+knowledgeFieldName: "Field Name",
+knowledgeFieldTypeText: "Text",
+knowledgeFieldTypeEmail: "Email",
+knowledgeFieldTypePhone: "Phone",
+knowledgeFieldTypeTextarea: "Textarea",
+knowledgeFieldTypeSelect: "Select",
+knowledgePlaceholderDe: "Placeholder DE",
+knowledgePlaceholderEn: "Placeholder EN",
+knowledgeRequired: "Required",
+knowledgeFieldOptionsPlaceholder: "Options, one per line",
+knowledgeFormsLoading: "Loading forms...",
+knowledgeNoForms: "No forms yet.",
+knowledgeFormsFailedLoad: "Failed to load forms",
+knowledgeFormsFailedSave: "Failed to save form",
+knowledgeFormsFailedDelete: "Failed to delete form",
+knowledgeFormTitleDeRequired: "Form title DE is required",
+knowledgeFormDeleteConfirm: "Delete form \"{{title}}\"?",
+
+
+
+
+knowledgeSubmissionsPageSubtitle: "View and manage all user form submissions.",
+knowledgeRefresh: "Refresh",
+knowledgeSubmissionsLoading: "Loading submissions...",
+knowledgeNoSubmissions: "No submissions yet.",
+knowledgeSubmissionsFailedLoad: "Failed to load submissions",
+knowledgeSubmissionsFailedUpdate: "Failed to update status",
+knowledgeUser: "User",
+knowledgeSubject: "Subject",
+knowledgeEmailSent: "Email Sent",
+knowledgeCreatedAt: "Created At",
+knowledgeSubmissionStatusNew: "New",
+knowledgeSubmissionStatusInProgress: "In Progress",
+knowledgeSubmissionStatusResolved: "Resolved",
+knowledgeYes: "Yes",
+knowledgeNo: "No",
+knowledgeView: "View",
+knowledgeSubmissionDetail: "Submission Detail",
+knowledgeSelectSubmission: "Select a submission to view details.",
+knowledgeClose: "Close",
+knowledgeEmailTo: "Email To",
+knowledgePhone: "Phone",
+knowledgeMessage: "Message",
+knowledgeSubmittedData: "Submitted Data",
+
+
+knowledgeSettingsPageSubtitle: "Control the Knowledge Area per agency: articles, FAQs, forms, and header/footer visibility.",
+knowledgeSettingsLoading: "Loading settings...",
+knowledgeNoSettings: "No agency settings found.",
+knowledgeSettingsFailedLoad: "Failed to load Knowledge Area settings",
+knowledgeSettingsFailedSave: "Failed to save Knowledge Area settings",
+knowledgeBrand: "Agency",
+knowledgeModule: "Module",
+knowledgeShowHeader: "Show in Header",
+knowledgeShowFooter: "Show in Footer",
+knowledgeUnnamedBrand: "Unnamed Agency",
+knowledgeSettingsAutoSaveNote: "Changes are saved automatically.",
+
+knowledgeSettingsDesc: "Control the Knowledge Area per agency.",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

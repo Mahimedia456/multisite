@@ -31,6 +31,7 @@ import moduleSettingsRoutes from "./routes/moduleSettings.js";
 import adminSettingsRoutes from "./routes/adminSettings.js";
 import websiteSettingsRoutes from "./routes/websiteSettings.js";
 import brandsRoutes from "./routes/brands.js";
+import adminKnowledgeRoutes from "./routes/adminKnowledgeRoutes.js";
 
 dotenv.config();
 
@@ -405,6 +406,15 @@ app.use(
     authMiddleware,
     wrap,
     isUuid,
+  })
+);
+
+app.use(
+  "/api",
+  adminKnowledgeRoutes({
+    pool,
+    authMiddleware,
+    wrap,
   })
 );
 

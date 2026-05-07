@@ -1,5 +1,28 @@
 import express from "express";
 
+const ADMIN_MODULE_KEYS = [
+  "overview",
+  "brands",
+  "main_website",
+  "generate_brand",
+  "support_chat",
+  "blogs",
+  "blog_categories",
+  "settings",
+  "blog_settings",
+  "module_settings",
+  "website_settings",
+  "admin_settings",
+  "brand_unique_pages",
+  "brand_inner_pages",
+  "knowledge_area",
+  "knowledge_categories",
+  "knowledge_articles",
+  "knowledge_faqs",
+  "knowledge_forms",
+  "knowledge_submissions",
+];
+
 export default function adminSettingsRoutes({ pool, authMiddleware, wrap }) {
   const router = express.Router();
 
@@ -22,23 +45,35 @@ export default function adminSettingsRoutes({ pool, authMiddleware, wrap }) {
         order by email asc
       `);
 
-      const permissionsQ = await pool.query(`
+      const permissionsQ = await pool.query(
+        `
         select
-          lower(email) as email,
-          module_key,
-          coalesce(can_view,false) as can_view,
-          coalesce(can_create,false) as can_create,
-          coalesce(can_edit,false) as can_edit,
-          coalesce(can_delete,false) as can_delete,
-          updated_at
-        from admin_module_permissions
-        order by lower(email) asc, module_key asc
-      `);
+          a.email,
+          m.module_key,
+          coalesce(p.can_view, false) as can_view,
+          coalesce(p.can_create, false) as can_create,
+          coalesce(p.can_edit, false) as can_edit,
+          coalesce(p.can_delete, false) as can_delete,
+          p.updated_at
+        from (
+          select lower(email) as email
+          from admins
+          where lower(coalesce(role,'')) = 'admin'
+        ) a
+        cross join unnest($1::text[]) as m(module_key)
+        left join admin_module_permissions p
+          on lower(p.email) = a.email
+          and p.module_key = m.module_key
+        order by a.email asc, m.module_key asc
+        `,
+        [ADMIN_MODULE_KEYS]
+      );
 
       res.json({
         ok: true,
         admins: adminsQ.rows,
         permissions: permissionsQ.rows,
+        module_keys: ADMIN_MODULE_KEYS,
       });
     })
   );
