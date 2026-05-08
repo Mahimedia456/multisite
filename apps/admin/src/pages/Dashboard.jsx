@@ -8,11 +8,11 @@ function num(value) {
   return Number(value || 0);
 }
 
-function formatDate(value) {
+function formatDate(value, lang = "de") {
   if (!value) return "-";
 
   try {
-    return new Intl.DateTimeFormat("de-DE", {
+    return new Intl.DateTimeFormat(lang === "en" ? "en-US" : "de-DE", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -154,6 +154,17 @@ function getModuleLabel(key, fallback, t) {
   };
 
   return t(map[key] || fallback, fallback);
+}
+
+function activityIcon(type) {
+  if (type === "blogs") return "article";
+  if (type === "support_chat") return "forum";
+  if (type === "website_settings") return "language";
+  if (type === "module_settings") return "tune";
+  if (type === "admin_settings") return "manage_accounts";
+  if (type === "brand_unique_pages") return "web";
+  if (type === "brand_inner_pages") return "description";
+  return "layers";
 }
 
 export default function Dashboard() {
@@ -536,16 +547,13 @@ export default function Dashboard() {
             {recentActivity.length ? (
               recentActivity.map((item, index) => (
                 <button
-                  key={`${item.type}-${item.title}-${index}`}
+                  key={`${item.id || item.type}-${item.title}-${index}`}
                   type="button"
                   onClick={() => item.path && navigate(item.path)}
                   className="flex w-full items-start gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-[#007ab3]/30 hover:bg-[#007ab3]/5 dark:border-white/10 dark:bg-slate-950 dark:hover:bg-white/5"
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#007ab3]/10 text-[#007ab3]">
-                    <MIcon
-                      name={item.type === "blog" ? "article" : "layers"}
-                      className="text-2xl"
-                    />
+                    <MIcon name={activityIcon(item.type)} className="text-2xl" />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -554,11 +562,24 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                      {item.description}
+                      {item.moduleLabel ? `${item.moduleLabel} · ` : ""}
+                      {item.action || ""}
                     </div>
 
+                    {item.description ? (
+                      <div className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                        {item.description}
+                      </div>
+                    ) : null}
+
+                    {item.actorEmail ? (
+                      <div className="mt-2 text-xs font-bold text-[#007ab3]">
+                        By {item.actorEmail}
+                      </div>
+                    ) : null}
+
                     <div className="mt-2 text-xs font-bold text-slate-400 dark:text-slate-500">
-                      {formatDate(item.date)}
+                      {formatDate(item.date, i18n.language)}
                     </div>
                   </div>
                 </button>

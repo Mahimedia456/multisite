@@ -103,6 +103,42 @@ function makeBrandIdFilter(brandIds) {
   };
 }
 
+function activityPath(row) {
+  if (row.module_key === "brands" && row.brand_id) {
+    return `/brands/${row.brand_id}`;
+  }
+
+  if (row.module_key === "blogs" && row.entity_id) {
+    return `/blogs/${row.entity_id}/edit`;
+  }
+
+  if (row.module_key === "support_chat") {
+    return "/support-chat";
+  }
+
+  if (row.module_key === "brand_inner_pages") {
+    return "/brand-inner-pages";
+  }
+
+  if (row.module_key === "brand_unique_pages") {
+    return "/brand-unique-pages";
+  }
+
+  if (row.module_key === "module_settings") {
+    return "/settings/modules";
+  }
+
+  if (row.module_key === "website_settings") {
+    return "/website-settings";
+  }
+
+  if (row.module_key === "admin_settings") {
+    return "/admin-settings";
+  }
+
+  return "/dashboard";
+}
+
 export default function adminDashboardSummaryRoutes({
   pool,
   authMiddleware,
@@ -334,43 +370,78 @@ export default function adminDashboardSummaryRoutes({
             { total: 0, enabled: 0, disabled: 0 }
           );
 
-      const latestBlogs = await manyRowsSafe(
+      const activityWhere = [];
+      const activityVals = [];
+
+      if (brandUser && forcedSlug) {
+        activityVals.push(forcedSlug);
+        activityWhere.push(
+          `LOWER(COALESCE(brand_slug,'')) = $${activityVals.length}`
+        );
+      }
+
+      const activityWhereSql = activityWhere.length
+        ? `WHERE ${activityWhere.join(" AND ")}`
+        : "";
+
+      const activityRows = await manyRowsSafe(
         pool,
         `
         SELECT
           id,
+          brand_id,
+          brand_slug,
+          brand_name,
+          actor_email,
+          actor_role,
+          module_key,
+          module_label,
+          action,
           title,
-          slug,
-          status,
-          updated_at
-        FROM blog_posts
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        ORDER BY updated_at DESC NULLS LAST, id DESC
-        LIMIT 5
+          description,
+          entity_type,
+          entity_id,
+          entity_slug,
+          created_at
+        FROM activity_logs
+        ${activityWhereSql}
+        ORDER BY created_at DESC
+        LIMIT 20
         `,
-        brandIdFilter.params
+        activityVals
       );
 
-      const recentActivity = [
-        ...brands.slice(0, 5).map((brand) => ({
-          type: "brand",
-          title: brand.name || brand.slug,
-          description: `Agency ${brand.status || "status unknown"}`,
-          date: brand.updated_at,
-          path: `/brands/${brand.id}`,
-        })),
-        ...latestBlogs.map((blog) => ({
-          type: "blog",
-          title: blog.title || blog.slug || "Blog",
-          description: `Blog ${blog.status || "status unknown"}`,
-          date: blog.updated_at,
-          path: `/blogs/${blog.id}/edit`,
-        })),
-      ]
-        .filter((item) => item.date)
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 8);
+      const fallbackRecentActivity = brands.slice(0, 8).map((brand) => ({
+        id: brand.id,
+        type: "brand",
+        title: brand.name || brand.slug,
+        description: `Agency ${brand.status || "status unknown"}`,
+        moduleLabel: "Brands",
+        action: "updated",
+        actorEmail: "",
+        actorRole: "",
+        brandName: brand.name,
+        brandSlug: brand.slug,
+        date: brand.updated_at,
+        path: `/brands/${brand.id}`,
+      }));
+
+      const recentActivity = activityRows.length
+        ? activityRows.map((row) => ({
+            id: row.id,
+            type: row.module_key,
+            title: row.title,
+            description: row.description,
+            moduleLabel: row.module_label,
+            action: row.action,
+            actorEmail: row.actor_email,
+            actorRole: row.actor_role,
+            brandName: row.brand_name,
+            brandSlug: row.brand_slug,
+            date: row.created_at,
+            path: activityPath(row),
+          }))
+        : fallbackRecentActivity;
 
       const modules = [
         {

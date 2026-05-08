@@ -24,6 +24,7 @@ import BrandUniquePageBuilder from "./pages/BrandUniquePageBuilder";
 import GenerateBrand from "./pages/GenerateBrand";
 import AISiteBuilder from "./pages/AISiteBuilder";
 import VisualPageBuilder from "./pages/VisualPageBuilder";
+
 import SupportChat from "./pages/SupportChat.jsx";
 import Notifications from "./pages/Notifications.jsx";
 
@@ -56,7 +57,6 @@ import HowToUseLayout from "./pages/how-to-use/HowToUseLayout";
 import HowToUseIndex from "./pages/how-to-use/HowToUseIndex";
 import HowToUseDetail from "./pages/how-to-use/HowToUseDetail";
 import HowToUseEditor from "./pages/how-to-use/HowToUseEditor";
-
 export default function App() {
   return (
     <BrowserRouter>
