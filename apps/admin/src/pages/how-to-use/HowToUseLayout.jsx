@@ -3,28 +3,128 @@ import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import MIcon from "../../components/MIcon";
 import { HOW_TO_USE_MODULES } from "../../constants/howToUseModules";
-import { getSession } from "../../lib/auth";
+import { getCurrentUser, getSession } from "../../lib/auth";
 
 const PRIMARY = "#007ab3";
 
-function getRole(session) {
-  return String(session?.user?.role || session?.role || "").toLowerCase();
+function normalize(value) {
+  return String(value || "").toLowerCase().trim();
+}
+
+function getLoggedInUserBag() {
+  const currentUser =
+    typeof getCurrentUser === "function" ? getCurrentUser() : null;
+
+  const session =
+    typeof getSession === "function" ? getSession() : null;
+
+  const raw = currentUser || session?.user || session || {};
+
+  return {
+    currentUser: currentUser || {},
+    session: session || {},
+    raw,
+  };
+}
+
+function getUserRole(userBag) {
+  const { currentUser, session, raw } = userBag;
+
+  const roleCandidates = [
+    raw?.role,
+    raw?.user?.role,
+    raw?.admin?.role,
+    raw?.account_type,
+    raw?.user_type,
+    raw?.type,
+
+    currentUser?.role,
+    currentUser?.user?.role,
+    currentUser?.admin?.role,
+    currentUser?.account_type,
+    currentUser?.user_type,
+    currentUser?.type,
+
+    session?.role,
+    session?.user?.role,
+    session?.admin?.role,
+    session?.account_type,
+    session?.user_type,
+    session?.type,
+  ];
+
+  return normalize(roleCandidates.find(Boolean));
+}
+
+function getUserEmail(userBag) {
+  const { currentUser, session, raw } = userBag;
+
+  const emailCandidates = [
+    raw?.email,
+    raw?.user?.email,
+    raw?.admin?.email,
+    raw?.admin_email,
+
+    currentUser?.email,
+    currentUser?.user?.email,
+    currentUser?.admin?.email,
+    currentUser?.admin_email,
+
+    session?.email,
+    session?.user?.email,
+    session?.admin?.email,
+    session?.admin_email,
+  ];
+
+  return normalize(emailCandidates.find(Boolean));
+}
+
+function isAdminUser(userBag) {
+  const role = getUserRole(userBag);
+  const email = getUserEmail(userBag);
+
+  if (
+    [
+      "admin",
+      "super_admin",
+      "full_admin",
+      "support_admin",
+      "administrator",
+      "global_admin",
+    ].includes(role)
+  ) {
+    return true;
+  }
+
+  if (role.includes("admin") && !role.includes("brand")) {
+    return true;
+  }
+
+  if (
+    email.endsWith("@mahimediasolutions.com") &&
+    !email.includes("allianz3") &&
+    !email.includes("allianz4")
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export default function HowToUseLayout() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const session = getSession();
+
+  const userBag = getLoggedInUserBag();
+  const user = userBag.raw;
 
   const [collapsed, setCollapsed] = useState(false);
 
-  const role = getRole(session);
-  const canManage = role === "admin" || role === "super_admin" || role === "full_admin";
-
-  const email = session?.user?.email || session?.email || "";
+  const role = getUserRole(userBag);
+  const email = getUserEmail(userBag);
+  const canManage = isAdminUser(userBag);
 
   const widthClass = collapsed ? "w-[88px]" : "w-[288px]";
-
   const modules = useMemo(() => HOW_TO_USE_MODULES, []);
 
   return (
@@ -56,7 +156,11 @@ export default function HowToUseLayout() {
               title={collapsed ? t("howToUseExpand") : t("howToUseCollapse")}
             >
               <MIcon
-                name={collapsed ? "keyboard_double_arrow_right" : "keyboard_double_arrow_left"}
+                name={
+                  collapsed
+                    ? "keyboard_double_arrow_right"
+                    : "keyboard_double_arrow_left"
+                }
                 className="text-xl"
               />
             </button>
@@ -92,7 +196,9 @@ export default function HowToUseLayout() {
                   className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-extrabold text-slate-700 transition hover:bg-slate-100 hover:text-[#007ab3] dark:text-slate-200 dark:hover:bg-white/10"
                 >
                   <MIcon name={item.icon} className="text-2xl text-[#007ab3]" />
-                  {!collapsed ? <span className="truncate">{t(item.titleKey)}</span> : null}
+                  {!collapsed ? (
+                    <span className="truncate">{t(item.titleKey)}</span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -110,11 +216,25 @@ export default function HowToUseLayout() {
                 <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
                   {t("howToUse")}
                 </div>
+
                 <h1 className="text-xl font-black text-slate-950 dark:text-white">
                   {t("howToUseTitle")}
                 </h1>
+
                 <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                  {email}
+                  {email || "Admin"}
+
+                  {role ? (
+                    <span className="ml-2 rounded-full bg-[#007ab3]/10 px-2.5 py-1 text-xs font-black text-[#007ab3]">
+                      {role}
+                    </span>
+                  ) : null}
+
+                  {canManage ? (
+                    <span className="ml-2 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                      Manage enabled
+                    </span>
+                  ) : null}
                 </p>
               </div>
 
@@ -141,7 +261,15 @@ export default function HowToUseLayout() {
           </header>
 
           <div className="p-4 sm:p-6 lg:p-8">
-            <Outlet context={{ canManage, role, primary: PRIMARY }} />
+            <Outlet
+              context={{
+                canManage,
+                role,
+                email,
+                primary: PRIMARY,
+                user,
+              }}
+            />
           </div>
         </main>
       </div>

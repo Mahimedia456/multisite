@@ -9,25 +9,49 @@ function localized(guide, lang, field) {
   return guide?.[`${field}_${suffix}`] || guide?.[field] || "";
 }
 
-function localizedSteps(guide, lang) {
-  const steps = lang === "en" ? guide?.steps_en : guide?.steps_de;
-  return Array.isArray(steps) ? steps : [];
+function normalizeSteps(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((step) => {
+      if (typeof step === "string") {
+        return {
+          title: "",
+          text: step,
+          image_url: "",
+          caption: "",
+        };
+      }
+
+      return {
+        title: step?.title || "",
+        text: step?.text || step?.body || step?.description || "",
+        image_url: step?.image_url || step?.image || step?.url || "",
+        caption: step?.caption || "",
+      };
+    })
+    .filter((step) => step.title || step.text || step.image_url);
 }
 
-function imagesList(guide) {
-  return Array.isArray(guide?.images_json) ? guide.images_json : [];
+function localizedSteps(guide, lang) {
+  const steps = lang === "en" ? guide?.steps_en : guide?.steps_de;
+  return normalizeSteps(steps);
 }
 
 export default function HowToUseDetail() {
   const navigate = useNavigate();
   const { slug } = useParams();
   const { t, i18n } = useTranslation();
-  const { canManage } = useOutletContext();
+
+  const outletContext = useOutletContext() || {};
+  const { canManage = false } = outletContext;
 
   const [guide, setGuide] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [apiCanManage, setApiCanManage] = useState(false);
 
+  const effectiveCanManage = canManage || apiCanManage;
   const lang = i18n.language === "en" ? "en" : "de";
 
   useEffect(() => {
@@ -46,7 +70,9 @@ export default function HowToUseDetail() {
         }
 
         if (!alive) return;
+
         setGuide(json?.data || null);
+        setApiCanManage(Boolean(json?.can_manage));
       } catch (err) {
         if (!alive) return;
         setError(err?.message || t("howToUseFailedLoad"));
@@ -63,10 +89,12 @@ export default function HowToUseDetail() {
   }, [slug, t]);
 
   const title = useMemo(() => localized(guide, lang, "title"), [guide, lang]);
-  const description = useMemo(() => localized(guide, lang, "description"), [guide, lang]);
+  const description = useMemo(
+    () => localized(guide, lang, "description"),
+    [guide, lang]
+  );
   const content = useMemo(() => localized(guide, lang, "content"), [guide, lang]);
   const steps = useMemo(() => localizedSteps(guide, lang), [guide, lang]);
-  const images = useMemo(() => imagesList(guide), [guide]);
 
   if (loading) {
     return (
@@ -102,7 +130,7 @@ export default function HowToUseDetail() {
                 {title}
               </h1>
 
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500 dark:text-slate-300">
+              <p className="mt-2 max-w-4xl text-sm font-semibold leading-6 text-slate-500 dark:text-slate-300">
                 {description}
               </p>
             </div>
@@ -118,7 +146,7 @@ export default function HowToUseDetail() {
               {t("howToUseBack")}
             </button>
 
-            {canManage ? (
+            {effectiveCanManage ? (
               <button
                 type="button"
                 onClick={() => navigate(`/how-to-use/${guide.id}/edit`)}
@@ -132,110 +160,112 @@ export default function HowToUseDetail() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
-              {t("howToUseGuideContent")}
-            </h2>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <h2 className="text-xl font-black text-slate-950 dark:text-white">
+          {t("howToUseGuideContent")}
+        </h2>
 
-            <div className="mt-4 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300">
-              {content || t("howToUseNoContent")}
-            </div>
-          </section>
+        <div className="mt-4 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300">
+          {content || t("howToUseNoContent")}
+        </div>
+      </section>
 
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
               {t("howToUseSteps")}
+            </div>
+
+            <h2 className="mt-2 text-2xl font-black text-slate-950 dark:text-white">
+              {t("howToUseStepByStep")}
             </h2>
+          </div>
 
-            {steps.length ? (
-              <div className="mt-5 space-y-4">
-                {steps.map((step, index) => (
-                  <div
-                    key={`${step}-${index}`}
-                    className="flex gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#007ab3] text-sm font-black text-white">
-                      {index + 1}
-                    </div>
-
-                    <div className="pt-2 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-200">
-                      {step}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                {t("howToUseNoSteps")}
-              </p>
-            )}
-          </section>
+          <div className="rounded-full bg-[#007ab3]/10 px-4 py-2 text-xs font-black text-[#007ab3]">
+            {steps.length} {t("howToUseSteps")}
+          </div>
         </div>
 
-        <aside className="space-y-6">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
-              {t("howToUseImages")}
-            </h2>
+        {steps.length ? (
+          <div className="mt-6 space-y-6">
+            {steps.map((step, index) => (
+              <article
+                key={`${step.text}-${index}`}
+                className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-950"
+              >
+                <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#007ab3] text-lg font-black text-white shadow-lg shadow-[#007ab3]/20">
+                    {index + 1}
+                  </div>
 
-            {images.length ? (
-              <div className="mt-5 space-y-4">
-                {images.map((img, index) => {
-                  const url = typeof img === "string" ? img : img?.url;
-                  const caption = typeof img === "string" ? "" : img?.caption;
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-black text-slate-950 dark:text-white">
+                      {step.title || `${t("howToUseStep")} ${index + 1}`}
+                    </h3>
 
-                  return (
-                    <figure
-                      key={`${url}-${index}`}
-                      className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-950"
-                    >
-                      <img
-                        src={url}
-                        alt={caption || title}
-                        className="h-auto w-full object-cover"
-                      />
+                    {step.text ? (
+                      <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300">
+                        {step.text}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
 
-                      {caption ? (
-                        <figcaption className="p-3 text-xs font-bold text-slate-500 dark:text-slate-300">
-                          {caption}
-                        </figcaption>
-                      ) : null}
-                    </figure>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                {t("howToUseNoImages")}
-              </p>
-            )}
-          </section>
+                {step.image_url ? (
+                  <div className="border-t border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                    <img
+                      src={step.image_url}
+                      alt={
+                        step.caption ||
+                        step.title ||
+                        `${t("howToUseStep")} ${index + 1}`
+                      }
+                      className="max-h-[520px] w-full rounded-3xl border border-slate-200 object-contain dark:border-white/10"
+                    />
 
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
-              {t("howToUseInfo")}
-            </h2>
+                    {step.caption ? (
+                      <div className="mt-3 text-center text-xs font-bold text-slate-500 dark:text-slate-300">
+                        {step.caption}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-300">
+            {t("howToUseNoSteps")}
+          </p>
+        )}
+      </section>
 
-            <div className="mt-4 space-y-3 text-sm font-semibold text-slate-600 dark:text-slate-300">
-              <div className="flex justify-between gap-4">
-                <span>{t("howToUseModuleKey")}</span>
-                <span className="font-black text-slate-950 dark:text-white">
-                  {guide.module_key}
-                </span>
-              </div>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <h2 className="text-xl font-black text-slate-950 dark:text-white">
+          {t("howToUseInfo")}
+        </h2>
 
-              <div className="flex justify-between gap-4">
-                <span>{t("status")}</span>
-                <span className="font-black text-[#007ab3]">
-                  {guide.status}
-                </span>
-              </div>
+        <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-2">
+          <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
+            <div className="text-xs font-black uppercase tracking-wide text-slate-400">
+              {t("howToUseModuleKey")}
             </div>
-          </section>
-        </aside>
-      </div>
+            <div className="mt-1 font-black text-slate-950 dark:text-white">
+              {guide.module_key}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
+            <div className="text-xs font-black uppercase tracking-wide text-slate-400">
+              {t("status")}
+            </div>
+            <div className="mt-1 font-black text-[#007ab3]">
+              {guide.status}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

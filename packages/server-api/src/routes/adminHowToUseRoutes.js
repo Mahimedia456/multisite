@@ -19,13 +19,60 @@ function normalizeRole(role) {
   return String(role || "").toLowerCase().trim();
 }
 
-function isFullAdmin(req) {
-  const role = normalizeRole(req.user?.role);
-  return role === "admin" || role === "super_admin" || role === "full_admin";
+function getReqRole(req) {
+  const candidates = [
+    req.user?.role,
+    req.user?.user?.role,
+    req.user?.admin?.role,
+    req.user?.account_type,
+    req.user?.user_type,
+    req.user?.type,
+  ];
+
+  return normalizeRole(candidates.find(Boolean));
 }
 
 function getUserEmail(req) {
-  return String(req.user?.email || req.user?.user?.email || "").toLowerCase();
+  const candidates = [
+    req.user?.email,
+    req.user?.user?.email,
+    req.user?.admin?.email,
+    req.user?.admin_email,
+  ];
+
+  return String(candidates.find(Boolean) || "").toLowerCase().trim();
+}
+
+function isFullAdmin(req) {
+  const role = getReqRole(req);
+  const email = getUserEmail(req);
+
+  if (
+    [
+      "admin",
+      "super_admin",
+      "full_admin",
+      "support_admin",
+      "administrator",
+      "global_admin",
+    ].includes(role)
+  ) {
+    return true;
+  }
+
+  if (role.includes("admin") && !role.includes("brand")) {
+    return true;
+  }
+
+  if (
+    email.endsWith("@mahimediasolutions.com") &&
+    !email.includes("allianz3") &&
+    !email.includes("allianz4")
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function parseJsonArray(value, fallback = []) {
@@ -148,6 +195,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
 
       res.json({
         ok: true,
+        can_manage: true,
         data: result.rows[0],
       });
     })
@@ -234,22 +282,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
           $9, $10, $11::jsonb, $12::jsonb,
           $13::jsonb, $14, $15, $15
         )
-        ON CONFLICT (module_key) DO UPDATE SET
-          slug = EXCLUDED.slug,
-          icon = EXCLUDED.icon,
-          sort_order = EXCLUDED.sort_order,
-          title_de = EXCLUDED.title_de,
-          title_en = EXCLUDED.title_en,
-          description_de = EXCLUDED.description_de,
-          description_en = EXCLUDED.description_en,
-          content_de = EXCLUDED.content_de,
-          content_en = EXCLUDED.content_en,
-          steps_de = EXCLUDED.steps_de,
-          steps_en = EXCLUDED.steps_en,
-          images_json = EXCLUDED.images_json,
-          status = EXCLUDED.status,
-          updated_by = EXCLUDED.updated_by,
-          updated_at = NOW()
+        ON CONFLICT (module_key) DO NOTHING
         RETURNING *
         `,
         [
@@ -271,8 +304,16 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
         ]
       );
 
+      if (!result.rowCount) {
+        return res.status(409).json({
+          ok: false,
+          message: "Guide already exists. Please edit the existing guide.",
+        });
+      }
+
       res.status(201).json({
         ok: true,
+        can_manage: true,
         data: result.rows[0],
       });
     })
@@ -353,6 +394,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
 
       res.json({
         ok: true,
+        can_manage: true,
         data: result.rows[0],
       });
     })
@@ -387,6 +429,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
 
       res.json({
         ok: true,
+        can_manage: true,
         deleted: true,
       });
     })

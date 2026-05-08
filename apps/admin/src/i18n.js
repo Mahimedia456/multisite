@@ -1098,7 +1098,18 @@ howToUseModuleModuleSettingsDesc: "Module und Zugriffe pro Agentur aktivieren od
 howToUseModuleWebsiteSettings: "Website-Einstellungen",
 howToUseModuleWebsiteSettingsDesc: "Sichtbare und ausgeblendete Website-Seiten pro Agentur steuern.",
 howToUseModuleAdminSettings: "Admin-Einstellungen",
-howToUseModuleAdminSettingsDesc: "Berechtigungen für Admin-Benutzer verwalten."
+howToUseModuleAdminSettingsDesc: "Berechtigungen für Admin-Benutzer verwalten.",
+
+howToUseStepByStep: "Schritt-für-Schritt-Anleitung",
+howToUseStep: "Schritt",
+howToUseAddStep: "Schritt hinzufügen",
+howToUseStepTitleDe: "Schritt-Titel DE",
+howToUseStepTextDe: "Schritt-Beschreibung DE",
+howToUseStepTitleEn: "Schritt-Titel EN",
+howToUseStepTextEn: "Schritt-Beschreibung EN",
+howToUseStepImageUrl: "Bild-URL für diesen Schritt",
+howToUseStepImageCaption: "Bild-Beschriftung",
+howToUseSortOrder: "Sortierung",
 
 
 
@@ -2328,9 +2339,18 @@ howToUseModuleModuleSettingsDesc: "Enable or disable modules and access per agen
 howToUseModuleWebsiteSettings: "Website Settings",
 howToUseModuleWebsiteSettingsDesc: "Control visible and hidden website pages per agency.",
 howToUseModuleAdminSettings: "Admin Settings",
-howToUseModuleAdminSettingsDesc: "Manage permissions for admin users."
+howToUseModuleAdminSettingsDesc: "Manage permissions for admin users.",
 
-
+howToUseStepByStep: "Step-by-step guide",
+howToUseStep: "Step",
+howToUseAddStep: "Add Step",
+howToUseStepTitleDe: "Step Title DE",
+howToUseStepTextDe: "Step Description DE",
+howToUseStepTitleEn: "Step Title EN",
+howToUseStepTextEn: "Step Description EN",
+howToUseStepImageUrl: "Image URL for this step",
+howToUseStepImageCaption: "Image caption",
+howToUseSortOrder: "Sort Order",
 
 
 

@@ -148,7 +148,7 @@ export default function App() {
             <Route path="/support" element={<Navigate to="/support-chat" replace />} />
             <Route path="/notifications" element={<Notifications />} />
 
-            <Route
+<Route
   path="/how-to-use"
   element={
     <ProtectedRoute>
@@ -158,8 +158,8 @@ export default function App() {
 >
   <Route index element={<HowToUseIndex />} />
   <Route path="create" element={<HowToUseEditor />} />
-  <Route path=":slug" element={<HowToUseDetail />} />
   <Route path=":id/edit" element={<HowToUseEditor />} />
+  <Route path=":slug" element={<HowToUseDetail />} />
 </Route>
 
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />

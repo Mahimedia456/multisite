@@ -14,37 +14,54 @@ function toSlug(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-function linesToArray(value) {
-  return String(value || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+function normalizeStep(step = {}) {
+  if (typeof step === "string") {
+    return {
+      title: "",
+      text: step,
+      image_url: "",
+      caption: "",
+    };
+  }
+
+  return {
+    title: step?.title || "",
+    text: step?.text || step?.body || step?.description || "",
+    image_url: step?.image_url || step?.image || step?.url || "",
+    caption: step?.caption || "",
+  };
 }
 
-function imageLinesToArray(value) {
-  return String(value || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((url) => ({ url, caption: "" }));
+function normalizeSteps(value) {
+  if (!Array.isArray(value) || !value.length) {
+    return [
+      { title: "", text: "", image_url: "", caption: "" },
+      { title: "", text: "", image_url: "", caption: "" },
+      { title: "", text: "", image_url: "", caption: "" },
+    ];
+  }
+
+  return value.map(normalizeStep);
 }
 
-function arrayToLines(value) {
-  if (!Array.isArray(value)) return "";
-  return value
-    .map((item) => {
-      if (typeof item === "string") return item;
-      return item?.url || "";
-    })
-    .filter(Boolean)
-    .join("\n");
+function cleanSteps(steps) {
+  return (Array.isArray(steps) ? steps : [])
+    .map((step) => ({
+      title: String(step?.title || "").trim(),
+      text: String(step?.text || "").trim(),
+      image_url: String(step?.image_url || "").trim(),
+      caption: String(step?.caption || "").trim(),
+    }))
+    .filter((step) => step.title || step.text || step.image_url || step.caption);
 }
 
 export default function HowToUseEditor() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { t } = useTranslation();
-  const { canManage } = useOutletContext();
+
+  const outletContext = useOutletContext() || {};
+  const { canManage = false } = outletContext;
 
   const isEdit = Boolean(id);
 
@@ -63,9 +80,8 @@ export default function HowToUseEditor() {
     description_en: "",
     content_de: "",
     content_en: "",
-    steps_de_text: "",
-    steps_en_text: "",
-    images_text: "",
+    steps_de: normalizeSteps([]),
+    steps_en: normalizeSteps([]),
     status: "active",
   });
 
@@ -111,9 +127,8 @@ export default function HowToUseEditor() {
           description_en: data.description_en || "",
           content_de: data.content_de || "",
           content_en: data.content_en || "",
-          steps_de_text: Array.isArray(data.steps_de) ? data.steps_de.join("\n") : "",
-          steps_en_text: Array.isArray(data.steps_en) ? data.steps_en.join("\n") : "",
-          images_text: arrayToLines(data.images_json),
+          steps_de: normalizeSteps(data.steps_de),
+          steps_en: normalizeSteps(data.steps_en),
           status: data.status || "active",
         });
       } catch (err) {
@@ -136,13 +151,61 @@ export default function HowToUseEditor() {
       const next = { ...prev, [name]: value };
 
       if (name === "module_key") {
-        const moduleItem = HOW_TO_USE_MODULES.find((item) => item.moduleKey === value);
+        const moduleItem = HOW_TO_USE_MODULES.find(
+          (item) => item.moduleKey === value
+        );
+
         next.slug = moduleItem?.slug || toSlug(value);
         next.icon = moduleItem?.icon || "help";
+        next.sort_order =
+          HOW_TO_USE_MODULES.findIndex((m) => m.moduleKey === value) * 10 + 10;
       }
 
       return next;
     });
+  }
+
+  function updateStep(lang, index, field, value) {
+    const key = lang === "en" ? "steps_en" : "steps_de";
+
+    setForm((prev) => {
+      const steps = [...prev[key]];
+      steps[index] = {
+        ...steps[index],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        [key]: steps,
+      };
+    });
+  }
+
+  function addStep(lang) {
+    const key = lang === "en" ? "steps_en" : "steps_de";
+
+    setForm((prev) => ({
+      ...prev,
+      [key]: [
+        ...prev[key],
+        {
+          title: "",
+          text: "",
+          image_url: "",
+          caption: "",
+        },
+      ],
+    }));
+  }
+
+  function removeStep(lang, index) {
+    const key = lang === "en" ? "steps_en" : "steps_de";
+
+    setForm((prev) => ({
+      ...prev,
+      [key]: prev[key].filter((_, i) => i !== index),
+    }));
   }
 
   async function onSubmit(event) {
@@ -163,19 +226,22 @@ export default function HowToUseEditor() {
         description_en: form.description_en,
         content_de: form.content_de,
         content_en: form.content_en,
-        steps_de: linesToArray(form.steps_de_text),
-        steps_en: linesToArray(form.steps_en_text),
-        images_json: imageLinesToArray(form.images_text),
+        steps_de: cleanSteps(form.steps_de),
+        steps_en: cleanSteps(form.steps_en),
+        images_json: [],
         status: form.status,
       };
 
-      const res = await apiFetch(isEdit ? `/admin/how-to-use/${id}` : "/admin/how-to-use", {
-        method: isEdit ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await apiFetch(
+        isEdit ? `/admin/how-to-use/${id}` : "/admin/how-to-use",
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const json = await res.json().catch(() => ({}));
 
@@ -198,6 +264,108 @@ export default function HowToUseEditor() {
     return (
       <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm font-bold text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
         {t("howToUseLoading")}
+      </div>
+    );
+  }
+
+  function StepEditor({ lang, steps }) {
+    const isEnglish = lang === "en";
+
+    return (
+      <div className="space-y-4">
+        {steps.map((step, index) => (
+          <div
+            key={`${lang}-${index}`}
+            className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950"
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#007ab3] text-sm font-black text-white">
+                  {index + 1}
+                </div>
+
+                <div className="text-sm font-black text-slate-950 dark:text-white">
+                  {t("howToUseStep")} {index + 1}
+                </div>
+              </div>
+
+              {steps.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => removeStep(lang, index)}
+                  className="inline-flex h-9 items-center gap-2 rounded-xl bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100 dark:bg-red-950/30"
+                >
+                  <MIcon name="delete" className="text-lg" />
+                  {t("delete")}
+                </button>
+              ) : null}
+            </div>
+
+            <div className="grid gap-3">
+              <input
+                value={step.title}
+                onChange={(e) =>
+                  updateStep(lang, index, "title", e.target.value)
+                }
+                placeholder={
+                  isEnglish
+                    ? t("howToUseStepTitleEn")
+                    : t("howToUseStepTitleDe")
+                }
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              />
+
+              <textarea
+                value={step.text}
+                onChange={(e) =>
+                  updateStep(lang, index, "text", e.target.value)
+                }
+                placeholder={
+                  isEnglish
+                    ? t("howToUseStepTextEn")
+                    : t("howToUseStepTextDe")
+                }
+                rows={4}
+                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              />
+
+              <input
+                value={step.image_url}
+                onChange={(e) =>
+                  updateStep(lang, index, "image_url", e.target.value)
+                }
+                placeholder={t("howToUseStepImageUrl")}
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              />
+
+              <input
+                value={step.caption}
+                onChange={(e) =>
+                  updateStep(lang, index, "caption", e.target.value)
+                }
+                placeholder={t("howToUseStepImageCaption")}
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              />
+
+              {step.image_url ? (
+                <img
+                  src={step.image_url}
+                  alt={step.caption || step.title || "Step"}
+                  className="max-h-[280px] w-full rounded-3xl border border-slate-200 object-contain dark:border-white/10"
+                />
+              ) : null}
+            </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => addStep(lang)}
+          className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#007ab3]/10 px-4 text-sm font-black text-[#007ab3] transition hover:bg-[#007ab3]/15"
+        >
+          <MIcon name="add" className="text-xl" />
+          {t("howToUseAddStep")}
+        </button>
       </div>
     );
   }
@@ -275,17 +443,17 @@ export default function HowToUseEditor() {
                 value={form.content_de}
                 onChange={(e) => updateField("content_de", e.target.value)}
                 placeholder={t("howToUseContentDe")}
-                rows={8}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
-
-              <textarea
-                value={form.steps_de_text}
-                onChange={(e) => updateField("steps_de_text", e.target.value)}
-                placeholder={t("howToUseStepsDePlaceholder")}
                 rows={6}
                 className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
+            </div>
+
+            <div className="mt-6">
+              <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
+                {t("howToUseSteps")}
+              </h3>
+
+              <StepEditor lang="de" steps={form.steps_de} />
             </div>
           </section>
 
@@ -314,17 +482,17 @@ export default function HowToUseEditor() {
                 value={form.content_en}
                 onChange={(e) => updateField("content_en", e.target.value)}
                 placeholder={t("howToUseContentEn")}
-                rows={8}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
-
-              <textarea
-                value={form.steps_en_text}
-                onChange={(e) => updateField("steps_en_text", e.target.value)}
-                placeholder={t("howToUseStepsEnPlaceholder")}
                 rows={6}
                 className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
+            </div>
+
+            <div className="mt-6">
+              <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
+                {t("howToUseSteps")}
+              </h3>
+
+              <StepEditor lang="en" steps={form.steps_en} />
             </div>
           </section>
         </div>
@@ -381,6 +549,19 @@ export default function HowToUseEditor() {
 
               <label className="block">
                 <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  {t("howToUseSortOrder")}
+                </span>
+
+                <input
+                  type="number"
+                  value={form.sort_order}
+                  onChange={(e) => updateField("sort_order", e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   {t("status")}
                 </span>
 
@@ -393,20 +574,6 @@ export default function HowToUseEditor() {
                   <option value="draft">{t("draft")}</option>
                   <option value="inactive">{t("inactive")}</option>
                 </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t("howToUseImages")}
-                </span>
-
-                <textarea
-                  value={form.images_text}
-                  onChange={(e) => updateField("images_text", e.target.value)}
-                  placeholder={t("howToUseImagesPlaceholder")}
-                  rows={7}
-                  className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
               </label>
             </div>
           </section>

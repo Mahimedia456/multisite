@@ -13,12 +13,16 @@ function getLocalized(item, lang, field) {
 export default function HowToUseIndex() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { canManage } = useOutletContext();
+
+  const outletContext = useOutletContext() || {};
+  const { canManage = false } = outletContext;
 
   const [loading, setLoading] = useState(true);
   const [guides, setGuides] = useState([]);
   const [error, setError] = useState("");
+  const [apiCanManage, setApiCanManage] = useState(false);
 
+  const effectiveCanManage = canManage || apiCanManage;
   const lang = i18n.language === "en" ? "en" : "de";
 
   useEffect(() => {
@@ -33,11 +37,13 @@ export default function HowToUseIndex() {
         const json = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          throw new Error(json?.message || "Failed to load guides");
+          throw new Error(json?.message || t("howToUseFailedLoad"));
         }
 
         if (!alive) return;
+
         setGuides(Array.isArray(json?.data) ? json.data : []);
+        setApiCanManage(Boolean(json?.can_manage));
       } catch (err) {
         if (!alive) return;
         setError(err?.message || t("howToUseFailedLoad"));
@@ -55,7 +61,10 @@ export default function HowToUseIndex() {
 
   const mergedItems = useMemo(() => {
     return HOW_TO_USE_MODULES.map((moduleItem) => {
-      const found = guides.find((guide) => guide.module_key === moduleItem.moduleKey);
+      const found = guides.find(
+        (guide) => guide.module_key === moduleItem.moduleKey
+      );
+
       return {
         ...moduleItem,
         guide: found || null,
@@ -81,7 +90,7 @@ export default function HowToUseIndex() {
             </p>
           </div>
 
-          {canManage ? (
+          {effectiveCanManage ? (
             <button
               type="button"
               onClick={() => navigate("/how-to-use/create")}
@@ -109,7 +118,11 @@ export default function HowToUseIndex() {
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {mergedItems.map((item) => {
           const guide = item.guide;
-          const title = guide ? getLocalized(guide, lang, "title") : t(item.titleKey);
+
+          const title = guide
+            ? getLocalized(guide, lang, "title")
+            : t(item.titleKey);
+
           const description = guide
             ? getLocalized(guide, lang, "description")
             : t(item.descriptionKey);
@@ -130,7 +143,7 @@ export default function HowToUseIndex() {
                   {title}
                 </h2>
 
-                {guide?.status === "draft" ? (
+                {effectiveCanManage && guide?.status === "draft" ? (
                   <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                     {t("draft")}
                   </span>
