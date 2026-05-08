@@ -9,6 +9,92 @@ function localized(guide, lang, field) {
   return guide?.[`${field}_${suffix}`] || guide?.[field] || "";
 }
 
+function sanitizeHtml(html) {
+  if (!html) return "";
+
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return String(html || "");
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(String(html || ""), "text/html");
+
+  doc.querySelectorAll("script, style, iframe, object, embed").forEach((node) =>
+    node.remove()
+  );
+
+  doc.body.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      const value = attr.value || "";
+
+      if (name.startsWith("on")) {
+        node.removeAttribute(attr.name);
+      }
+
+      if (
+        ["href", "src"].includes(name) &&
+        value.trim().toLowerCase().startsWith("javascript:")
+      ) {
+        node.removeAttribute(attr.name);
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+}
+
+function HtmlContent({ html, fallback }) {
+  const clean = sanitizeHtml(html);
+
+  if (!clean) {
+    return fallback ? (
+      <div className="text-sm font-semibold leading-7 text-slate-500 dark:text-slate-300">
+        {fallback}
+      </div>
+    ) : null;
+  }
+
+  return (
+    <div
+      className="max-w-none text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300 [&_a]:font-black [&_a]:text-[#007ab3] [&_br]:block [&_h1]:mb-3 [&_h1]:mt-5 [&_h1]:text-2xl [&_h1]:font-black [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-black [&_li]:ml-5 [&_ol]:my-3 [&_ol]:list-decimal [&_p]:my-3 [&_strong]:font-black [&_ul]:my-3 [&_ul]:list-disc"
+      dangerouslySetInnerHTML={{ __html: clean }}
+    />
+  );
+}
+
+function normalizeStepImages(step = {}) {
+  const fromImages = Array.isArray(step?.images)
+    ? step.images
+    : Array.isArray(step?.image_urls)
+    ? step.image_urls.map((url) => ({ url, caption: "" }))
+    : [];
+
+  const legacyImage =
+    step?.image_url || step?.image || step?.url
+      ? [
+          {
+            url: step?.image_url || step?.image || step?.url || "",
+            caption: step?.caption || "",
+          },
+        ]
+      : [];
+
+  const seen = new Set();
+
+  return [...fromImages, ...legacyImage]
+    .map((image) => ({
+      url: String(image?.url || image?.image_url || "").trim(),
+      caption: String(image?.caption || "").trim(),
+    }))
+    .filter((image) => {
+      if (!image.url) return false;
+      if (seen.has(image.url)) return false;
+      seen.add(image.url);
+      return true;
+    });
+}
+
 function normalizeSteps(value) {
   if (!Array.isArray(value)) return [];
 
@@ -20,17 +106,24 @@ function normalizeSteps(value) {
           text: step,
           image_url: "",
           caption: "",
+          images: [],
         };
       }
+
+      const images = normalizeStepImages(step);
 
       return {
         title: step?.title || "",
         text: step?.text || step?.body || step?.description || "",
-        image_url: step?.image_url || step?.image || step?.url || "",
-        caption: step?.caption || "",
+        image_url: step?.image_url || step?.image || step?.url || images[0]?.url || "",
+        caption: step?.caption || images[0]?.caption || "",
+        images,
       };
     })
-    .filter((step) => step.title || step.text || step.image_url);
+    .filter(
+      (step) =>
+        step.title || step.text || step.image_url || step.images?.length
+    );
 }
 
 function localizedSteps(guide, lang) {
@@ -165,8 +258,8 @@ export default function HowToUseDetail() {
           {t("howToUseGuideContent")}
         </h2>
 
-        <div className="mt-4 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300">
-          {content || t("howToUseNoContent")}
+        <div className="mt-4">
+          <HtmlContent html={content} fallback={t("howToUseNoContent")} />
         </div>
       </section>
 
@@ -189,50 +282,61 @@ export default function HowToUseDetail() {
 
         {steps.length ? (
           <div className="mt-6 space-y-6">
-            {steps.map((step, index) => (
-              <article
-                key={`${step.text}-${index}`}
-                className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-950"
-              >
-                <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#007ab3] text-lg font-black text-white shadow-lg shadow-[#007ab3]/20">
-                    {index + 1}
+            {steps.map((step, index) => {
+              const images = normalizeStepImages(step);
+
+              return (
+                <article
+                  key={`${step.title}-${index}`}
+                  className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-950"
+                >
+                  <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#007ab3] text-lg font-black text-white shadow-lg shadow-[#007ab3]/20">
+                      {index + 1}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-black text-slate-950 dark:text-white">
+                        {step.title || `${t("howToUseStep")} ${index + 1}`}
+                      </h3>
+
+                      {step.text ? (
+                        <div className="mt-2">
+                          <HtmlContent html={step.text} />
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-lg font-black text-slate-950 dark:text-white">
-                      {step.title || `${t("howToUseStep")} ${index + 1}`}
-                    </h3>
+                  {images.length ? (
+                    <div className="space-y-4 border-t border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                      {images.map((image, imageIndex) => (
+                        <div
+                          key={`${image.url}-${imageIndex}`}
+                          className="rounded-3xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-slate-950"
+                        >
+                          <img
+                            src={image.url}
+                            alt={
+                              image.caption ||
+                              step.title ||
+                              `${t("howToUseStep")} ${index + 1}`
+                            }
+                            className="max-h-[520px] w-full rounded-2xl object-contain"
+                          />
 
-                    {step.text ? (
-                      <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300">
-                        {step.text}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                {step.image_url ? (
-                  <div className="border-t border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-                    <img
-                      src={step.image_url}
-                      alt={
-                        step.caption ||
-                        step.title ||
-                        `${t("howToUseStep")} ${index + 1}`
-                      }
-                      className="max-h-[520px] w-full rounded-3xl border border-slate-200 object-contain dark:border-white/10"
-                    />
-
-                    {step.caption ? (
-                      <div className="mt-3 text-center text-xs font-bold text-slate-500 dark:text-slate-300">
-                        {step.caption}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </article>
-            ))}
+                          {image.caption ? (
+                            <div className="mt-3 text-center text-xs font-bold text-slate-500 dark:text-slate-300">
+                              {image.caption}
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-300">

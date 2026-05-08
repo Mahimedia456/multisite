@@ -1,9 +1,10 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MIcon from "../../components/MIcon";
 import { HOW_TO_USE_MODULES } from "../../constants/howToUseModules";
 import { getCurrentUser, getSession } from "../../lib/auth";
+import logo from "../../assets/logo.svg";
 
 const PRIMARY = "#007ab3";
 
@@ -15,8 +16,7 @@ function getLoggedInUserBag() {
   const currentUser =
     typeof getCurrentUser === "function" ? getCurrentUser() : null;
 
-  const session =
-    typeof getSession === "function" ? getSession() : null;
+  const session = typeof getSession === "function" ? getSession() : null;
 
   const raw = currentUser || session?.user || session || {};
 
@@ -113,12 +113,14 @@ function isAdminUser(userBag) {
 
 export default function HowToUseLayout() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const userBag = getLoggedInUserBag();
   const user = userBag.raw;
 
   const [collapsed, setCollapsed] = useState(false);
+  const [lang, setLang] = useState(localStorage.getItem("site_lang") || "de");
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   const role = getUserRole(userBag);
   const email = getUserEmail(userBag);
@@ -127,23 +129,55 @@ export default function HowToUseLayout() {
   const widthClass = collapsed ? "w-[88px]" : "w-[288px]";
   const modules = useMemo(() => HOW_TO_USE_MODULES, []);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    i18n.changeLanguage(lang);
+  }, [lang, theme, i18n]);
+
+  function toggleLanguage() {
+    const next = lang === "de" ? "en" : "de";
+
+    localStorage.setItem("site_lang", next);
+    document.documentElement.lang = next;
+    i18n.changeLanguage(next);
+    setLang(next);
+  }
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+
+    localStorage.setItem("theme", next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    setTheme(next);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-white">
       <div className="flex min-h-screen">
         <aside
           className={`${widthClass} fixed left-0 top-0 z-40 hidden h-screen border-r border-slate-200 bg-white shadow-sm transition-all duration-300 dark:border-white/10 dark:bg-slate-900 lg:block`}
         >
-          <div className="flex h-20 items-center justify-between border-b border-slate-200 px-4 dark:border-white/10">
-            {!collapsed ? (
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
-                  Allianz
-                </div>
-                <div className="text-lg font-black text-slate-950 dark:text-white">
-                  {t("howToUse")}
-                </div>
-              </div>
-            ) : (
+      <div className="relative flex h-32 items-center justify-center border-b border-slate-200 px-4 dark:border-white/10">
+  {!collapsed ? (
+    <div className="flex min-w-0 flex-col items-center text-center">
+      <img
+        src={logo}
+        alt="Logo"
+        className="h-12 w-auto shrink-0 object-contain dark:brightness-0 dark:invert"
+      />
+
+      <div className="mt-2 min-w-0">
+        <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
+          Allianz
+        </div>
+
+        <div className="truncate text-lg font-black leading-tight text-slate-950 dark:text-white">
+          {t("howToUse")}
+        </div>
+      </div>
+    </div>
+  ) : (
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#007ab3]/10 text-[#007ab3]">
                 <MIcon name="help" className="text-2xl" />
               </div>
@@ -152,7 +186,7 @@ export default function HowToUseLayout() {
             <button
               type="button"
               onClick={() => setCollapsed((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
+            className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
               title={collapsed ? t("howToUseExpand") : t("howToUseCollapse")}
             >
               <MIcon
@@ -166,7 +200,7 @@ export default function HowToUseLayout() {
             </button>
           </div>
 
-          <div className="h-[calc(100vh-80px)] overflow-y-auto p-3">
+          <div className="h-[calc(100vh-128px)] overflow-y-auto p-3">
             <button
               type="button"
               onClick={() => navigate("/how-to-use")}
@@ -211,8 +245,8 @@ export default function HowToUseLayout() {
           }`}
         >
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 sm:px-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="min-w-0">
                 <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
                   {t("howToUse")}
                 </div>
@@ -239,6 +273,27 @@ export default function HowToUseLayout() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="inline-flex h-11 min-w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-700 shadow-sm transition hover:bg-[#007ab3]/10 hover:text-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white dark:hover:bg-white/10"
+                  title={theme === "dark" ? "Light mode" : "Dark mode"}
+                >
+                  <MIcon
+                    name={theme === "dark" ? "light_mode" : "dark_mode"}
+                    className="text-xl"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 shadow-sm transition hover:bg-[#007ab3]/10 hover:text-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white dark:hover:bg-white/10"
+                  title="Switch language"
+                >
+                  {lang === "de" ? "EN" : "DE"}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => navigate("/dashboard")}

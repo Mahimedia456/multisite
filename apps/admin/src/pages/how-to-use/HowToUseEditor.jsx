@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import MIcon from "../../components/MIcon";
@@ -9,6 +9,185 @@ import {
   getHowToUseMediaByModule,
 } from "../../constants/howToUseMedia";
 
+function RichTextEditor({ value, onChange, placeholder }) {
+  const editorRef = useRef(null);
+  const lastExternalValueRef = useRef(value || "");
+
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    const nextValue = value || "";
+
+    // Do not rewrite innerHTML while editor is focused.
+    // Rewriting active contentEditable causes cursor + page scroll jump.
+    if (document.activeElement === el) {
+      lastExternalValueRef.current = nextValue;
+      return;
+    }
+
+    if (lastExternalValueRef.current !== nextValue) {
+      el.innerHTML = nextValue;
+      lastExternalValueRef.current = nextValue;
+    }
+  }, [value]);
+
+  function emitChange() {
+    const html = editorRef.current?.innerHTML || "";
+    lastExternalValueRef.current = html;
+    onChange(html);
+  }
+
+  function preserveScroll(callback) {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    callback();
+
+    requestAnimationFrame(() => {
+      window.scrollTo(scrollX, scrollY);
+    });
+  }
+
+  function runCommand(command, commandValue = null) {
+    preserveScroll(() => {
+      editorRef.current?.focus();
+      document.execCommand(command, false, commandValue);
+      emitChange();
+    });
+  }
+
+  function addLink() {
+    const url = window.prompt("Enter link URL");
+    if (!url) return;
+
+    runCommand("createLink", url);
+  }
+
+  function handleInput() {
+    emitChange();
+  }
+
+  function handlePaste(event) {
+    event.preventDefault();
+
+    const html = event.clipboardData?.getData("text/html");
+    const text = event.clipboardData?.getData("text/plain");
+
+    preserveScroll(() => {
+      editorRef.current?.focus();
+
+      if (html) {
+        document.execCommand("insertHTML", false, html);
+      } else if (text) {
+        document.execCommand("insertText", false, text);
+      }
+
+      emitChange();
+    });
+  }
+
+  const buttonClass =
+    "inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-white/10";
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-slate-950">
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("bold")}
+          className={buttonClass}
+        >
+          B
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("italic")}
+          className={buttonClass}
+        >
+          I
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("underline")}
+          className={buttonClass}
+        >
+          U
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("formatBlock", "h3")}
+          className={buttonClass}
+        >
+          H3
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("formatBlock", "p")}
+          className={buttonClass}
+        >
+          P
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("insertUnorderedList")}
+          className={buttonClass}
+        >
+          • List
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("insertOrderedList")}
+          className={buttonClass}
+        >
+          1. List
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={addLink}
+          className={buttonClass}
+        >
+          Link
+        </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand("removeFormat")}
+          className={buttonClass}
+        >
+          Clear
+        </button>
+      </div>
+
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onPaste={handlePaste}
+        data-placeholder={placeholder}
+        className="min-h-[160px] w-full p-4 text-sm font-semibold leading-7 text-slate-700 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] dark:text-slate-200 [&_a]:font-black [&_a]:text-[#007ab3] [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-black [&_li]:ml-5 [&_ol]:list-decimal [&_ul]:list-disc"
+      />
+    </div>
+  );
+}
+
 function toSlug(value) {
   return String(value || "")
     .trim()
@@ -18,31 +197,77 @@ function toSlug(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+function normalizeImageList(images = [], keepEmpty = false) {
+  return (Array.isArray(images) ? images : [])
+    .map((image) => ({
+      url: String(image?.url || image?.image_url || "").trim(),
+      caption: String(image?.caption || "").trim(),
+    }))
+    .filter((image) => keepEmpty || image.url || image.caption);
+}
+
+function normalizeStepImages(step = {}, keepEmpty = false) {
+  const fromImages = Array.isArray(step?.images)
+    ? step.images
+    : Array.isArray(step?.image_urls)
+    ? step.image_urls.map((url) => ({ url, caption: "" }))
+    : [];
+
+  const legacyImage =
+    step?.image_url || step?.image || step?.url
+      ? [
+          {
+            url: step?.image_url || step?.image || step?.url || "",
+            caption: step?.caption || "",
+          },
+        ]
+      : [];
+
+  const merged = [...fromImages, ...legacyImage];
+  const clean = normalizeImageList(merged, keepEmpty);
+  const seen = new Set();
+
+  return clean.filter((image) => {
+    if (!image.url) return keepEmpty;
+    if (seen.has(image.url)) return false;
+
+    seen.add(image.url);
+    return true;
+  });
+}
+
+function emptyStep() {
+  return {
+    title: "",
+    text: "",
+    image_url: "",
+    caption: "",
+    images: [],
+  };
+}
+
 function normalizeStep(step = {}) {
   if (typeof step === "string") {
     return {
-      title: "",
+      ...emptyStep(),
       text: step,
-      image_url: "",
-      caption: "",
     };
   }
+
+  const images = normalizeStepImages(step);
 
   return {
     title: step?.title || "",
     text: step?.text || step?.body || step?.description || "",
-    image_url: step?.image_url || step?.image || step?.url || "",
-    caption: step?.caption || "",
+    image_url: step?.image_url || step?.image || step?.url || images[0]?.url || "",
+    caption: step?.caption || images[0]?.caption || "",
+    images,
   };
 }
 
 function normalizeSteps(value) {
   if (!Array.isArray(value) || !value.length) {
-    return [
-      { title: "", text: "", image_url: "", caption: "" },
-      { title: "", text: "", image_url: "", caption: "" },
-      { title: "", text: "", image_url: "", caption: "" },
-    ];
+    return [emptyStep(), emptyStep(), emptyStep()];
   }
 
   return value.map(normalizeStep);
@@ -50,13 +275,40 @@ function normalizeSteps(value) {
 
 function cleanSteps(steps) {
   return (Array.isArray(steps) ? steps : [])
-    .map((step) => ({
-      title: String(step?.title || "").trim(),
-      text: String(step?.text || "").trim(),
-      image_url: String(step?.image_url || "").trim(),
-      caption: String(step?.caption || "").trim(),
-    }))
-    .filter((step) => step.title || step.text || step.image_url || step.caption);
+    .map((step) => {
+      const images = normalizeStepImages(step, false);
+      const legacyImageUrl = String(step?.image_url || "").trim();
+      const legacyCaption = String(step?.caption || "").trim();
+      const finalImages = [...images];
+
+      if (
+        legacyImageUrl &&
+        !finalImages.some((image) => image.url === legacyImageUrl)
+      ) {
+        finalImages.unshift({
+          url: legacyImageUrl,
+          caption: legacyCaption,
+        });
+      }
+
+      const firstImage = finalImages.find((image) => image.url) || null;
+
+      return {
+        title: String(step?.title || "").trim(),
+        text: String(step?.text || "").trim(),
+        image_url: firstImage?.url || "",
+        caption: firstImage?.caption || legacyCaption || "",
+        images: finalImages,
+      };
+    })
+    .filter(
+      (step) =>
+        step.title ||
+        step.text ||
+        step.image_url ||
+        step.caption ||
+        step.images.length
+    );
 }
 
 export default function HowToUseEditor() {
@@ -71,6 +323,7 @@ export default function HowToUseEditor() {
 
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [apiCanManage, setApiCanManage] = useState(false);
+  const [activeLang, setActiveLang] = useState("de");
 
   const canManage = layoutCanManage || apiCanManage;
 
@@ -120,12 +373,7 @@ export default function HowToUseEditor() {
       const matchesModule = moduleKey ? image.moduleKey === moduleKey : true;
 
       const matchesSearch = term
-        ? [
-            image.label,
-            image.url,
-            image.moduleTitle,
-            image.moduleKey,
-          ]
+        ? [image.label, image.url, image.moduleTitle, image.moduleKey]
             .filter(Boolean)
             .join(" ")
             .toLowerCase()
@@ -134,7 +382,12 @@ export default function HowToUseEditor() {
 
       return matchesModule && matchesSearch;
     });
-  }, [allMedia, mediaPicker.search, mediaPicker.selectedModuleKey, form.module_key]);
+  }, [
+    allMedia,
+    mediaPicker.search,
+    mediaPicker.selectedModuleKey,
+    form.module_key,
+  ]);
 
   useEffect(() => {
     let alive = true;
@@ -254,20 +507,95 @@ export default function HowToUseEditor() {
     });
   }
 
+  function getStepImages(step, keepEmpty = true) {
+    return normalizeStepImages(step, keepEmpty);
+  }
+
+  function setStepImages(lang, stepIndex, updater) {
+    const key = lang === "en" ? "steps_en" : "steps_de";
+
+    setForm((prev) => {
+      const steps = [...prev[key]];
+      const currentStep = steps[stepIndex] || emptyStep();
+
+      const currentImages = getStepImages(currentStep, true);
+      const nextImages =
+        typeof updater === "function" ? updater(currentImages) : updater;
+
+      const normalizedImages = normalizeImageList(nextImages, true);
+      const firstImage =
+        normalizedImages.find((image) => String(image.url || "").trim()) ||
+        null;
+
+      steps[stepIndex] = {
+        ...currentStep,
+        images: normalizedImages,
+        image_url: firstImage?.url || "",
+        caption: firstImage?.caption || "",
+      };
+
+      return {
+        ...prev,
+        [key]: steps,
+      };
+    });
+  }
+
+  function addImageToStep(lang, index, image) {
+    const imageUrl = String(image?.url || image?.image_url || "").trim();
+
+    if (!imageUrl) return;
+
+    setStepImages(lang, index, (currentImages) => {
+      const alreadyExists = currentImages.some((item) => item.url === imageUrl);
+
+      if (alreadyExists) return currentImages;
+
+      return [
+        ...currentImages,
+        {
+          url: imageUrl,
+          caption: image?.caption || image?.label || "",
+        },
+      ];
+    });
+  }
+
+  function addManualImage(lang, index) {
+    setStepImages(lang, index, (currentImages) => [
+      ...currentImages,
+      {
+        url: "",
+        caption: "",
+      },
+    ]);
+  }
+
+  function updateStepImage(lang, stepIndex, imageIndex, field, value) {
+    setStepImages(lang, stepIndex, (currentImages) =>
+      currentImages.map((image, index) =>
+        index === imageIndex
+          ? {
+              ...image,
+              [field]: value,
+            }
+          : image
+      )
+    );
+  }
+
+  function removeStepImage(lang, stepIndex, imageIndex) {
+    setStepImages(lang, stepIndex, (currentImages) =>
+      currentImages.filter((_, index) => index !== imageIndex)
+    );
+  }
+
   function addStep(lang) {
     const key = lang === "en" ? "steps_en" : "steps_de";
 
     setForm((prev) => ({
       ...prev,
-      [key]: [
-        ...prev[key],
-        {
-          title: "",
-          text: "",
-          image_url: "",
-          caption: "",
-        },
-      ],
+      [key]: [...prev[key], emptyStep()],
     }));
   }
 
@@ -298,16 +626,10 @@ export default function HowToUseEditor() {
   }
 
   function selectMedia(image) {
-    updateStep(mediaPicker.lang, mediaPicker.stepIndex, "image_url", image.url);
-
-    const key = mediaPicker.lang === "en" ? "steps_en" : "steps_de";
-    const currentStep = form[key]?.[mediaPicker.stepIndex];
-
-    if (!currentStep?.caption) {
-      updateStep(mediaPicker.lang, mediaPicker.stepIndex, "caption", image.label);
-    }
-
-    closeMediaPicker();
+    addImageToStep(mediaPicker.lang, mediaPicker.stepIndex, {
+      url: image.url,
+      caption: image.label,
+    });
   }
 
   async function onSubmit(event) {
@@ -418,99 +740,175 @@ export default function HowToUseEditor() {
 
     return (
       <div className="space-y-4">
-        {steps.map((step, index) => (
-          <div
-            key={`${lang}-${index}`}
-            className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950"
-          >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#007ab3] text-sm font-black text-white">
-                  {index + 1}
+        {steps.map((step, index) => {
+          const stepImages = getStepImages(step, true);
+
+          return (
+            <div
+              key={`${lang}-${index}`}
+              className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950"
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#007ab3] text-sm font-black text-white">
+                    {index + 1}
+                  </div>
+
+                  <div className="text-sm font-black text-slate-950 dark:text-white">
+                    {t("howToUseStep")} {index + 1}
+                  </div>
                 </div>
 
-                <div className="text-sm font-black text-slate-950 dark:text-white">
-                  {t("howToUseStep")} {index + 1}
-                </div>
+                {steps.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => removeStep(lang, index)}
+                    className="inline-flex h-9 items-center gap-2 rounded-xl bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100 dark:bg-red-950/30"
+                  >
+                    <MIcon name="delete" className="text-lg" />
+                    {t("delete")}
+                  </button>
+                ) : null}
               </div>
 
-              {steps.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => removeStep(lang, index)}
-                  className="inline-flex h-9 items-center gap-2 rounded-xl bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100 dark:bg-red-950/30"
-                >
-                  <MIcon name="delete" className="text-lg" />
-                  {t("delete")}
-                </button>
-              ) : null}
-            </div>
-
-            <div className="grid gap-3">
-              <input
-                value={step.title}
-                onChange={(e) => updateStep(lang, index, "title", e.target.value)}
-                placeholder={
-                  isEnglish
-                    ? t("howToUseStepTitleEn")
-                    : t("howToUseStepTitleDe")
-                }
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
-              />
-
-              <textarea
-                value={step.text}
-                onChange={(e) => updateStep(lang, index, "text", e.target.value)}
-                placeholder={
-                  isEnglish
-                    ? t("howToUseStepTextEn")
-                    : t("howToUseStepTextDe")
-                }
-                rows={4}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
-              />
-
-              <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+              <div className="grid gap-3">
                 <input
-                  value={step.image_url}
+                  value={step.title}
                   onChange={(e) =>
-                    updateStep(lang, index, "image_url", e.target.value)
+                    updateStep(lang, index, "title", e.target.value)
                   }
-                  placeholder={t("howToUseStepImageUrl")}
+                  placeholder={
+                    isEnglish
+                      ? t("howToUseStepTitleEn")
+                      : t("howToUseStepTitleDe")
+                  }
                   className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
                 />
 
-                <button
-                  type="button"
-                  onClick={() => openMediaPicker(lang, index)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#007ab3]/10 px-4 text-sm font-black text-[#007ab3] transition hover:bg-[#007ab3]/15"
-                >
-                  <MIcon name="perm_media" className="text-xl" />
-                  Media
-                </button>
-              </div>
+                <RichTextEditor
+                  value={step.text}
+                  onChange={(html) => updateStep(lang, index, "text", html)}
+                  placeholder={
+                    isEnglish
+                      ? t("howToUseStepTextEn")
+                      : t("howToUseStepTextDe")
+                  }
+                />
 
-              <input
-                value={step.caption}
-                onChange={(e) =>
-                  updateStep(lang, index, "caption", e.target.value)
-                }
-                placeholder={t("howToUseStepImageCaption")}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
-              />
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-sm font-black text-slate-950 dark:text-white">
+                        Step Images
+                      </div>
 
-              {step.image_url ? (
-                <div className="rounded-3xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
-                  <img
-                    src={step.image_url}
-                    alt={step.caption || step.title || "Step"}
-                    className="max-h-[280px] w-full rounded-2xl object-contain"
-                  />
+                      <div className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                        Add one or more images for this step. You can paste URLs
+                        manually or select from media.
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => addManualImage(lang, index)}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-xs font-black text-slate-700 transition hover:bg-slate-200 dark:bg-white/10 dark:text-slate-200"
+                      >
+                        <MIcon name="add_link" className="text-lg" />
+                        Add URL
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openMediaPicker(lang, index)}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-[#007ab3]/10 px-4 text-xs font-black text-[#007ab3] transition hover:bg-[#007ab3]/15"
+                      >
+                        <MIcon name="perm_media" className="text-lg" />
+                        Media
+                      </button>
+                    </div>
+                  </div>
+
+                  {stepImages.length ? (
+                    <div className="space-y-4">
+                      {stepImages.map((image, imageIndex) => (
+                        <div
+                          key={`${lang}-${index}-image-${imageIndex}-${image.url}`}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-slate-950"
+                        >
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              Image {imageIndex + 1}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeStepImage(lang, index, imageIndex)
+                              }
+                              className="inline-flex h-8 items-center gap-1 rounded-xl bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100 dark:bg-red-950/30"
+                            >
+                              <MIcon name="delete" className="text-base" />
+                              Remove
+                            </button>
+                          </div>
+
+                          <div className="grid gap-3">
+                            <input
+                              value={image.url}
+                              onChange={(e) =>
+                                updateStepImage(
+                                  lang,
+                                  index,
+                                  imageIndex,
+                                  "url",
+                                  e.target.value
+                                )
+                              }
+                              placeholder={t("howToUseStepImageUrl")}
+                              className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                            />
+
+                            <input
+                              value={image.caption}
+                              onChange={(e) =>
+                                updateStepImage(
+                                  lang,
+                                  index,
+                                  imageIndex,
+                                  "caption",
+                                  e.target.value
+                                )
+                              }
+                              placeholder={t("howToUseStepImageCaption")}
+                              className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                            />
+
+                            {image.url ? (
+                              <div className="rounded-2xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900">
+                                <img
+                                  src={image.url}
+                                  alt={
+                                    image.caption || step.title || "Step image"
+                                  }
+                                  className="max-h-[260px] w-full rounded-xl object-contain"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm font-bold text-slate-500 dark:border-white/10 dark:text-slate-300">
+                      No images added for this step.
+                    </div>
+                  )}
                 </div>
-              ) : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <button
           type="button"
@@ -523,6 +921,12 @@ export default function HowToUseEditor() {
       </div>
     );
   }
+
+  const activeTitleField = activeLang === "en" ? "title_en" : "title_de";
+  const activeDescriptionField =
+    activeLang === "en" ? "description_en" : "description_de";
+  const activeContentField = activeLang === "en" ? "content_en" : "content_de";
+  const activeSteps = activeLang === "en" ? form.steps_en : form.steps_de;
 
   return (
     <>
@@ -573,85 +977,94 @@ export default function HowToUseEditor() {
 
         <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <div className="space-y-6">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <h2 className="text-xl font-black text-slate-950 dark:text-white">
-                {t("howToUseContentGerman")}
-              </h2>
+            <section className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <div className="border-b border-slate-200 p-4 dark:border-white/10">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveLang("de")}
+                    className={`inline-flex h-11 items-center gap-2 rounded-2xl px-5 text-sm font-black transition ${
+                      activeLang === "de"
+                        ? "bg-[#007ab3] text-white shadow-lg shadow-[#007ab3]/20"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-200"
+                    }`}
+                  >
+                    <MIcon name="language" className="text-xl" />
+                    Deutsch
+                  </button>
 
-              <div className="mt-5 grid gap-4">
-                <input
-                  value={form.title_de}
-                  onChange={(e) => updateField("title_de", e.target.value)}
-                  placeholder={t("howToUseTitleDe")}
-                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
-
-                <textarea
-                  value={form.description_de}
-                  onChange={(e) =>
-                    updateField("description_de", e.target.value)
-                  }
-                  placeholder={t("howToUseDescriptionDe")}
-                  rows={3}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
-
-                <textarea
-                  value={form.content_de}
-                  onChange={(e) => updateField("content_de", e.target.value)}
-                  placeholder={t("howToUseContentDe")}
-                  rows={6}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
+                  <button
+                    type="button"
+                    onClick={() => setActiveLang("en")}
+                    className={`inline-flex h-11 items-center gap-2 rounded-2xl px-5 text-sm font-black transition ${
+                      activeLang === "en"
+                        ? "bg-[#007ab3] text-white shadow-lg shadow-[#007ab3]/20"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-200"
+                    }`}
+                  >
+                    <MIcon name="translate" className="text-xl" />
+                    English
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-6">
-                <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
-                  {t("howToUseSteps")}
-                </h3>
+              <div className="p-6">
+                <h2 className="text-xl font-black text-slate-950 dark:text-white">
+                  {activeLang === "en"
+                    ? t("howToUseContentEnglish")
+                    : t("howToUseContentGerman")}
+                </h2>
 
-                <StepEditor lang="de" steps={form.steps_de} />
-              </div>
-            </section>
+                <div className="mt-5 grid gap-4">
+                  <input
+                    value={form[activeTitleField]}
+                    onChange={(e) =>
+                      updateField(activeTitleField, e.target.value)
+                    }
+                    placeholder={
+                      activeLang === "en"
+                        ? t("howToUseTitleEn")
+                        : t("howToUseTitleDe")
+                    }
+                    className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  />
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <h2 className="text-xl font-black text-slate-950 dark:text-white">
-                {t("howToUseContentEnglish")}
-              </h2>
+                  <textarea
+                    value={form[activeDescriptionField]}
+                    onChange={(e) =>
+                      updateField(activeDescriptionField, e.target.value)
+                    }
+                    placeholder={
+                      activeLang === "en"
+                        ? t("howToUseDescriptionEn")
+                        : t("howToUseDescriptionDe")
+                    }
+                    rows={3}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  />
 
-              <div className="mt-5 grid gap-4">
-                <input
-                  value={form.title_en}
-                  onChange={(e) => updateField("title_en", e.target.value)}
-                  placeholder={t("howToUseTitleEn")}
-                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
+                  <textarea
+                    value={form[activeContentField]}
+                    onChange={(e) =>
+                      updateField(activeContentField, e.target.value)
+                    }
+                    placeholder={
+                      activeLang === "en"
+                        ? t("howToUseContentEn")
+                        : t("howToUseContentDe")
+                    }
+                    rows={6}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
 
-                <textarea
-                  value={form.description_en}
-                  onChange={(e) =>
-                    updateField("description_en", e.target.value)
-                  }
-                  placeholder={t("howToUseDescriptionEn")}
-                  rows={3}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
+                <div className="mt-6">
+                  <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
+                    {t("howToUseSteps")}
+                  </h3>
 
-                <textarea
-                  value={form.content_en}
-                  onChange={(e) => updateField("content_en", e.target.value)}
-                  placeholder={t("howToUseContentEn")}
-                  rows={6}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
-
-              <div className="mt-6">
-                <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
-                  {t("howToUseSteps")}
-                </h3>
-
-                <StepEditor lang="en" steps={form.steps_en} />
+                  <StepEditor lang={activeLang} steps={activeSteps} />
+                </div>
               </div>
             </section>
           </div>
@@ -739,11 +1152,9 @@ export default function HowToUseEditor() {
 
                 <div className="rounded-2xl bg-[#007ab3]/10 p-4 text-xs font-bold leading-5 text-[#007ab3]">
                   Media folder:{" "}
-                  <span className="font-black">
-                    public/how-to-use-media/
-                  </span>
+                  <span className="font-black">public/how-to-use-media/</span>
                   <br />
-                  DB stores only image path, not image file.
+                  DB stores image paths only, not image files.
                 </div>
 
                 {moduleMedia?.images?.length ? (
@@ -780,12 +1191,12 @@ export default function HowToUseEditor() {
                 </div>
 
                 <h2 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">
-                  Select Step Image
+                  Select Step Images
                 </h2>
 
                 <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
-                  Images are loaded from public/how-to-use-media and saved as
-                  URL/path in DB.
+                  Click multiple images to add them to the current step. Images
+                  are saved as paths in DB.
                 </p>
               </div>
 
@@ -794,8 +1205,8 @@ export default function HowToUseEditor() {
                 onClick={closeMediaPicker}
                 className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
               >
-                <MIcon name="close" className="text-xl" />
-                Close
+                <MIcon name="check" className="text-xl" />
+                Done
               </button>
             </div>
 
@@ -860,6 +1271,11 @@ export default function HowToUseEditor() {
 
                         <div className="mt-2 truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                           {image.url}
+                        </div>
+
+                        <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#007ab3]/10 px-3 py-1 text-[11px] font-black text-[#007ab3]">
+                          <MIcon name="add" className="text-sm" />
+                          Add
                         </div>
                       </div>
                     </button>
