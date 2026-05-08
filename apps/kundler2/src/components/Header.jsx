@@ -268,7 +268,7 @@ export default function Header({ brandSlug = "kundler3" }) {
     location: companyData.location,
 
     cta: {
-      label: "contact",
+      label: "kontakt",
       to: "/contact",
       href: "",
     },

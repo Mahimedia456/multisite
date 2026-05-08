@@ -442,31 +442,36 @@ export default function SiteHeader({
     );
   };
 
-  const renderHeaderRowActions = () => {
-    return (
-      <div className="hidden lg:flex items-center justify-end gap-3">
-        <Link
-          to="/knowledge"
-          className="h-11 px-5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:text-primary transition-all inline-flex items-center gap-2 text-sm font-extrabold shadow-sm"
-        >
-          <span className="material-symbols-outlined text-[22px] text-primary">
-            support_agent
-          </span>
-          <span>Support</span>
-        </Link>
+const renderHeaderRowActions = () => {
+  return (
+    <div className="hidden lg:flex items-center justify-end gap-3">
+      {/* ✅ SUPPORT BUTTON HIDDEN */}
+      {/* Code kept, but disabled from UI. */}
 
-        <a
-          href={loginHref}
-          className="h-11 w-11 rounded-xl bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 inline-flex items-center justify-center"
-          aria-label="My account"
-        >
-          <span className="material-symbols-outlined text-[24px]">person</span>
-        </a>
+      {/*
+      <Link
+        to="/knowledge"
+        className="h-11 px-5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:text-primary transition-all inline-flex items-center gap-2 text-sm font-extrabold shadow-sm"
+      >
+        <span className="material-symbols-outlined text-[22px] text-primary">
+          support_agent
+        </span>
+        <span>Support</span>
+      </Link>
+      */}
 
-        {renderCta()}
-      </div>
-    );
-  };
+      <a
+        href={loginHref}
+        className="h-11 w-11 rounded-xl bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 inline-flex items-center justify-center"
+        aria-label="My account"
+      >
+        <span className="material-symbols-outlined text-[24px]">person</span>
+      </a>
+
+      {renderCta()}
+    </div>
+  );
+};
 
   const shouldShowTopbar =
     showTopBar && (contactPlacement === "topbar" || contactPlacement === "both");

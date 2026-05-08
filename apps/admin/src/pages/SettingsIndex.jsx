@@ -27,12 +27,15 @@ const SETTINGS_ITEMS = [
     icon: "admin_panel_settings",
     path: "/blog-settings",
   },
-  {
-    titleKey: "knowledgeSettings",
-    descriptionKey: "knowledgeSettingsDesc",
-    icon: "school",
-    path: "/settings/knowledge",
-  },
+
+  // ✅ HIDDEN FOR ALL ADMIN ACCOUNTS
+  // Code kept, but hidden from Settings UI.
+  // {
+  //   titleKey: "knowledgeSettings",
+  //   descriptionKey: "knowledgeSettingsDesc",
+  //   icon: "school",
+  //   path: "/settings/knowledge",
+  // },
 ];
 
 export default function SettingsIndex() {

@@ -52,6 +52,13 @@ import KnowledgeForms from "./pages/knowledge/KnowledgeForms";
 import KnowledgeSubmissions from "./pages/knowledge/KnowledgeSubmissions";
 import KnowledgeSettings from "./pages/knowledge/KnowledgeSettings";
 
+import HowToUseLayout from "./pages/how-to-use/HowToUseLayout";
+import HowToUseIndex from "./pages/how-to-use/HowToUseIndex";
+import HowToUseDetail from "./pages/how-to-use/HowToUseDetail";
+import HowToUseEditor from "./pages/how-to-use/HowToUseEditor";
+
+
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -65,9 +72,12 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
 
             <Route path="/brands" element={<BrandsPortfolio />} />
+            <Route path="/agencies" element={<Navigate to="/brands" replace />} />
+            <Route path="/agency" element={<Navigate to="/brands" replace />} />
             <Route path="/brands/:brandId" element={<BrandDetail />} />
             <Route path="/brands/:brandId/templates" element={<BrandTemplates />} />
             <Route
@@ -85,24 +95,46 @@ export default function App() {
             <Route path="/knowledge/articles" element={<KnowledgeArticles />} />
             <Route path="/knowledge/faqs" element={<KnowledgeFaqs />} />
             <Route path="/knowledge/forms" element={<KnowledgeForms />} />
-            <Route path="/knowledge/submissions" element={<KnowledgeSubmissions />} />
+            <Route
+              path="/knowledge/submissions"
+              element={<KnowledgeSubmissions />}
+            />
 
             <Route path="/settings" element={<SettingsIndex />} />
             <Route path="/admin-settings" element={<AdminSettingsIndex />} />
-            <Route path="/admin-settings/:email" element={<AdminSettingsDetail />} />
+            <Route
+              path="/admin-settings/:email"
+              element={<AdminSettingsDetail />}
+            />
             <Route path="/settings/modules" element={<ModuleSettings />} />
+            <Route
+              path="/module-settings"
+              element={<Navigate to="/settings/modules" replace />}
+            />
             <Route path="/settings/knowledge" element={<KnowledgeSettings />} />
+            <Route path="/knowledge/settings" element={<Navigate to="/settings/knowledge" replace />} />
             <Route path="/website-settings" element={<WebsiteSettingsIndex />} />
-            <Route path="/website-settings/:brandId" element={<WebsiteSettingsDetail />} />
+            <Route
+              path="/website-settings/:brandId"
+              element={<WebsiteSettingsDetail />}
+            />
             <Route path="/blog-settings" element={<BlogSettings />} />
 
             <Route path="/brand-inner-pages" element={<BrandInnerPagesIndex />} />
+            <Route
+              path="/inner-pages"
+              element={<Navigate to="/brand-inner-pages" replace />}
+            />
             <Route
               path="/brand-inner-pages/:pageId"
               element={<BrandInnerPageDetail />}
             />
 
             <Route path="/brand-unique-pages" element={<BrandUniquePagesIndex />} />
+            <Route
+              path="/unique-pages"
+              element={<Navigate to="/brand-unique-pages" replace />}
+            />
             <Route
               path="/brand-unique-pages/:brandId"
               element={<BrandUniquePagesList />}
@@ -113,23 +145,56 @@ export default function App() {
             />
 
             <Route path="/support-chat" element={<SupportChat />} />
+            <Route path="/support" element={<Navigate to="/support-chat" replace />} />
             <Route path="/notifications" element={<Notifications />} />
 
+            <Route
+  path="/how-to-use"
+  element={
+    <ProtectedRoute>
+      <HowToUseLayout />
+    </ProtectedRoute>
+  }
+>
+  <Route index element={<HowToUseIndex />} />
+  <Route path="create" element={<HowToUseEditor />} />
+  <Route path=":slug" element={<HowToUseDetail />} />
+  <Route path=":id/edit" element={<HowToUseEditor />} />
+</Route>
+
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />
+            <Route
+              path="/generate-brand"
+              element={<Navigate to="/admin/generate-brand" replace />}
+            />
             <Route path="/admin/ai-site-builder" element={<AISiteBuilder />} />
+            <Route
+              path="/ai-site-builder"
+              element={<Navigate to="/admin/ai-site-builder" replace />}
+            />
 
             <Route path="/site" element={<SitePages />} />
+            <Route path="/site-pages" element={<Navigate to="/site" replace />} />
+            <Route
+              path="/main-website"
+              element={<Navigate to="/site" replace />}
+            />
             <Route
               path="/site/templates/:templateId/builder"
               element={<TemplateBuilder />}
             />
+
+            <Route
+              path="*"
+              element={<Navigate to="/dashboard" replace />}
+            />
           </Route>
 
-          <Route path="/admin/page-builder/:pageId" element={<VisualPageBuilder />} />
+          <Route
+            path="/admin/page-builder/:pageId"
+            element={<VisualPageBuilder />}
+          />
         </Route>
-
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

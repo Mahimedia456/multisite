@@ -14,9 +14,11 @@ import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
 import { useBrandTheme } from "./hooks/useBrandTheme";
 
-import KnowledgeArea from "./pages/KnowledgeArea.jsx";
-import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
-import KnowledgeForm from "./pages/KnowledgeForm.jsx";
+// ✅ KNOWLEDGE MODULE HIDDEN ON USER SIDE
+// Code kept, but imports/routes are disabled.
+// import KnowledgeArea from "./pages/KnowledgeArea.jsx";
+// import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
+// import KnowledgeForm from "./pages/KnowledgeForm.jsx";
 
 import NotFound from "./pages/NotFound.jsx";
 
@@ -25,7 +27,8 @@ const BRAND = "allianz4";
 export default function App() {
   useBrandTheme(BRAND);
 
-  const lang = localStorage.getItem("site_lang") || "de";
+  // ✅ disabled with Knowledge module
+  // const lang = localStorage.getItem("site_lang") || "de";
 
   return (
     <>
@@ -65,7 +68,11 @@ export default function App() {
           <Route
             path="/e-auto-versicherung"
             element={
-              <VisiblePage brandSlug={BRAND} type="shared" slug="e-auto-versicherung">
+              <VisiblePage
+                brandSlug={BRAND}
+                type="shared"
+                slug="e-auto-versicherung"
+              >
                 <EAautoVersicherung />
               </VisiblePage>
             }
@@ -74,7 +81,11 @@ export default function App() {
           <Route
             path="/kfz-versicherung"
             element={
-              <VisiblePage brandSlug={BRAND} type="shared" slug="kfz-versicherung">
+              <VisiblePage
+                brandSlug={BRAND}
+                type="shared"
+                slug="kfz-versicherung"
+              >
                 <KfzVersicherung />
               </VisiblePage>
             }
@@ -83,6 +94,10 @@ export default function App() {
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
 
+          {/* ✅ KNOWLEDGE MODULE HIDDEN ON USER SIDE */}
+          {/* Code kept, but routes are disabled. */}
+
+          {/* 
           <Route
             path="/knowledge"
             element={<KnowledgeArea brandSlug={BRAND} lang={lang} />}
@@ -97,9 +112,9 @@ export default function App() {
             path="/knowledge/forms/:slug"
             element={<KnowledgeForm brandSlug={BRAND} lang={lang} />}
           />
+          */}
 
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
-
 
           <Route path="*" element={<NotFound />} />
         </Routes>

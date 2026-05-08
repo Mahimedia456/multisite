@@ -5,18 +5,71 @@ import { logout, getCurrentUser } from "../lib/auth";
 import logo from "../assets/logo.svg";
 
 const MAIN_NAV_ITEMS = [
-  { to: "/dashboard", label: "Overview", translationKey: "overview", icon: "grid_view" },
-  { to: "/brands", label: "Brands", translationKey: "brands", icon: "layers" },
-  { to: "/brand-inner-pages", label: "Brand Inner Pages", translationKey: "brandInnerPages", icon: "description" },
-  { to: "/brand-unique-pages", label: "Brand Unique Pages", translationKey: "brandUniquePages", icon: "web" },
-  { to: "/support-chat", label: "Support Chat", translationKey: "supportChat", icon: "forum" },
-  { to: "/blogs", label: "Blogs", translationKey: "blogs", icon: "article" },
-  { to: "/blog-categories", label: "Blog Categories", translationKey: "blogCategories", icon: "category" },
+  {
+    to: "/dashboard",
+    label: "Overview",
+    translationKey: "overview",
+    icon: "grid_view",
+  },
+  {
+    to: "/brands",
+    label: "Brands",
+    translationKey: "brands",
+    icon: "layers",
+  },
+  {
+    to: "/brand-inner-pages",
+    label: "Brand Inner Pages",
+    translationKey: "brandInnerPages",
+    icon: "description",
+  },
+  {
+    to: "/brand-unique-pages",
+    label: "Brand Unique Pages",
+    translationKey: "brandUniquePages",
+    icon: "web",
+  },
+  {
+    to: "/support-chat",
+    label: "Support Chat",
+    translationKey: "supportChat",
+    icon: "forum",
+  },
+  {
+    to: "/blogs",
+    label: "Blogs",
+    translationKey: "blogs",
+    icon: "article",
+  },
+  {
+    to: "/blog-categories",
+    label: "Blog Categories",
+    translationKey: "blogCategories",
+    icon: "category",
+  },
 
-  // ✅ NEW: Knowledge Area sidebar item
-  { to: "/knowledge", label: "Knowledge Area", translationKey: "knowledgeArea", icon: "school" },
+  // Knowledge Area agar sidebar mein chahiye to uncomment karo
+  // {
+  //   to: "/knowledge",
+  //   label: "Knowledge Area",
+  //   translationKey: "knowledgeArea",
+  //   icon: "school",
+  // },
 
-  { to: "/settings", label: "Settings", translationKey: "settings", icon: "settings" },
+  {
+    to: "/settings",
+    label: "Settings",
+    translationKey: "settings",
+    icon: "settings",
+  },
+
+  // ✅ New module: visible for full admin and brand admin
+  {
+    to: "/how-to-use",
+    label: "How to Use",
+    translationKey: "howToUse",
+    icon: "help",
+  },
 ];
 
 function hasPermission(user, label) {
@@ -40,6 +93,7 @@ function SidebarLink({ item, collapsed, t }) {
       }
     >
       <MIcon name={item.icon} className="text-[20px] shrink-0" />
+
       {!collapsed ? (
         <span className="truncate">{t(item.translationKey, item.label)}</span>
       ) : null}
@@ -52,9 +106,12 @@ export default function AdminSidebar({ collapsed = false, setCollapsed }) {
   const { t } = useTranslation();
   const user = getCurrentUser();
 
-  const mainNav = MAIN_NAV_ITEMS.filter((item) =>
-    hasPermission(user, item.label)
-  );
+  const mainNav = MAIN_NAV_ITEMS.filter((item) => {
+    // ✅ How to Use must be visible to every logged-in admin/brand admin
+    if (item.to === "/how-to-use") return true;
+
+    return hasPermission(user, item.label);
+  });
 
   function handleLogout() {
     logout();
@@ -98,6 +155,7 @@ export default function AdminSidebar({ collapsed = false, setCollapsed }) {
             <div className="text-sm font-extrabold tracking-wide text-gray-900 dark:text-white">
               ALLIANZ PANEL
             </div>
+
             <div className="text-[11px] font-semibold text-[#007ab3]">
               Admin Dashboard
             </div>
@@ -109,7 +167,7 @@ export default function AdminSidebar({ collapsed = false, setCollapsed }) {
         <nav className="space-y-1">
           {mainNav.map((item) => (
             <SidebarLink
-              key={item.label}
+              key={item.to}
               item={item}
               collapsed={collapsed}
               t={t}

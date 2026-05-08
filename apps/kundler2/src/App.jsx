@@ -12,14 +12,16 @@ import { useBrandTheme } from "./hooks/useBrandTheme";
 import UniquePagePreview from "./pages/UniquePagePreview.jsx";
 import VisiblePage from "./components/VisiblePage.jsx";
 
-import KnowledgeArea from "./pages/KnowledgeArea.jsx";
-import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
-import KnowledgeForm from "./pages/KnowledgeForm.jsx";
+// ✅ KNOWLEDGE MODULE HIDDEN ON USER SIDE
+// Code kept, but imports/routes are disabled.
+// import KnowledgeArea from "./pages/KnowledgeArea.jsx";
+// import KnowledgeArticle from "./pages/KnowledgeArticle.jsx";
+// import KnowledgeForm from "./pages/KnowledgeForm.jsx";
 
 import NotFound from "./pages/NotFound.jsx";
 
 const BRAND = "kundler3";
-const LANG = "de";
+// const LANG = "de"; // disabled with Knowledge module
 
 export default function App() {
   useBrandTheme(BRAND);
@@ -60,7 +62,11 @@ export default function App() {
           <Route
             path="/e-auto-versicherung"
             element={
-              <VisiblePage brandSlug={BRAND} type="shared" slug="e-auto-versicherung">
+              <VisiblePage
+                brandSlug={BRAND}
+                type="shared"
+                slug="e-auto-versicherung"
+              >
                 <EAautoVersicherung />
               </VisiblePage>
             }
@@ -69,7 +75,11 @@ export default function App() {
           <Route
             path="/kfz-versicherung"
             element={
-              <VisiblePage brandSlug={BRAND} type="shared" slug="kfz-versicherung">
+              <VisiblePage
+                brandSlug={BRAND}
+                type="shared"
+                slug="kfz-versicherung"
+              >
                 <KfzVersicherung />
               </VisiblePage>
             }
@@ -78,6 +88,10 @@ export default function App() {
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blogs/:slug" element={<BlogDetail />} />
 
+          {/* ✅ KNOWLEDGE MODULE HIDDEN ON USER SIDE */}
+          {/* Code kept, but routes are disabled. */}
+
+          {/* 
           <Route
             path="/knowledge"
             element={<KnowledgeArea brandSlug={BRAND} lang={LANG} />}
@@ -92,6 +106,7 @@ export default function App() {
             path="/knowledge/forms/:slug"
             element={<KnowledgeForm brandSlug={BRAND} lang={LANG} />}
           />
+          */}
 
           <Route path="/admin-preview/:slug" element={<UniquePagePreview />} />
 
