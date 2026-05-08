@@ -4,6 +4,10 @@ import { useTranslation } from "react-i18next";
 import MIcon from "../../components/MIcon";
 import { apiFetch } from "../../lib/auth";
 import { HOW_TO_USE_MODULES } from "../../constants/howToUseModules";
+import {
+  getAllHowToUseMedia,
+  getHowToUseMediaByModule,
+} from "../../constants/howToUseMedia";
 
 function toSlug(value) {
   return String(value || "")
@@ -61,13 +65,26 @@ export default function HowToUseEditor() {
   const { t } = useTranslation();
 
   const outletContext = useOutletContext() || {};
-  const { canManage = false } = outletContext;
+  const { canManage: layoutCanManage = false } = outletContext;
 
   const isEdit = Boolean(id);
+
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [apiCanManage, setApiCanManage] = useState(false);
+
+  const canManage = layoutCanManage || apiCanManage;
 
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [mediaPicker, setMediaPicker] = useState({
+    open: false,
+    lang: "de",
+    stepIndex: 0,
+    search: "",
+    selectedModuleKey: "",
+  });
 
   const [form, setForm] = useState({
     module_key: "dashboard",
@@ -89,17 +106,71 @@ export default function HowToUseEditor() {
     return HOW_TO_USE_MODULES.find((item) => item.moduleKey === form.module_key);
   }, [form.module_key]);
 
+  const moduleMedia = useMemo(() => {
+    return getHowToUseMediaByModule(form.module_key);
+  }, [form.module_key]);
+
+  const allMedia = useMemo(() => getAllHowToUseMedia(), []);
+
+  const filteredMedia = useMemo(() => {
+    const term = mediaPicker.search.trim().toLowerCase();
+    const moduleKey = mediaPicker.selectedModuleKey || form.module_key;
+
+    return allMedia.filter((image) => {
+      const matchesModule = moduleKey ? image.moduleKey === moduleKey : true;
+
+      const matchesSearch = term
+        ? [
+            image.label,
+            image.url,
+            image.moduleTitle,
+            image.moduleKey,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase()
+            .includes(term)
+        : true;
+
+      return matchesModule && matchesSearch;
+    });
+  }, [allMedia, mediaPicker.search, mediaPicker.selectedModuleKey, form.module_key]);
+
   useEffect(() => {
-    if (!canManage) {
-      navigate("/how-to-use", { replace: true });
+    let alive = true;
+
+    async function checkAccess() {
+      try {
+        setCheckingAccess(true);
+
+        const res = await apiFetch("/admin/how-to-use");
+        const json = await res.json().catch(() => ({}));
+
+        if (!alive) return;
+
+        setApiCanManage(Boolean(json?.can_manage));
+      } catch {
+        if (!alive) return;
+        setApiCanManage(false);
+      } finally {
+        if (alive) setCheckingAccess(false);
+      }
     }
-  }, [canManage, navigate]);
+
+    checkAccess();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
 
     async function load() {
       if (!isEdit) return;
+      if (checkingAccess) return;
+      if (!canManage) return;
 
       try {
         setLoading(true);
@@ -144,7 +215,7 @@ export default function HowToUseEditor() {
     return () => {
       alive = false;
     };
-  }, [id, isEdit, t]);
+  }, [id, isEdit, checkingAccess, canManage, t]);
 
   function updateField(name, value) {
     setForm((prev) => {
@@ -170,6 +241,7 @@ export default function HowToUseEditor() {
 
     setForm((prev) => {
       const steps = [...prev[key]];
+
       steps[index] = {
         ...steps[index],
         [field]: value,
@@ -208,8 +280,43 @@ export default function HowToUseEditor() {
     }));
   }
 
+  function openMediaPicker(lang, stepIndex) {
+    setMediaPicker({
+      open: true,
+      lang,
+      stepIndex,
+      search: "",
+      selectedModuleKey: form.module_key,
+    });
+  }
+
+  function closeMediaPicker() {
+    setMediaPicker((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  }
+
+  function selectMedia(image) {
+    updateStep(mediaPicker.lang, mediaPicker.stepIndex, "image_url", image.url);
+
+    const key = mediaPicker.lang === "en" ? "steps_en" : "steps_de";
+    const currentStep = form[key]?.[mediaPicker.stepIndex];
+
+    if (!currentStep?.caption) {
+      updateStep(mediaPicker.lang, mediaPicker.stepIndex, "caption", image.label);
+    }
+
+    closeMediaPicker();
+  }
+
   async function onSubmit(event) {
     event.preventDefault();
+
+    if (!canManage) {
+      setError("Only full admin can create or edit guides.");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -258,7 +365,45 @@ export default function HowToUseEditor() {
     }
   }
 
-  if (!canManage) return null;
+  if (checkingAccess) {
+    return (
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm font-bold text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
+        {t("howToUseLoading")}
+      </div>
+    );
+  }
+
+  if (!canManage) {
+    return (
+      <div className="rounded-[28px] border border-red-200 bg-red-50 p-6 shadow-sm dark:border-red-500/20 dark:bg-red-950/30">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-950/50">
+            <MIcon name="lock" className="text-2xl" />
+          </div>
+
+          <div>
+            <h1 className="text-xl font-black text-red-700 dark:text-red-300">
+              Access denied
+            </h1>
+
+            <p className="mt-2 text-sm font-bold leading-6 text-red-600 dark:text-red-200">
+              Only full admin can create or edit How to Use guides. Brand role
+              can only view guides.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => navigate("/how-to-use")}
+              className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl bg-red-600 px-4 text-sm font-black text-white transition hover:bg-red-700"
+            >
+              <MIcon name="arrow_back" className="text-xl" />
+              {t("howToUseBack")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -304,9 +449,7 @@ export default function HowToUseEditor() {
             <div className="grid gap-3">
               <input
                 value={step.title}
-                onChange={(e) =>
-                  updateStep(lang, index, "title", e.target.value)
-                }
+                onChange={(e) => updateStep(lang, index, "title", e.target.value)}
                 placeholder={
                   isEnglish
                     ? t("howToUseStepTitleEn")
@@ -317,9 +460,7 @@ export default function HowToUseEditor() {
 
               <textarea
                 value={step.text}
-                onChange={(e) =>
-                  updateStep(lang, index, "text", e.target.value)
-                }
+                onChange={(e) => updateStep(lang, index, "text", e.target.value)}
                 placeholder={
                   isEnglish
                     ? t("howToUseStepTextEn")
@@ -329,14 +470,25 @@ export default function HowToUseEditor() {
                 className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
               />
 
-              <input
-                value={step.image_url}
-                onChange={(e) =>
-                  updateStep(lang, index, "image_url", e.target.value)
-                }
-                placeholder={t("howToUseStepImageUrl")}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
-              />
+              <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+                <input
+                  value={step.image_url}
+                  onChange={(e) =>
+                    updateStep(lang, index, "image_url", e.target.value)
+                  }
+                  placeholder={t("howToUseStepImageUrl")}
+                  className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => openMediaPicker(lang, index)}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#007ab3]/10 px-4 text-sm font-black text-[#007ab3] transition hover:bg-[#007ab3]/15"
+                >
+                  <MIcon name="perm_media" className="text-xl" />
+                  Media
+                </button>
+              </div>
 
               <input
                 value={step.caption}
@@ -348,11 +500,13 @@ export default function HowToUseEditor() {
               />
 
               {step.image_url ? (
-                <img
-                  src={step.image_url}
-                  alt={step.caption || step.title || "Step"}
-                  className="max-h-[280px] w-full rounded-3xl border border-slate-200 object-contain dark:border-white/10"
-                />
+                <div className="rounded-3xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
+                  <img
+                    src={step.image_url}
+                    alt={step.caption || step.title || "Step"}
+                    className="max-h-[280px] w-full rounded-2xl object-contain"
+                  />
+                </div>
               ) : null}
             </div>
           </div>
@@ -371,214 +525,356 @@ export default function HowToUseEditor() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
-              {t("howToUse")}
+    <>
+      <form onSubmit={onSubmit} className="space-y-6">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
+                {t("howToUse")}
+              </div>
+
+              <h1 className="mt-2 text-2xl font-black text-slate-950 dark:text-white">
+                {isEdit ? t("howToUseEdit") : t("howToUseCreate")}
+              </h1>
+
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500 dark:text-slate-300">
+                {t("howToUseEditorSubtitle")}
+              </p>
             </div>
 
-            <h1 className="mt-2 text-2xl font-black text-slate-950 dark:text-white">
-              {isEdit ? t("howToUseEdit") : t("howToUseCreate")}
-            </h1>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/how-to-use")}
+                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
+              >
+                <MIcon name="close" className="text-xl" />
+                {t("cancel")}
+              </button>
 
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500 dark:text-slate-300">
-              {t("howToUseEditorSubtitle")}
-            </p>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#007ab3] px-5 text-sm font-black text-white shadow-lg shadow-[#007ab3]/20 transition hover:bg-[#005f8c] disabled:opacity-60"
+              >
+                <MIcon name="save" className="text-xl" />
+                {saving ? t("howToUseSaving") : t("save")}
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/how-to-use")}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
-            >
-              <MIcon name="close" className="text-xl" />
-              {t("cancel")}
-            </button>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#007ab3] px-5 text-sm font-black text-white shadow-lg shadow-[#007ab3]/20 transition hover:bg-[#005f8c] disabled:opacity-60"
-            >
-              <MIcon name="save" className="text-xl" />
-              {saving ? t("howToUseSaving") : t("save")}
-            </button>
-          </div>
+          {error ? (
+            <div className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-600 dark:bg-red-950/30">
+              {error}
+            </div>
+          ) : null}
         </div>
 
-        {error ? (
-          <div className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-600 dark:bg-red-950/30">
-            {error}
+        <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+          <div className="space-y-6">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <h2 className="text-xl font-black text-slate-950 dark:text-white">
+                {t("howToUseContentGerman")}
+              </h2>
+
+              <div className="mt-5 grid gap-4">
+                <input
+                  value={form.title_de}
+                  onChange={(e) => updateField("title_de", e.target.value)}
+                  placeholder={t("howToUseTitleDe")}
+                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+
+                <textarea
+                  value={form.description_de}
+                  onChange={(e) =>
+                    updateField("description_de", e.target.value)
+                  }
+                  placeholder={t("howToUseDescriptionDe")}
+                  rows={3}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+
+                <textarea
+                  value={form.content_de}
+                  onChange={(e) => updateField("content_de", e.target.value)}
+                  placeholder={t("howToUseContentDe")}
+                  rows={6}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+              </div>
+
+              <div className="mt-6">
+                <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
+                  {t("howToUseSteps")}
+                </h3>
+
+                <StepEditor lang="de" steps={form.steps_de} />
+              </div>
+            </section>
+
+            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <h2 className="text-xl font-black text-slate-950 dark:text-white">
+                {t("howToUseContentEnglish")}
+              </h2>
+
+              <div className="mt-5 grid gap-4">
+                <input
+                  value={form.title_en}
+                  onChange={(e) => updateField("title_en", e.target.value)}
+                  placeholder={t("howToUseTitleEn")}
+                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+
+                <textarea
+                  value={form.description_en}
+                  onChange={(e) =>
+                    updateField("description_en", e.target.value)
+                  }
+                  placeholder={t("howToUseDescriptionEn")}
+                  rows={3}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+
+                <textarea
+                  value={form.content_en}
+                  onChange={(e) => updateField("content_en", e.target.value)}
+                  placeholder={t("howToUseContentEn")}
+                  rows={6}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                />
+              </div>
+
+              <div className="mt-6">
+                <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
+                  {t("howToUseSteps")}
+                </h3>
+
+                <StepEditor lang="en" steps={form.steps_en} />
+              </div>
+            </section>
           </div>
-        ) : null}
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
-              {t("howToUseContentGerman")}
-            </h2>
+          <aside className="space-y-6">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <h2 className="text-xl font-black text-slate-950 dark:text-white">
+                {t("howToUseSettings")}
+              </h2>
 
-            <div className="mt-5 grid gap-4">
-              <input
-                value={form.title_de}
-                onChange={(e) => updateField("title_de", e.target.value)}
-                placeholder={t("howToUseTitleDe")}
-                className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {t("howToUseModule")}
+                  </span>
 
-              <textarea
-                value={form.description_de}
-                onChange={(e) => updateField("description_de", e.target.value)}
-                placeholder={t("howToUseDescriptionDe")}
-                rows={3}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
+                  <select
+                    value={form.module_key}
+                    onChange={(e) => updateField("module_key", e.target.value)}
+                    disabled={isEdit}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] disabled:opacity-70 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  >
+                    {HOW_TO_USE_MODULES.map((item) => (
+                      <option key={item.moduleKey} value={item.moduleKey}>
+                        {t(item.titleKey)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <textarea
-                value={form.content_de}
-                onChange={(e) => updateField("content_de", e.target.value)}
-                placeholder={t("howToUseContentDe")}
-                rows={6}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
-            </div>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {t("howToUseSlug")}
+                  </span>
 
-            <div className="mt-6">
-              <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
-                {t("howToUseSteps")}
-              </h3>
+                  <input
+                    value={form.slug}
+                    onChange={(e) => updateField("slug", toSlug(e.target.value))}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  />
+                </label>
 
-              <StepEditor lang="de" steps={form.steps_de} />
-            </div>
-          </section>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {t("howToUseIcon")}
+                  </span>
 
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
-              {t("howToUseContentEnglish")}
-            </h2>
+                  <input
+                    value={form.icon}
+                    onChange={(e) => updateField("icon", e.target.value)}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  />
+                </label>
 
-            <div className="mt-5 grid gap-4">
-              <input
-                value={form.title_en}
-                onChange={(e) => updateField("title_en", e.target.value)}
-                placeholder={t("howToUseTitleEn")}
-                className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
+                <label className="block">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {t("howToUseSortOrder")}
+                  </span>
 
-              <textarea
-                value={form.description_en}
-                onChange={(e) => updateField("description_en", e.target.value)}
-                placeholder={t("howToUseDescriptionEn")}
-                rows={3}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
+                  <input
+                    type="number"
+                    value={form.sort_order}
+                    onChange={(e) =>
+                      updateField("sort_order", e.target.value)
+                    }
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  />
+                </label>
 
-              <textarea
-                value={form.content_en}
-                onChange={(e) => updateField("content_en", e.target.value)}
-                placeholder={t("howToUseContentEn")}
-                rows={6}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
-            </div>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {t("status")}
+                  </span>
 
-            <div className="mt-6">
-              <h3 className="mb-4 text-lg font-black text-slate-950 dark:text-white">
-                {t("howToUseSteps")}
-              </h3>
+                  <select
+                    value={form.status}
+                    onChange={(e) => updateField("status", e.target.value)}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                  >
+                    <option value="active">{t("active")}</option>
+                    <option value="draft">{t("draft")}</option>
+                    <option value="inactive">{t("inactive")}</option>
+                  </select>
+                </label>
 
-              <StepEditor lang="en" steps={form.steps_en} />
-            </div>
-          </section>
+                <div className="rounded-2xl bg-[#007ab3]/10 p-4 text-xs font-bold leading-5 text-[#007ab3]">
+                  Media folder:{" "}
+                  <span className="font-black">
+                    public/how-to-use-media/
+                  </span>
+                  <br />
+                  DB stores only image path, not image file.
+                </div>
+
+                {moduleMedia?.images?.length ? (
+                  <div className="rounded-2xl border border-slate-200 p-3 dark:border-white/10">
+                    <div className="mb-3 text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Current module media
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {moduleMedia.images.slice(0, 4).map((image) => (
+                        <img
+                          key={image.url}
+                          src={image.url}
+                          alt={image.label}
+                          className="h-20 w-full rounded-xl border border-slate-200 object-cover dark:border-white/10"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          </aside>
         </div>
+      </form>
 
-        <aside className="space-y-6">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
-              {t("howToUseSettings")}
-            </h2>
+      {mediaPicker.open ? (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+          <div className="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            <div className="flex flex-col gap-4 border-b border-slate-200 p-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.22em] text-[#007ab3]">
+                  Media Library
+                </div>
 
-            <div className="mt-5 space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t("howToUseModule")}
-                </span>
+                <h2 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">
+                  Select Step Image
+                </h2>
 
-                <select
-                  value={form.module_key}
-                  onChange={(e) => updateField("module_key", e.target.value)}
-                  disabled={isEdit}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] disabled:opacity-70 dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                >
-                  {HOW_TO_USE_MODULES.map((item) => (
-                    <option key={item.moduleKey} value={item.moduleKey}>
-                      {t(item.titleKey)}
-                    </option>
+                <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-300">
+                  Images are loaded from public/how-to-use-media and saved as
+                  URL/path in DB.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeMediaPicker}
+                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
+              >
+                <MIcon name="close" className="text-xl" />
+                Close
+              </button>
+            </div>
+
+            <div className="grid gap-4 border-b border-slate-200 p-5 dark:border-white/10 lg:grid-cols-[260px_1fr]">
+              <select
+                value={mediaPicker.selectedModuleKey}
+                onChange={(e) =>
+                  setMediaPicker((prev) => ({
+                    ...prev,
+                    selectedModuleKey: e.target.value,
+                  }))
+                }
+                className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              >
+                <option value="">All modules</option>
+                {HOW_TO_USE_MODULES.map((item) => (
+                  <option key={item.moduleKey} value={item.moduleKey}>
+                    {t(item.titleKey)}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                value={mediaPicker.search}
+                onChange={(e) =>
+                  setMediaPicker((prev) => ({
+                    ...prev,
+                    search: e.target.value,
+                  }))
+                }
+                placeholder="Search media..."
+                className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              />
+            </div>
+
+            <div className="max-h-[58vh] overflow-y-auto p-5">
+              {filteredMedia.length ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredMedia.map((image) => (
+                    <button
+                      key={`${image.moduleKey}-${image.url}`}
+                      type="button"
+                      onClick={() => selectMedia(image)}
+                      className="group overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-1 hover:border-[#007ab3]/40 hover:shadow-xl hover:shadow-[#007ab3]/10 dark:border-white/10 dark:bg-slate-950"
+                    >
+                      <div className="h-40 bg-white p-2 dark:bg-slate-900">
+                        <img
+                          src={image.url}
+                          alt={image.label}
+                          className="h-full w-full rounded-2xl object-cover"
+                        />
+                      </div>
+
+                      <div className="p-4">
+                        <div className="text-sm font-black text-slate-950 dark:text-white">
+                          {image.label}
+                        </div>
+
+                        <div className="mt-1 text-xs font-bold text-[#007ab3]">
+                          {image.moduleTitle}
+                        </div>
+
+                        <div className="mt-2 truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                          {image.url}
+                        </div>
+                      </div>
+                    </button>
                   ))}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t("howToUseSlug")}
-                </span>
-
-                <input
-                  value={form.slug}
-                  onChange={(e) => updateField("slug", toSlug(e.target.value))}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t("howToUseIcon")}
-                </span>
-
-                <input
-                  value={form.icon}
-                  onChange={(e) => updateField("icon", e.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t("howToUseSortOrder")}
-                </span>
-
-                <input
-                  type="number"
-                  value={form.sort_order}
-                  onChange={(e) => updateField("sort_order", e.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {t("status")}
-                </span>
-
-                <select
-                  value={form.status}
-                  onChange={(e) => updateField("status", e.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                >
-                  <option value="active">{t("active")}</option>
-                  <option value="draft">{t("draft")}</option>
-                  <option value="inactive">{t("inactive")}</option>
-                </select>
-              </label>
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center text-sm font-bold text-slate-500 dark:border-white/10 dark:text-slate-300">
+                  No media found. Add images inside public/how-to-use-media and
+                  register them in src/constants/howToUseMedia.js.
+                </div>
+              )}
             </div>
-          </section>
-        </aside>
-      </div>
-    </form>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

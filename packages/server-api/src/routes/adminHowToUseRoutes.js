@@ -8,7 +8,6 @@ const VALID_MODULE_KEYS = new Set([
   "support_chat",
   "blogs",
   "blog_categories",
-  "knowledge_area",
   "settings",
   "module_settings",
   "website_settings",
@@ -151,7 +150,8 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
           created_at,
           updated_at
         FROM how_to_use_guides
-        WHERE ($1::boolean = true OR status = 'active')
+        WHERE module_key <> 'knowledge_area'
+          AND ($1::boolean = true OR status = 'active')
         ORDER BY sort_order ASC, title_de ASC
         `,
         [fullAdmin]
@@ -181,6 +181,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
         SELECT *
         FROM how_to_use_guides
         WHERE id = $1
+          AND module_key <> 'knowledge_area'
         LIMIT 1
         `,
         [req.params.id]
@@ -212,6 +213,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
         SELECT *
         FROM how_to_use_guides
         WHERE slug = $1
+          AND module_key <> 'knowledge_area'
           AND ($2::boolean = true OR status = 'active')
         LIMIT 1
         `,
@@ -363,6 +365,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
           updated_by = $16,
           updated_at = NOW()
         WHERE id = $1
+          AND module_key <> 'knowledge_area'
         RETURNING *
         `,
         [
@@ -415,6 +418,7 @@ export default function adminHowToUseRoutes({ pool, authMiddleware, wrap }) {
         `
         DELETE FROM how_to_use_guides
         WHERE id = $1
+          AND module_key <> 'knowledge_area'
         RETURNING id
         `,
         [req.params.id]

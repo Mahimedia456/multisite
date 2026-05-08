@@ -33,7 +33,7 @@ import websiteSettingsRoutes from "./routes/websiteSettings.js";
 import brandsRoutes from "./routes/brands.js";
 import adminKnowledgeRoutes from "./routes/adminKnowledgeRoutes.js";
 import adminHowToUseRoutes from "./routes/adminHowToUseRoutes.js";
-
+import adminDashboardSummaryRoutes from "./routes/adminDashboardSummaryRoutes.js";
 
 
 dotenv.config();
@@ -436,6 +436,14 @@ app.use(
   })
 );
 
+
+app.use(
+  adminDashboardSummaryRoutes({
+    pool,
+    authMiddleware,
+    wrap,
+  })
+);
 async function downloadToBuffer(url) {
   const headers = {
     // Unsplash source sometimes blocks unknown user agents

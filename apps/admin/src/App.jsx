@@ -57,8 +57,6 @@ import HowToUseIndex from "./pages/how-to-use/HowToUseIndex";
 import HowToUseDetail from "./pages/how-to-use/HowToUseDetail";
 import HowToUseEditor from "./pages/how-to-use/HowToUseEditor";
 
-
-
 export default function App() {
   return (
     <BrowserRouter>
@@ -71,6 +69,13 @@ export default function App() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
+          <Route path="/how-to-use" element={<HowToUseLayout />}>
+            <Route index element={<HowToUseIndex />} />
+            <Route path="create" element={<HowToUseEditor />} />
+            <Route path=":id/edit" element={<HowToUseEditor />} />
+            <Route path=":slug" element={<HowToUseDetail />} />
+          </Route>
+
           <Route element={<AdminLayout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -112,7 +117,10 @@ export default function App() {
               element={<Navigate to="/settings/modules" replace />}
             />
             <Route path="/settings/knowledge" element={<KnowledgeSettings />} />
-            <Route path="/knowledge/settings" element={<Navigate to="/settings/knowledge" replace />} />
+            <Route
+              path="/knowledge/settings"
+              element={<Navigate to="/settings/knowledge" replace />}
+            />
             <Route path="/website-settings" element={<WebsiteSettingsIndex />} />
             <Route
               path="/website-settings/:brandId"
@@ -148,20 +156,6 @@ export default function App() {
             <Route path="/support" element={<Navigate to="/support-chat" replace />} />
             <Route path="/notifications" element={<Notifications />} />
 
-<Route
-  path="/how-to-use"
-  element={
-    <ProtectedRoute>
-      <HowToUseLayout />
-    </ProtectedRoute>
-  }
->
-  <Route index element={<HowToUseIndex />} />
-  <Route path="create" element={<HowToUseEditor />} />
-  <Route path=":id/edit" element={<HowToUseEditor />} />
-  <Route path=":slug" element={<HowToUseDetail />} />
-</Route>
-
             <Route path="/admin/generate-brand" element={<GenerateBrand />} />
             <Route
               path="/generate-brand"
@@ -184,10 +178,7 @@ export default function App() {
               element={<TemplateBuilder />}
             />
 
-            <Route
-              path="*"
-              element={<Navigate to="/dashboard" replace />}
-            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
           <Route

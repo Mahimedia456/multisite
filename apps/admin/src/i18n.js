@@ -1112,7 +1112,64 @@ howToUseStepImageCaption: "Bild-Beschriftung",
 howToUseSortOrder: "Sortierung",
 
 
+dashboardAdminDashboard: "Admin Dashboard",
+dashboardWelcomeBack: "Willkommen zurück",
+dashboardSubtitle:
+  "Komplette Übersicht über Agenturen, Seiten, Support, Blogs, Einstellungen, Sichtbarkeit und Admin-Berechtigungen.",
+dashboardHowToUse: "Anleitung",
+dashboardOpenAgencies: "Agenturen öffnen",
+dashboardLoading: "Dashboard-Übersicht wird geladen...",
+dashboardFailedLoad: "Dashboard-Übersicht konnte nicht geladen werden",
 
+dashboardAgencies: "Agenturen",
+dashboardAgenciesSubtitle: "{{active}} aktiv / {{inactive}} inaktiv",
+
+dashboardPages: "Seiten",
+dashboardPagesSubtitle: "{{published}} veröffentlicht / {{draft}} Entwurf",
+
+dashboardSupport: "Support",
+dashboardSupportSubtitle: "{{open}} offen / {{messages}} Nachrichten",
+
+dashboardBlogs: "Blogs",
+dashboardBlogsSubtitle:
+  "{{published}} veröffentlicht / {{draft}} Entwurf / {{hidden}} ausgeblendet",
+
+dashboardBlogCategories: "Blog-Kategorien",
+dashboardBlogCategoriesSubtitle: "{{active}} aktiv / {{inactive}} inaktiv",
+
+dashboardWebsiteVisibility: "Website-Sichtbarkeit",
+dashboardWebsiteVisibilitySubtitle: "{{visible}} sichtbar / {{hidden}} ausgeblendet",
+
+dashboardModuleSettings: "Moduleinstellungen",
+dashboardModuleSettingsSubtitle: "{{enabled}} aktiviert / {{disabled}} deaktiviert",
+
+dashboardAdminSettings: "Admin-Einstellungen",
+dashboardAdminSettingsSubtitle: "{{enabled}} Berechtigungen aktiviert",
+
+dashboardModules: "Module",
+dashboardModuleOverview: "Modulübersicht",
+dashboardModulesCount: "{{count}} Module",
+dashboardOpenModule: "Modul öffnen",
+
+dashboardHealth: "Systemstatus",
+dashboardSystemHealth: "Systemstatus",
+dashboardActiveAgencies: "Aktive Agenturen",
+dashboardPublishedPages: "Veröffentlichte Seiten",
+dashboardPublishedBlogs: "Veröffentlichte Blogs",
+dashboardVisibleWebsitePages: "Sichtbare Website-Seiten",
+dashboardEnabledModules: "Aktivierte Module",
+
+dashboardAllBrandsAgencies: "Alle Marken / Agenturen",
+dashboardViewAll: "Alle anzeigen",
+dashboardAgency: "Agentur",
+dashboardSlug: "Slug",
+dashboardStatus: "Status",
+dashboardNoAgencies: "Keine Agenturen gefunden.",
+
+dashboardActivity: "Aktivität",
+dashboardRecentActivity: "Letzte Aktivitäten",
+dashboardNoRecentActivity: "Keine letzten Aktivitäten gefunden.",
+dashboardUnknown: "Unbekannt",
 
 
 
@@ -2351,6 +2408,65 @@ howToUseStepTextEn: "Step Description EN",
 howToUseStepImageUrl: "Image URL for this step",
 howToUseStepImageCaption: "Image caption",
 howToUseSortOrder: "Sort Order",
+
+dashboardAdminDashboard: "Admin Dashboard",
+dashboardWelcomeBack: "Welcome back",
+dashboardSubtitle:
+  "Complete overview of agencies, pages, support, blogs, settings, visibility, and admin permissions.",
+dashboardHowToUse: "How to Use",
+dashboardOpenAgencies: "Open Agencies",
+dashboardLoading: "Loading dashboard summary...",
+dashboardFailedLoad: "Failed to load dashboard summary",
+
+dashboardAgencies: "Agencies",
+dashboardAgenciesSubtitle: "{{active}} active / {{inactive}} inactive",
+
+dashboardPages: "Pages",
+dashboardPagesSubtitle: "{{published}} published / {{draft}} draft",
+
+dashboardSupport: "Support",
+dashboardSupportSubtitle: "{{open}} open / {{messages}} messages",
+
+dashboardBlogs: "Blogs",
+dashboardBlogsSubtitle:
+  "{{published}} published / {{draft}} draft / {{hidden}} hidden",
+
+dashboardBlogCategories: "Blog Categories",
+dashboardBlogCategoriesSubtitle: "{{active}} active / {{inactive}} inactive",
+
+dashboardWebsiteVisibility: "Website Visibility",
+dashboardWebsiteVisibilitySubtitle: "{{visible}} visible / {{hidden}} hidden",
+
+dashboardModuleSettings: "Module Settings",
+dashboardModuleSettingsSubtitle: "{{enabled}} enabled / {{disabled}} disabled",
+
+dashboardAdminSettings: "Admin Settings",
+dashboardAdminSettingsSubtitle: "{{enabled}} permissions enabled",
+
+dashboardModules: "Modules",
+dashboardModuleOverview: "Module Overview",
+dashboardModulesCount: "{{count}} modules",
+dashboardOpenModule: "Open module",
+
+dashboardHealth: "Health",
+dashboardSystemHealth: "System Health",
+dashboardActiveAgencies: "Active agencies",
+dashboardPublishedPages: "Published pages",
+dashboardPublishedBlogs: "Published blogs",
+dashboardVisibleWebsitePages: "Visible website pages",
+dashboardEnabledModules: "Enabled modules",
+
+dashboardAllBrandsAgencies: "All Brands / Agencies",
+dashboardViewAll: "View all",
+dashboardAgency: "Agency",
+dashboardSlug: "Slug",
+dashboardStatus: "Status",
+dashboardNoAgencies: "No agencies found.",
+
+dashboardActivity: "Activity",
+dashboardRecentActivity: "Recent Activity",
+dashboardNoRecentActivity: "No recent activity found.",
+dashboardUnknown: "Unknown",
 
 
 

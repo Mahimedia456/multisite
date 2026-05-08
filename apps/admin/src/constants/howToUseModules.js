@@ -49,13 +49,6 @@ export const HOW_TO_USE_MODULES = [
     icon: "category",
   },
   {
-    moduleKey: "knowledge_area",
-    slug: "knowledge-area",
-    titleKey: "howToUseModuleKnowledgeArea",
-    descriptionKey: "howToUseModuleKnowledgeAreaDesc",
-    icon: "school",
-  },
-  {
     moduleKey: "settings",
     slug: "settings",
     titleKey: "howToUseModuleSettings",
