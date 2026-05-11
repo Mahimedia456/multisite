@@ -169,10 +169,40 @@ export function getHowToUseMediaByModule(moduleKey) {
 
 export function getAllHowToUseMedia() {
   return HOW_TO_USE_MEDIA.flatMap((group) =>
-    group.images.map((image) => ({
+    group.images.map((image, index) => ({
       ...image,
+      stepIndex: index,
       moduleKey: group.moduleKey,
       moduleTitle: group.title,
     }))
   );
+}
+
+export function getDefaultStepsFromMedia(moduleKey) {
+  const group = getHowToUseMediaByModule(moduleKey);
+
+  if (!group?.images?.length) {
+    return [
+      {
+        title: "",
+        text: "",
+        image_url: "",
+        caption: "",
+        images: [],
+      },
+    ];
+  }
+
+  return group.images.map((image) => ({
+    title: image.label || "",
+    text: "",
+    image_url: image.url || "",
+    caption: image.label || "",
+    images: [
+      {
+        url: image.url || "",
+        caption: image.label || "",
+      },
+    ],
+  }));
 }

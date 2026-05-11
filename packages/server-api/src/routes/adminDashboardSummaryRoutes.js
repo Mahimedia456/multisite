@@ -150,6 +150,8 @@ export default function adminDashboardSummaryRoutes({
     "/admin/dashboard-summary",
     authMiddleware,
     wrap(async (req, res) => {
+      const startedAt = Date.now();
+
       const email = getUserEmail(req);
       const role = getReqRole(req);
       const forcedSlug = getForcedBrandSlug(req);
@@ -157,218 +159,52 @@ export default function adminDashboardSummaryRoutes({
 
       const brandFilter = makeBrandFilter({ forcedSlug });
 
-      const brandsStats = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status,'')) IN ('active','published','live')
-          )::int AS active,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status,'')) NOT IN ('active','published','live')
-               OR status IS NULL
-          )::int AS inactive
-        FROM brands
-        ${brandFilter.whereSql}
-        `,
-        brandFilter.values,
-        { total: 0, active: 0, inactive: 0 }
-      );
+      /*
+        Step 1:
+        brandsStats + brands list can run together.
+        brandIds are needed for all brand-scoped module counts.
+      */
+      const [brandsStats, brands] = await Promise.all([
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status,'')) IN ('active','published','live')
+            )::int AS active,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status,'')) NOT IN ('active','published','live')
+                 OR status IS NULL
+            )::int AS inactive
+          FROM brands
+          ${brandFilter.whereSql}
+          `,
+          brandFilter.values,
+          { total: 0, active: 0, inactive: 0 }
+        ),
 
-      const brands = await manyRowsSafe(
-        pool,
-        `
-        SELECT
-          id,
-          name,
-          slug,
-          route,
-          status,
-          updated_at
-        FROM brands
-        ${brandFilter.whereSql}
-        ORDER BY updated_at DESC NULLS LAST, id DESC
-        LIMIT 500
-        `,
-        brandFilter.values
-      );
+        manyRowsSafe(
+          pool,
+          `
+          SELECT
+            id,
+            name,
+            slug,
+            route,
+            status,
+            updated_at
+          FROM brands
+          ${brandFilter.whereSql}
+          ORDER BY updated_at DESC NULLS LAST, id DESC
+          LIMIT 500
+          `,
+          brandFilter.values
+        ),
+      ]);
 
       const brandIds = brands.map((brand) => brand.id);
       const brandIdFilter = makeBrandIdFilter(brandIds);
-
-      const sharedPages = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status::text,'')) IN ('published','active','live')
-          )::int AS published,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status::text,'')) IN ('draft','inactive')
-               OR status IS NULL
-          )::int AS draft
-        FROM brand_shared_pages
-        `,
-        [],
-        { total: 0, published: 0, draft: 0 }
-      );
-
-      const uniquePages = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status::text,'')) IN ('published','active','live')
-          )::int AS published,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status::text,'')) IN ('draft','inactive')
-               OR status IS NULL
-          )::int AS draft
-        FROM brand_unique_pages
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params,
-        { total: 0, published: 0, draft: 0 }
-      );
-
-      const supportThreads = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status,'')) IN ('open','active','pending')
-          )::int AS open
-        FROM brand_support_threads
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params,
-        { total: 0, open: 0 }
-      );
-
-      const supportMessages = await countSafe(
-        pool,
-        `
-        SELECT COUNT(*)::int AS count
-        FROM brand_support_messages
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params
-      );
-
-      const blogs = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status,'')) IN ('published','active','live')
-          )::int AS published,
-          COUNT(*) FILTER (
-            WHERE LOWER(COALESCE(status,'')) = 'draft'
-          )::int AS draft,
-          COUNT(*) FILTER (
-            WHERE COALESCE(is_hidden, false) = true
-          )::int AS hidden
-        FROM blog_posts
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params,
-        { total: 0, published: 0, draft: 0, hidden: 0 }
-      );
-
-      const blogCategories = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE COALESCE(is_active, true) = true
-          )::int AS active,
-          COUNT(*) FILTER (
-            WHERE COALESCE(is_active, true) = false
-          )::int AS inactive
-        FROM blog_categories
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params,
-        { total: 0, active: 0, inactive: 0 }
-      );
-
-      const moduleSettings = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE COALESCE(can_view, false) = true
-          )::int AS enabled,
-          COUNT(*) FILTER (
-            WHERE COALESCE(can_view, false) = false
-          )::int AS disabled
-        FROM brand_module_permissions
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params,
-        { total: 0, enabled: 0, disabled: 0 }
-      );
-
-      const websiteSettings = await oneRowSafe(
-        pool,
-        `
-        SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (
-            WHERE COALESCE(is_visible, false) = true
-          )::int AS visible,
-          COUNT(*) FILTER (
-            WHERE COALESCE(is_visible, false) = false
-          )::int AS hidden
-        FROM brand_website_page_visibility
-        WHERE 1=1
-        ${brandIdFilter.sql}
-        `,
-        brandIdFilter.params,
-        { total: 0, visible: 0, hidden: 0 }
-      );
-
-      const adminUsers = brandUser
-        ? 0
-        : await countSafe(
-            pool,
-            `
-            SELECT COUNT(*)::int AS count
-            FROM admins
-            `
-          );
-
-      const adminPermissions = brandUser
-        ? { total: 0, enabled: 0, disabled: 0 }
-        : await oneRowSafe(
-            pool,
-            `
-            SELECT
-              COUNT(*)::int AS total,
-              COUNT(*) FILTER (
-                WHERE COALESCE(can_view, false) = true
-              )::int AS enabled,
-              COUNT(*) FILTER (
-                WHERE COALESCE(can_view, false) = false
-              )::int AS disabled
-            FROM admin_module_permissions
-            `,
-            [],
-            { total: 0, enabled: 0, disabled: 0 }
-          );
 
       const activityWhere = [];
       const activityVals = [];
@@ -384,32 +220,223 @@ export default function adminDashboardSummaryRoutes({
         ? `WHERE ${activityWhere.join(" AND ")}`
         : "";
 
-      const activityRows = await manyRowsSafe(
-        pool,
-        `
-        SELECT
-          id,
-          brand_id,
-          brand_slug,
-          brand_name,
-          actor_email,
-          actor_role,
-          module_key,
-          module_label,
-          action,
-          title,
-          description,
-          entity_type,
-          entity_id,
-          entity_slug,
-          created_at
-        FROM activity_logs
-        ${activityWhereSql}
-        ORDER BY created_at DESC
-        LIMIT 20
-        `,
-        activityVals
-      );
+      /*
+        Step 2:
+        All independent dashboard stats now run in parallel.
+      */
+      const [
+        sharedPages,
+        uniquePages,
+        supportThreads,
+        supportMessages,
+        blogs,
+        blogCategories,
+        moduleSettings,
+        websiteSettings,
+        adminUsers,
+        adminPermissions,
+        activityRows,
+      ] = await Promise.all([
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status::text,'')) IN ('published','active','live')
+            )::int AS published,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status::text,'')) IN ('draft','inactive')
+                 OR status IS NULL
+            )::int AS draft
+          FROM brand_shared_pages
+          `,
+          [],
+          { total: 0, published: 0, draft: 0 }
+        ),
+
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status::text,'')) IN ('published','active','live')
+            )::int AS published,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status::text,'')) IN ('draft','inactive')
+                 OR status IS NULL
+            )::int AS draft
+          FROM brand_unique_pages
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params,
+          { total: 0, published: 0, draft: 0 }
+        ),
+
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status,'')) IN ('open','active','pending')
+            )::int AS open
+          FROM brand_support_threads
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params,
+          { total: 0, open: 0 }
+        ),
+
+        countSafe(
+          pool,
+          `
+          SELECT COUNT(*)::int AS count
+          FROM brand_support_messages
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params
+        ),
+
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status,'')) IN ('published','active','live')
+            )::int AS published,
+            COUNT(*) FILTER (
+              WHERE LOWER(COALESCE(status,'')) = 'draft'
+            )::int AS draft,
+            COUNT(*) FILTER (
+              WHERE COALESCE(is_hidden, false) = true
+            )::int AS hidden
+          FROM blog_posts
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params,
+          { total: 0, published: 0, draft: 0, hidden: 0 }
+        ),
+
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE COALESCE(is_active, true) = true
+            )::int AS active,
+            COUNT(*) FILTER (
+              WHERE COALESCE(is_active, true) = false
+            )::int AS inactive
+          FROM blog_categories
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params,
+          { total: 0, active: 0, inactive: 0 }
+        ),
+
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE COALESCE(can_view, false) = true
+            )::int AS enabled,
+            COUNT(*) FILTER (
+              WHERE COALESCE(can_view, false) = false
+            )::int AS disabled
+          FROM brand_module_permissions
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params,
+          { total: 0, enabled: 0, disabled: 0 }
+        ),
+
+        oneRowSafe(
+          pool,
+          `
+          SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (
+              WHERE COALESCE(is_visible, false) = true
+            )::int AS visible,
+            COUNT(*) FILTER (
+              WHERE COALESCE(is_visible, false) = false
+            )::int AS hidden
+          FROM brand_website_page_visibility
+          WHERE 1=1
+          ${brandIdFilter.sql}
+          `,
+          brandIdFilter.params,
+          { total: 0, visible: 0, hidden: 0 }
+        ),
+
+        brandUser
+          ? Promise.resolve(0)
+          : countSafe(
+              pool,
+              `
+              SELECT COUNT(*)::int AS count
+              FROM admins
+              `
+            ),
+
+        brandUser
+          ? Promise.resolve({ total: 0, enabled: 0, disabled: 0 })
+          : oneRowSafe(
+              pool,
+              `
+              SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (
+                  WHERE COALESCE(can_view, false) = true
+                )::int AS enabled,
+                COUNT(*) FILTER (
+                  WHERE COALESCE(can_view, false) = false
+                )::int AS disabled
+              FROM admin_module_permissions
+              `,
+              [],
+              { total: 0, enabled: 0, disabled: 0 }
+            ),
+
+        manyRowsSafe(
+          pool,
+          `
+          SELECT
+            id,
+            brand_id,
+            brand_slug,
+            brand_name,
+            actor_email,
+            actor_role,
+            module_key,
+            module_label,
+            action,
+            title,
+            description,
+            entity_type,
+            entity_id,
+            entity_slug,
+            created_at
+          FROM activity_logs
+          ${activityWhereSql}
+          ORDER BY created_at DESC
+          LIMIT 20
+          `,
+          activityVals
+        ),
+      ]);
 
       const fallbackRecentActivity = brands.slice(0, 8).map((brand) => ({
         id: brand.id,
@@ -525,6 +552,7 @@ export default function adminDashboardSummaryRoutes({
           forcedSlug,
           brandUser,
           brandIds,
+          durationMs: Date.now() - startedAt,
         },
         data: {
           brands,

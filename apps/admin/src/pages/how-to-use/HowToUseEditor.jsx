@@ -7,11 +7,12 @@ import { HOW_TO_USE_MODULES } from "../../constants/howToUseModules";
 import {
   getAllHowToUseMedia,
   getHowToUseMediaByModule,
+  getDefaultStepsFromMedia,
 } from "../../constants/howToUseMedia";
 
 function RichTextEditor({ value, onChange, placeholder }) {
   const editorRef = useRef(null);
-  const lastExternalValueRef = useRef(value || "");
+  const lastExternalValueRef = useRef("");
 
   useEffect(() => {
     const el = editorRef.current;
@@ -19,17 +20,16 @@ function RichTextEditor({ value, onChange, placeholder }) {
 
     const nextValue = value || "";
 
-    // Do not rewrite innerHTML while editor is focused.
-    // Rewriting active contentEditable causes cursor + page scroll jump.
     if (document.activeElement === el) {
       lastExternalValueRef.current = nextValue;
       return;
     }
 
-    if (lastExternalValueRef.current !== nextValue) {
+    if (el.innerHTML !== nextValue) {
       el.innerHTML = nextValue;
-      lastExternalValueRef.current = nextValue;
     }
+
+    lastExternalValueRef.current = nextValue;
   }, [value]);
 
   function emitChange() {
@@ -68,19 +68,55 @@ function RichTextEditor({ value, onChange, placeholder }) {
     emitChange();
   }
 
+  function insertHtmlAtCursor(html) {
+    const selection = window.getSelection();
+
+    if (!selection || !selection.rangeCount) {
+      document.execCommand("insertHTML", false, html);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+
+    const template = document.createElement("template");
+    template.innerHTML = html;
+
+    const fragment = template.content;
+    const lastNode = fragment.lastChild;
+
+    range.insertNode(fragment);
+
+    if (lastNode) {
+      range.setStartAfter(lastNode);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+
+  function escapeHtml(text) {
+    return String(text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function handlePaste(event) {
     event.preventDefault();
 
-    const html = event.clipboardData?.getData("text/html");
-    const text = event.clipboardData?.getData("text/plain");
+    const html = event.clipboardData?.getData("text/html") || "";
+    const text = event.clipboardData?.getData("text/plain") || "";
 
     preserveScroll(() => {
       editorRef.current?.focus();
 
       if (html) {
-        document.execCommand("insertHTML", false, html);
+        insertHtmlAtCursor(html);
       } else if (text) {
-        document.execCommand("insertText", false, text);
+        insertHtmlAtCursor(escapeHtml(text).replace(/\n/g, "<br />"));
       }
 
       emitChange();
@@ -180,6 +216,7 @@ function RichTextEditor({ value, onChange, placeholder }) {
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onBlur={handleInput}
         onPaste={handlePaste}
         data-placeholder={placeholder}
         className="min-h-[160px] w-full p-4 text-sm font-semibold leading-7 text-slate-700 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] dark:text-slate-200 [&_a]:font-black [&_a]:text-[#007ab3] [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-black [&_li]:ml-5 [&_ol]:list-decimal [&_ul]:list-disc"
@@ -229,7 +266,10 @@ function normalizeStepImages(step = {}, keepEmpty = false) {
 
   return clean.filter((image) => {
     if (!image.url) return keepEmpty;
-    if (seen.has(image.url)) return false;
+
+    if (seen.has(image.url)) {
+      return false;
+    }
 
     seen.add(image.url);
     return true;
@@ -254,12 +294,13 @@ function normalizeStep(step = {}) {
     };
   }
 
-  const images = normalizeStepImages(step);
+  const images = normalizeStepImages(step, false);
 
   return {
     title: step?.title || "",
     text: step?.text || step?.body || step?.description || "",
-    image_url: step?.image_url || step?.image || step?.url || images[0]?.url || "",
+    image_url:
+      step?.image_url || step?.image || step?.url || images[0]?.url || "",
     caption: step?.caption || images[0]?.caption || "",
     images,
   };
@@ -267,10 +308,22 @@ function normalizeStep(step = {}) {
 
 function normalizeSteps(value) {
   if (!Array.isArray(value) || !value.length) {
-    return [emptyStep(), emptyStep(), emptyStep()];
+    return [emptyStep()];
   }
 
-  return value.map(normalizeStep);
+  const normalized = value.map(normalizeStep).filter((step) => {
+    const images = normalizeStepImages(step, false);
+
+    return (
+      String(step?.title || "").trim() ||
+      String(step?.text || "").trim() ||
+      String(step?.image_url || "").trim() ||
+      String(step?.caption || "").trim() ||
+      images.length
+    );
+  });
+
+  return normalized.length ? normalized : [emptyStep()];
 }
 
 function cleanSteps(steps) {
@@ -350,8 +403,8 @@ export default function HowToUseEditor() {
     description_en: "",
     content_de: "",
     content_en: "",
-    steps_de: normalizeSteps([]),
-    steps_en: normalizeSteps([]),
+    steps_de: getDefaultStepsFromMedia("dashboard"),
+    steps_en: getDefaultStepsFromMedia("dashboard"),
     status: "active",
   });
 
@@ -479,10 +532,15 @@ export default function HowToUseEditor() {
           (item) => item.moduleKey === value
         );
 
+        const defaultSteps = getDefaultStepsFromMedia(value);
+
         next.slug = moduleItem?.slug || toSlug(value);
         next.icon = moduleItem?.icon || "help";
         next.sort_order =
           HOW_TO_USE_MODULES.findIndex((m) => m.moduleKey === value) * 10 + 10;
+
+        next.steps_de = defaultSteps;
+        next.steps_en = defaultSteps;
       }
 
       return next;
@@ -507,22 +565,23 @@ export default function HowToUseEditor() {
     });
   }
 
-  function getStepImages(step, keepEmpty = true) {
+  function getStepImages(step, keepEmpty = false) {
     return normalizeStepImages(step, keepEmpty);
   }
 
-  function setStepImages(lang, stepIndex, updater) {
+  function setStepImages(lang, stepIndex, updater, options = {}) {
     const key = lang === "en" ? "steps_en" : "steps_de";
+    const keepEmpty = Boolean(options.keepEmpty);
 
     setForm((prev) => {
       const steps = [...prev[key]];
       const currentStep = steps[stepIndex] || emptyStep();
 
-      const currentImages = getStepImages(currentStep, true);
+      const currentImages = normalizeStepImages(currentStep, keepEmpty);
       const nextImages =
         typeof updater === "function" ? updater(currentImages) : updater;
 
-      const normalizedImages = normalizeImageList(nextImages, true);
+      const normalizedImages = normalizeImageList(nextImages, keepEmpty);
       const firstImage =
         normalizedImages.find((image) => String(image.url || "").trim()) ||
         null;
@@ -546,47 +605,66 @@ export default function HowToUseEditor() {
 
     if (!imageUrl) return;
 
-    setStepImages(lang, index, (currentImages) => {
-      const alreadyExists = currentImages.some((item) => item.url === imageUrl);
+    setStepImages(
+      lang,
+      index,
+      (currentImages) => {
+        const alreadyExists = currentImages.some(
+          (item) => item.url === imageUrl
+        );
 
-      if (alreadyExists) return currentImages;
+        if (alreadyExists) return currentImages;
 
-      return [
-        ...currentImages,
-        {
-          url: imageUrl,
-          caption: image?.caption || image?.label || "",
-        },
-      ];
-    });
+        return [
+          ...currentImages,
+          {
+            url: imageUrl,
+            caption: image?.caption || image?.label || "",
+          },
+        ];
+      },
+      { keepEmpty: false }
+    );
   }
 
   function addManualImage(lang, index) {
-    setStepImages(lang, index, (currentImages) => [
-      ...currentImages,
-      {
-        url: "",
-        caption: "",
-      },
-    ]);
+    setStepImages(
+      lang,
+      index,
+      (currentImages) => [
+        ...currentImages,
+        {
+          url: "",
+          caption: "",
+        },
+      ],
+      { keepEmpty: true }
+    );
   }
 
   function updateStepImage(lang, stepIndex, imageIndex, field, value) {
-    setStepImages(lang, stepIndex, (currentImages) =>
-      currentImages.map((image, index) =>
-        index === imageIndex
-          ? {
-              ...image,
-              [field]: value,
-            }
-          : image
-      )
+    setStepImages(
+      lang,
+      stepIndex,
+      (currentImages) =>
+        currentImages.map((image, index) =>
+          index === imageIndex
+            ? {
+                ...image,
+                [field]: value,
+              }
+            : image
+        ),
+      { keepEmpty: true }
     );
   }
 
   function removeStepImage(lang, stepIndex, imageIndex) {
-    setStepImages(lang, stepIndex, (currentImages) =>
-      currentImages.filter((_, index) => index !== imageIndex)
+    setStepImages(
+      lang,
+      stepIndex,
+      (currentImages) => currentImages.filter((_, index) => index !== imageIndex),
+      { keepEmpty: true }
     );
   }
 
@@ -602,10 +680,14 @@ export default function HowToUseEditor() {
   function removeStep(lang, index) {
     const key = lang === "en" ? "steps_en" : "steps_de";
 
-    setForm((prev) => ({
-      ...prev,
-      [key]: prev[key].filter((_, i) => i !== index),
-    }));
+    setForm((prev) => {
+      const nextSteps = prev[key].filter((_, i) => i !== index);
+
+      return {
+        ...prev,
+        [key]: nextSteps.length ? nextSteps : [emptyStep()],
+      };
+    });
   }
 
   function openMediaPicker(lang, stepIndex) {
@@ -735,7 +817,7 @@ export default function HowToUseEditor() {
     );
   }
 
-  function StepEditor({ lang, steps }) {
+  function renderStepEditor(lang, steps) {
     const isEnglish = lang === "en";
 
     return (
@@ -803,8 +885,7 @@ export default function HowToUseEditor() {
                       </div>
 
                       <div className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">
-                        Add one or more images for this step. You can paste URLs
-                        manually or select from media.
+                        Add images from media or paste a custom image URL.
                       </div>
                     </div>
 
@@ -833,7 +914,7 @@ export default function HowToUseEditor() {
                     <div className="space-y-4">
                       {stepImages.map((image, imageIndex) => (
                         <div
-                          key={`${lang}-${index}-image-${imageIndex}-${image.url}`}
+                          key={`${lang}-${index}-image-${imageIndex}`}
                           className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-slate-950"
                         >
                           <div className="mb-3 flex items-center justify-between gap-3">
@@ -894,14 +975,18 @@ export default function HowToUseEditor() {
                                   className="max-h-[260px] w-full rounded-xl object-contain"
                                 />
                               </div>
-                            ) : null}
+                            ) : (
+                              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-center text-xs font-bold text-slate-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-500">
+                                Paste image URL above to show preview.
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm font-bold text-slate-500 dark:border-white/10 dark:text-slate-300">
-                      No images added for this step.
+                      No images selected for this step.
                     </div>
                   )}
                 </div>
@@ -1063,7 +1148,7 @@ export default function HowToUseEditor() {
                     {t("howToUseSteps")}
                   </h3>
 
-                  <StepEditor lang={activeLang} steps={activeSteps} />
+                  {renderStepEditor(activeLang, activeSteps)}
                 </div>
               </div>
             </section>
@@ -1127,9 +1212,7 @@ export default function HowToUseEditor() {
                   <input
                     type="number"
                     value={form.sort_order}
-                    onChange={(e) =>
-                      updateField("sort_order", e.target.value)
-                    }
+                    onChange={(e) => updateField("sort_order", e.target.value)}
                     className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold outline-none focus:border-[#007ab3] dark:border-white/10 dark:bg-slate-950 dark:text-white"
                   />
                 </label>
@@ -1164,7 +1247,7 @@ export default function HowToUseEditor() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      {moduleMedia.images.slice(0, 4).map((image) => (
+                      {moduleMedia.images.map((image) => (
                         <img
                           key={image.url}
                           src={image.url}

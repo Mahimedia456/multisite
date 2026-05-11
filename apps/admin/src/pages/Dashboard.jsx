@@ -4,8 +4,44 @@ import { useTranslation } from "react-i18next";
 import MIcon from "../components/MIcon";
 import { apiFetch, getCurrentUser } from "../lib/auth";
 
+const DASHBOARD_CACHE_KEY = "dashboard_summary_cache";
+const DASHBOARD_CACHE_TTL = 60_000;
+
 function num(value) {
   return Number(value || 0);
+}
+
+function readDashboardCache() {
+  try {
+    const cached = sessionStorage.getItem(DASHBOARD_CACHE_KEY);
+    if (!cached) return null;
+
+    const parsed = JSON.parse(cached);
+    const savedAt = Number(parsed?.savedAt || 0);
+    const isFresh = Date.now() - savedAt < DASHBOARD_CACHE_TTL;
+
+    if (!isFresh || !parsed?.data) {
+      sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+    return null;
+  }
+}
+
+function writeDashboardCache(data) {
+  try {
+    sessionStorage.setItem(
+      DASHBOARD_CACHE_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        data,
+      })
+    );
+  } catch {}
 }
 
 function formatDate(value, lang = "de") {
@@ -124,6 +160,7 @@ function ProgressBar({ label, value, total, tone = "bg-[#007ab3]" }) {
         <span className="font-bold text-slate-600 dark:text-slate-300">
           {label}
         </span>
+
         <span className="font-black text-slate-950 dark:text-white">
           {num(value)} / {num(total)}
         </span>
@@ -172,32 +209,52 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const user = getCurrentUser?.();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !readDashboardCache());
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [summary, setSummary] = useState(null);
+  const [summary, setSummary] = useState(() => readDashboardCache());
 
   useEffect(() => {
     let alive = true;
 
     async function loadDashboard() {
-      try {
-        setLoading(true);
-        setError("");
+      const cached = readDashboardCache();
 
+      if (cached) {
+        setSummary(cached);
+        setLoading(false);
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      setError("");
+
+      try {
         const res = await apiFetch("/admin/dashboard-summary");
         const json = await res.json().catch(() => ({}));
 
-        if (!res.ok) {
+        if (!res.ok || !json?.ok) {
           throw new Error(json?.message || t("dashboardFailedLoad"));
         }
 
         if (!alive) return;
-        setSummary(json?.data || null);
+
+        const nextData = json?.data || null;
+
+        setSummary(nextData);
+        writeDashboardCache(nextData);
       } catch (err) {
         if (!alive) return;
-        setError(err?.message || t("dashboardFailedLoad"));
+
+        if (!cached) {
+          setError(err?.message || t("dashboardFailedLoad"));
+        }
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     }
 
@@ -340,6 +397,13 @@ export default function Dashboard() {
                 {user.email}
               </div>
             ) : null}
+
+            {refreshing ? (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                <MIcon name="sync" className="text-lg" />
+                {t("dashboardRefreshing", "Refreshing latest data...")}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -402,7 +466,12 @@ export default function Dashboard() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {modules.map((item) => (
-              <ModuleCard key={item.key} item={item} navigate={navigate} t={t} />
+              <ModuleCard
+                key={item.key}
+                item={item}
+                navigate={navigate}
+                t={t}
+              />
             ))}
           </div>
         </section>
@@ -507,6 +576,7 @@ export default function Dashboard() {
                           <div className="font-black text-slate-950 dark:text-white">
                             {brand.name || "-"}
                           </div>
+
                           <div className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
                             {brand.route || "-"}
                           </div>
@@ -553,7 +623,10 @@ export default function Dashboard() {
                   className="flex w-full items-start gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-[#007ab3]/30 hover:bg-[#007ab3]/5 dark:border-white/10 dark:bg-slate-950 dark:hover:bg-white/5"
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#007ab3]/10 text-[#007ab3]">
-                    <MIcon name={activityIcon(item.type)} className="text-2xl" />
+                    <MIcon
+                      name={activityIcon(item.type)}
+                      className="text-2xl"
+                    />
                   </div>
 
                   <div className="min-w-0 flex-1">
