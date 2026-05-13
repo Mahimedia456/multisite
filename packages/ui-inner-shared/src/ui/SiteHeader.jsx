@@ -188,15 +188,7 @@ export default function SiteHeader({
   variant = "bar",
   showDefaultAbout = true,
   hiddenWebsitePages = [],
-
-  /**
-   * "topbar" = company details topbar + logo row buttons
-   * "actions" = only logo row buttons, no topbar
-   * "both" = same as topbar, kept for backward compatibility
-   * "none" = no topbar and no logo row buttons
-   */
   contactPlacement = "topbar",
-
   showTopBar = true,
 }) {
   const Link = LinkComponent;
@@ -206,7 +198,7 @@ export default function SiteHeader({
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDesktopMega, setOpenDesktopMega] = useState(null);
-  const [mobileOpenMega, setMobileOpenMega] = useState({});
+  const [mobileSubmenuItem, setMobileSubmenuItem] = useState(null);
 
   const {
     name,
@@ -308,6 +300,7 @@ export default function SiteHeader({
       if (e.key === "Escape") {
         setOpenDesktopMega(null);
         setMobileOpen(false);
+        setMobileSubmenuItem(null);
       }
     }
 
@@ -321,7 +314,17 @@ export default function SiteHeader({
   }, []);
 
   useEffect(() => {
-    if (mobileOpen) setOpenDesktopMega(null);
+    if (mobileOpen) {
+      setOpenDesktopMega(null);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      setMobileSubmenuItem(null);
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -329,42 +332,25 @@ export default function SiteHeader({
   }, []);
 
   const navItem =
-    "leading-none font-medium text-slate-800 hover:text-primary transition-colors " +
-    "whitespace-nowrap text-[clamp(11px,0.9vw,14px)] px-2 xl:px-3 py-3";
+    "leading-none font-medium text-slate-800 hover:text-primary transition-colors whitespace-nowrap text-[clamp(11px,0.9vw,14px)] px-2 xl:px-3 py-3";
 
   const navItemButton =
-    "leading-none font-medium text-slate-800 hover:text-primary transition-colors " +
-    "whitespace-nowrap text-[clamp(11px,0.9vw,14px)] px-2 xl:px-3 py-3 " +
-    "inline-flex items-center gap-1.5";
+    "leading-none font-medium text-slate-800 hover:text-primary transition-colors whitespace-nowrap text-[clamp(11px,0.9vw,14px)] px-2 xl:px-3 py-3 inline-flex items-center gap-1.5";
 
   const megaPanelBase =
     "absolute left-0 right-0 top-full z-50 border-t border-gray-100 bg-white/95 backdrop-blur-md shadow-xl";
 
   const megaInnerWrap = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8";
-
-  const megaCard =
-    "rounded-2xl border border-[#f0edf7] bg-white/90 shadow-sm p-5";
-
-  const megaColTitle =
-    "text-[13px] font-extrabold text-slate-900 tracking-tight";
-
-  const megaLink =
-    "block text-sm text-slate-700 hover:text-primary transition-colors py-1";
-
-  const caretIcon = (open) => (
-    <span className="material-symbols-outlined text-[18px] leading-none">
-      {open ? "expand_less" : "expand_more"}
-    </span>
-  );
+  const megaCard = "rounded-2xl border border-[#f0edf7] bg-white/90 shadow-sm p-5";
+  const megaColTitle = "text-[13px] font-extrabold text-slate-900 tracking-tight";
+  const megaLink = "block text-sm text-slate-700 hover:text-primary transition-colors py-1";
 
   const loginHref = login?.href || login?.url || ADMIN_LOGIN_URL;
 
   const renderCta = () => {
     const label = cta?.label || "kontakt";
     const cls =
-      "h-11 px-6 rounded-xl bg-primary hover:bg-primary-dark " +
-      "text-white text-sm font-extrabold shadow-lg shadow-primary/20 transition-all " +
-      "inline-flex items-center justify-center leading-none whitespace-nowrap";
+      "h-11 px-6 rounded-xl bg-primary hover:bg-primary-dark text-white text-sm font-extrabold shadow-lg shadow-primary/20 transition-all inline-flex items-center justify-center leading-none whitespace-nowrap";
 
     if (cta?.to) {
       return (
@@ -442,36 +428,21 @@ export default function SiteHeader({
     );
   };
 
-const renderHeaderRowActions = () => {
-  return (
-    <div className="hidden lg:flex items-center justify-end gap-3">
-      {/* ✅ SUPPORT BUTTON HIDDEN */}
-      {/* Code kept, but disabled from UI. */}
+  const renderHeaderRowActions = () => {
+    return (
+      <div className="hidden lg:flex items-center justify-end gap-3">
+        <a
+          href={loginHref}
+          className="h-11 w-11 rounded-xl bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 inline-flex items-center justify-center"
+          aria-label="My account"
+        >
+          <span className="material-symbols-outlined text-[24px]">person</span>
+        </a>
 
-      {/*
-      <Link
-        to="/knowledge"
-        className="h-11 px-5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:text-primary transition-all inline-flex items-center gap-2 text-sm font-extrabold shadow-sm"
-      >
-        <span className="material-symbols-outlined text-[22px] text-primary">
-          support_agent
-        </span>
-        <span>Support</span>
-      </Link>
-      */}
-
-      <a
-        href={loginHref}
-        className="h-11 w-11 rounded-xl bg-primary text-white hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 inline-flex items-center justify-center"
-        aria-label="My account"
-      >
-        <span className="material-symbols-outlined text-[24px]">person</span>
-      </a>
-
-      {renderCta()}
-    </div>
-  );
-};
+        {renderCta()}
+      </div>
+    );
+  };
 
   const shouldShowTopbar =
     showTopBar && (contactPlacement === "topbar" || contactPlacement === "both");
@@ -480,10 +451,6 @@ const renderHeaderRowActions = () => {
     contactPlacement === "topbar" ||
     contactPlacement === "actions" ||
     contactPlacement === "both";
-
-  const toggleMobileMega = (label) => {
-    setMobileOpenMega((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
 
   const renderTopBar = () => {
     if (!shouldShowTopbar) return null;
@@ -533,22 +500,14 @@ const renderHeaderRowActions = () => {
 
                       if (isNonEmptyString(it?.to)) {
                         return (
-                          <Link
-                            key={`${label}-${j}`}
-                            to={it.to}
-                            className={megaLink}
-                          >
+                          <Link key={`${label}-${j}`} to={it.to} className={megaLink}>
                             {label}
                           </Link>
                         );
                       }
 
                       return (
-                        <a
-                          key={`${label}-${j}`}
-                          href={href}
-                          className={megaLink}
-                        >
+                        <a key={`${label}-${j}`} href={href} className={megaLink}>
                           {label}
                         </a>
                       );
@@ -583,6 +542,332 @@ const renderHeaderRowActions = () => {
     );
   };
 
+  const closeMobile = () => {
+    setMobileOpen(false);
+    setMobileSubmenuItem(null);
+  };
+
+  const mobileContactRows = [
+    phone
+      ? {
+          key: "phone",
+          icon: "call",
+          label: phone,
+          href: telHref(phone),
+        }
+      : null,
+    email
+      ? {
+          key: "email",
+          icon: "mail",
+          label: email,
+          href: `mailto:${email}`,
+        }
+      : null,
+    whatsapp
+      ? {
+          key: "whatsapp",
+          icon: "chat",
+          label: whatsapp,
+          href: whatsappHref(whatsapp),
+          external: true,
+        }
+      : null,
+    location
+      ? {
+          key: "location",
+          icon: "location_on",
+          label: location,
+          href: null,
+        }
+      : null,
+  ].filter(Boolean);
+
+  const renderMobileMainMenu = () => {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <Link to="/" onClick={closeMobile} className="flex min-w-0 items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              {renderLogo()}
+            </div>
+            <span className="truncate text-lg font-extrabold text-slate-900">
+              {name}
+            </span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={closeMobile}
+            className="w-12 h-12 rounded-xl bg-gray-50 hover:bg-gray-100 inline-flex items-center justify-center"
+            aria-label="Close menu"
+          >
+            <span className="material-symbols-outlined text-3xl">close</span>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {mobileContactRows.length ? (
+            <div className="mb-5 rounded-2xl border border-gray-100 bg-gray-50 overflow-hidden">
+              {mobileContactRows.map((row) => {
+                const content = (
+                  <>
+                    <span className="material-symbols-outlined text-primary text-[24px] shrink-0">
+                      {row.icon}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold text-slate-700">
+                      {row.label}
+                    </span>
+                  </>
+                );
+
+                if (!row.href) {
+                  return (
+                    <div
+                      key={row.key}
+                      className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 last:border-b-0"
+                    >
+                      {content}
+                    </div>
+                  );
+                }
+
+                return (
+                  <a
+                    key={row.key}
+                    href={row.href}
+                    target={row.external ? "_blank" : undefined}
+                    rel={row.external ? "noreferrer" : undefined}
+                    className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 last:border-b-0 active:bg-white"
+                    onClick={closeMobile}
+                  >
+                    {content}
+                  </a>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="mb-5 grid grid-cols-2 gap-3">
+            <a
+              href={loginHref}
+              className="h-12 rounded-xl bg-primary text-white inline-flex items-center justify-center gap-2 text-sm font-extrabold"
+              onClick={closeMobile}
+            >
+              <span className="material-symbols-outlined text-[21px]">person</span>
+              My account
+            </a>
+
+            <Link
+              to="/contact"
+              className="h-12 rounded-xl border border-gray-200 bg-white text-slate-800 inline-flex items-center justify-center gap-2 text-sm font-extrabold"
+              onClick={closeMobile}
+            >
+              <span className="material-symbols-outlined text-primary text-[21px]">
+                contact_mail
+              </span>
+              kontakt
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
+            {normalizedLinks.map((item, idx) => {
+              const label = item?.label || `Menu ${idx + 1}`;
+
+              if (hasMega(item)) {
+                return (
+                  <button
+                    key={`${label}-${idx}`}
+                    type="button"
+                    onClick={() => setMobileSubmenuItem(item)}
+                    className="w-full flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-4 text-left last:border-b-0"
+                  >
+                    <span className="text-[15px] font-extrabold text-slate-900">
+                      {label}
+                    </span>
+                    <span className="material-symbols-outlined text-slate-500">
+                      chevron_right
+                    </span>
+                  </button>
+                );
+              }
+
+              const href = normalizeHref(item);
+
+              if (item.to) {
+                return (
+                  <Link
+                    key={`${label}-${idx}`}
+                    to={item.to}
+                    className="block border-b border-gray-100 px-4 py-4 text-[15px] font-extrabold text-slate-900 last:border-b-0"
+                    onClick={closeMobile}
+                  >
+                    {label}
+                  </Link>
+                );
+              }
+
+              return (
+                <a
+                  key={`${label}-${idx}`}
+                  href={href}
+                  className="block border-b border-gray-100 px-4 py-4 text-[15px] font-extrabold text-slate-900 last:border-b-0"
+                  onClick={closeMobile}
+                >
+                  {label}
+                </a>
+              );
+            })}
+
+            {showDefaultAbout && !hasAboutAlready ? (
+              <Link
+                to="/about"
+                className="block border-b border-gray-100 px-4 py-4 text-[15px] font-extrabold text-slate-900 last:border-b-0"
+                onClick={closeMobile}
+              >
+                About Us
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMobileSubmenu = () => {
+    if (!mobileSubmenuItem) return null;
+
+    const columns = mobileSubmenuItem?.mega?.columns || [];
+
+    return (
+      <div className="absolute inset-0 z-10 flex h-full flex-col bg-white">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <button
+            type="button"
+            onClick={() => setMobileSubmenuItem(null)}
+            className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-700"
+          >
+            <span className="material-symbols-outlined text-[24px]">
+              arrow_back
+            </span>
+            Back
+          </button>
+
+          <button
+            type="button"
+            onClick={closeMobile}
+            className="w-12 h-12 rounded-xl bg-gray-50 hover:bg-gray-100 inline-flex items-center justify-center"
+            aria-label="Close menu"
+          >
+            <span className="material-symbols-outlined text-3xl">close</span>
+          </button>
+        </div>
+
+        <div className="border-b border-gray-100 px-5 py-4">
+          <div className="text-xs font-extrabold uppercase tracking-widest text-primary">
+            Menu
+          </div>
+          <div className="mt-1 text-2xl font-extrabold text-slate-950">
+            {mobileSubmenuItem.label}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="space-y-4">
+            {columns.map((col, cIdx) => (
+              <div
+                key={`${col?.title || "col"}-${cIdx}`}
+                className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+              >
+                <div className="text-sm font-extrabold uppercase tracking-wide text-slate-500">
+                  {col?.title || ""}
+                </div>
+
+                <div className="mt-3 rounded-xl bg-white border border-gray-100 overflow-hidden">
+                  {(col?.items || []).map((it, j) => {
+                    const href = normalizeHref(it);
+                    const l = it?.label || "Link";
+
+                    if (isNonEmptyString(it?.to)) {
+                      return (
+                        <Link
+                          key={`${l}-${j}`}
+                          to={it.to}
+                          className="flex items-center justify-between border-b border-gray-100 px-4 py-3 text-sm font-bold text-slate-800 last:border-b-0"
+                          onClick={closeMobile}
+                        >
+                          <span>{l}</span>
+                          <span className="material-symbols-outlined text-[18px] text-slate-400">
+                            chevron_right
+                          </span>
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <a
+                        key={`${l}-${j}`}
+                        href={href}
+                        className="flex items-center justify-between border-b border-gray-100 px-4 py-3 text-sm font-bold text-slate-800 last:border-b-0"
+                        onClick={closeMobile}
+                      >
+                        <span>{l}</span>
+                        <span className="material-symbols-outlined text-[18px] text-slate-400">
+                          chevron_right
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
+
+                {col?.footerLink?.label ? (
+                  <div className="mt-3">
+                    {isNonEmptyString(col.footerLink?.to) ? (
+                      <Link
+                        to={col.footerLink.to}
+                        className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-extrabold text-primary"
+                        onClick={closeMobile}
+                      >
+                        {col.footerLink.label}
+                        <span className="material-symbols-outlined text-[18px]">
+                          arrow_forward
+                        </span>
+                      </Link>
+                    ) : (
+                      <a
+                        href={normalizeHref(col.footerLink)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-extrabold text-primary"
+                        onClick={closeMobile}
+                      >
+                        {col.footerLink.label}
+                        <span className="material-symbols-outlined text-[18px]">
+                          arrow_forward
+                        </span>
+                      </a>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMobileDrawer = () => {
+    if (!mobileOpen) return null;
+
+    return (
+      <div className="sm:hidden fixed inset-0 z-[999] bg-white">
+        <div className="relative h-full w-full overflow-hidden">
+          {renderMobileMainMenu()}
+          {renderMobileSubmenu()}
+        </div>
+      </div>
+    );
+  };
+
   const Inner = (
     <div className="w-full" ref={headerRef}>
       <div className="h-16 flex items-center justify-between gap-4">
@@ -601,12 +886,10 @@ const renderHeaderRowActions = () => {
 
           <button
             className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle Menu"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
           >
-            <span className="material-symbols-outlined text-3xl">
-              {mobileOpen ? "close" : "menu"}
-            </span>
+            <span className="material-symbols-outlined text-3xl">menu</span>
           </button>
         </div>
       </div>
@@ -683,232 +966,7 @@ const renderHeaderRowActions = () => {
         {renderDesktopMegaPanel()}
       </div>
 
-      {mobileOpen && (
-        <div className="sm:hidden border-t border-gray-100 bg-white">
-          <div className="flex flex-col py-2">
-            {phone ? (
-              <a
-                href={telHref(phone)}
-                className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
-                onClick={() => setMobileOpen(false)}
-              >
-                <span className="material-symbols-outlined text-primary text-[20px]">
-                  call
-                </span>
-                {phone}
-              </a>
-            ) : null}
-
-            {email ? (
-              <a
-                href={`mailto:${email}`}
-                className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
-                onClick={() => setMobileOpen(false)}
-              >
-                <span className="material-symbols-outlined text-primary text-[20px]">
-                  mail
-                </span>
-                {email}
-              </a>
-            ) : null}
-
-            {whatsapp ? (
-              <a
-                href={whatsappHref(whatsapp)}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
-                onClick={() => setMobileOpen(false)}
-              >
-                <span className="material-symbols-outlined text-primary text-[20px]">
-                  chat
-                </span>
-                {whatsapp}
-              </a>
-            ) : null}
-
-            {location ? (
-              <div className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100">
-                <span className="material-symbols-outlined text-primary text-[20px]">
-                  location_on
-                </span>
-                {location}
-              </div>
-            ) : null}
-
-            <Link
-              to="/knowledge"
-              className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="material-symbols-outlined text-primary text-[20px]">
-                support_agent
-              </span>
-              Support
-            </Link>
-
-            <a
-              href={loginHref}
-              className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="material-symbols-outlined text-primary text-[20px]">
-                person
-              </span>
-              My account
-            </a>
-
-            <Link
-              to="/contact"
-              className="px-4 py-3 flex items-center gap-2 text-slate-700 text-sm font-bold border-b border-gray-100"
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="material-symbols-outlined text-primary text-[20px]">
-                contact_mail
-              </span>
-              kontakt
-            </Link>
-
-            {normalizedLinks.map((item, idx) => {
-              const label = item?.label || `Link-${idx}`;
-
-              if (hasMega(item)) {
-                const opened = !!mobileOpenMega[label];
-
-                return (
-                  <div key={`${label}-${idx}`} className="px-4">
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-between py-3 text-slate-800 text-sm font-extrabold"
-                      onClick={() => toggleMobileMega(label)}
-                      aria-expanded={opened}
-                    >
-                      <span>{label}</span>
-                      {caretIcon(opened)}
-                    </button>
-
-                    {opened ? (
-                      <div className="pb-3">
-                        {(item?.mega?.columns || []).map((col, cIdx) => (
-                          <div
-                            key={`${col?.title || "col"}-${cIdx}`}
-                            className="mt-3"
-                          >
-                            <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">
-                              {col?.title || ""}
-                            </div>
-
-                            <div className="mt-2 space-y-1">
-                              {(col?.items || []).map((it, j) => {
-                                const href = normalizeHref(it);
-                                const l = it?.label || "Link";
-
-                                if (isNonEmptyString(it?.to)) {
-                                  return (
-                                    <Link
-                                      key={`${l}-${j}`}
-                                      to={it.to}
-                                      className="block text-sm text-slate-700 py-1"
-                                      onClick={() => {
-                                        setMobileOpen(false);
-                                        setMobileOpenMega({});
-                                      }}
-                                    >
-                                      {l}
-                                    </Link>
-                                  );
-                                }
-
-                                return (
-                                  <a
-                                    key={`${l}-${j}`}
-                                    href={href}
-                                    className="block text-sm text-slate-700 py-1"
-                                    onClick={() => {
-                                      setMobileOpen(false);
-                                      setMobileOpenMega({});
-                                    }}
-                                  >
-                                    {l}
-                                  </a>
-                                );
-                              })}
-                            </div>
-
-                            {col?.footerLink?.label ? (
-                              <div className="mt-2">
-                                {isNonEmptyString(col.footerLink?.to) ? (
-                                  <Link
-                                    to={col.footerLink.to}
-                                    className="text-sm font-bold text-primary"
-                                    onClick={() => {
-                                      setMobileOpen(false);
-                                      setMobileOpenMega({});
-                                    }}
-                                  >
-                                    {col.footerLink.label}
-                                  </Link>
-                                ) : (
-                                  <a
-                                    href={normalizeHref(col.footerLink)}
-                                    className="text-sm font-bold text-primary"
-                                    onClick={() => {
-                                      setMobileOpen(false);
-                                      setMobileOpenMega({});
-                                    }}
-                                  >
-                                    {col.footerLink.label}
-                                  </a>
-                                )}
-                              </div>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    <div className="border-b border-gray-100" />
-                  </div>
-                );
-              }
-
-              const href = normalizeHref(item);
-
-              return (
-                <div key={`${label}-${idx}`} className="px-4 py-2">
-                  {item.to ? (
-                    <Link
-                      to={item.to}
-                      className="block text-slate-700 text-sm font-medium"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {label}
-                    </Link>
-                  ) : (
-                    <a
-                      href={href}
-                      className="block text-slate-700 text-sm font-medium"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {label}
-                    </a>
-                  )}
-                </div>
-              );
-            })}
-
-            {showDefaultAbout && !hasAboutAlready ? (
-              <Link
-                to="/about"
-                className="px-4 py-2 block text-slate-700 text-sm font-medium"
-                onClick={() => setMobileOpen(false)}
-              >
-                About Us
-              </Link>
-            ) : null}
-          </div>
-        </div>
-      )}
+      {renderMobileDrawer()}
     </div>
   );
 
